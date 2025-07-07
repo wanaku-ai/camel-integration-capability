@@ -1,8 +1,10 @@
 package ai.wanaku.tool.camel.grpc;
 
 import ai.wanaku.core.exchange.ToolInvokeReply;
+import ai.wanaku.core.exchange.ToolInvokeRequest;
 import ai.wanaku.core.exchange.ToolInvokerGrpc;
 import ai.wanaku.tool.camel.util.WanakuRoutesLoader;
+import io.grpc.stub.StreamObserver;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.List;
@@ -22,9 +24,7 @@ public class CamelTool extends ToolInvokerGrpc.ToolInvokerImplBase {
     }
 
     @Override
-    public void invokeTool(
-            ai.wanaku.core.exchange.ToolInvokeRequest request,
-            io.grpc.stub.StreamObserver<ai.wanaku.core.exchange.ToolInvokeReply> responseObserver) {
+    public void invokeTool(ToolInvokeRequest request, StreamObserver<ToolInvokeReply> responseObserver) {
 
         LOG.debug("About to load a Camel route");
 

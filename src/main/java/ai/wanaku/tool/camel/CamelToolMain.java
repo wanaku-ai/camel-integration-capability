@@ -17,59 +17,57 @@
 
 package ai.wanaku.tool.camel;
 
+import ai.wanaku.api.discovery.RegistrationManager;
+import ai.wanaku.api.types.providers.ServiceTarget;
+import ai.wanaku.api.types.providers.ServiceType;
+import ai.wanaku.capabilities.sdk.common.ServicesHelper;
+import ai.wanaku.capabilities.sdk.discovery.DiscoveryServiceHttpClient;
+import ai.wanaku.capabilities.sdk.discovery.ZeroDepRegistrationManager;
+import ai.wanaku.capabilities.sdk.discovery.config.DefaultRegistrationConfig;
+import ai.wanaku.capabilities.sdk.discovery.config.DefaultServiceConfig;
+import ai.wanaku.capabilities.sdk.discovery.deserializer.JacksonDeserializer;
+import ai.wanaku.capabilities.sdk.discovery.serializer.JacksonSerializer;
+import ai.wanaku.capabilities.sdk.discovery.util.DiscoveryHelper;
 import ai.wanaku.tool.camel.grpc.CamelTool;
-import ai.wanaku.tool.camel.grpc.InquireBase;
-import ai.wanaku.tool.camel.registry.ServiceTarget;
-import ai.wanaku.tool.camel.registry.ServiceType;
-import ai.wanaku.tool.camel.registry.ValkeyRegistry;
+import ai.wanaku.tool.camel.grpc.ProvisionBase;
 import io.grpc.Grpc;
 import io.grpc.InsecureServerCredentials;
 import io.grpc.Server;
 import io.grpc.ServerBuilder;
-import io.valkey.JedisPool;
-import io.valkey.JedisPoolConfig;
-import java.util.Map;
 import java.util.concurrent.Callable;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import picocli.CommandLine;
 
 public class CamelToolMain implements Callable<Integer> {
-    private static final Logger LOG = LoggerFactory.getLogger(CamelToolMain.class);
-    private static final String DEFAULT_ROUTE_FILE = "routes.yaml";
-
-    @CommandLine.Option(names = {"--valkey-host"}, description = "The valkey server to use", required = true)
-    private String valkeyHost;
-
-    @CommandLine.Option(names = {"--valkey-port"}, description = "The valkey port to use", defaultValue = "9092")
-    private int valkeyPort;
-
-    @CommandLine.Option(names = {"--register-host"}, description = "The address to register", required = true)
-    private String registerHost;
-
-    @CommandLine.Option(names = {"--register-port"}, description = "The gRPC port to use", defaultValue = "9190")
-    private int grpcPort;
-
-    @CommandLine.Option(names = {"--routes-path"}, description = "The path where the routes are stored")
-    private String routesPath;
-
-
-//    @CommandLine.Option(names = {"--consumes-from"}, description = "The Kafka topic from which to consume the trigger event")
-//    private String consumesFrom;
-//
-
-
-//    @CommandLine.Option(names = {"--step"}, description = "The step to run on event (should contain a file named " + DEFAULT_ROUTE_FILE + ")", required = true)
-//    private String step;
-
-//    @CommandLine.Option(names = {"-d", "--dependencies"}, description = "The list of dependencies to include in runtime (comma-separated)")
-//    private String dependenciesList;
-//
-//    @CommandLine.Option(names = {"--wait"}, description = "Wait forever until a file is created", defaultValue = "false")
-//    private boolean waitForever;
-
     @CommandLine.Option(names = { "-h", "--help" }, usageHelp = true, description = "display a help message")
     private boolean helpRequested = false;
+
+    @CommandLine.Option(names = {"--registration-url"}, description = "The registration URL to use", required = true)
+    private String registrationUrl;
+
+    @CommandLine.Option(names = {"--grpc-port"}, description = "The gRPC port to use", defaultValue = "9190")
+    private int grpcPort;
+
+    @CommandLine.Option(names = {"--registration-announce-address"}, description = "The announce address to use when registering",
+        defaultValue = "auto", required = true)
+    private String registrationAnnounceAddress;
+
+    @CommandLine.Option(names = {"--name"}, description = "The service name to use", defaultValue = "camel")
+    private String name;
+
+    @CommandLine.Option(names = {"--retries"}, description = "The maximum number of retries for registration", defaultValue = "3")
+    private int retries;
+
+    @CommandLine.Option(names = {"--wait-seconds"}, description = "The retry wait seconds between attempts", defaultValue = "1")
+    private int retryWaitSeconds;
+
+    @CommandLine.Option(names = {"--initial-delay"}, description = "Initial delay for registration attempts in seconds", defaultValue = "0")
+    private long initialDelay;
+
+    @CommandLine.Option(names = {"--period"}, description = "Period between registration attempts in seconds", defaultValue = "5")
+    private long period;
+
+    @CommandLine.Option(names = {"--routes-path"}, description = "The path to the Camel routes", required = true)
+    private String routesPath;
 
     public static void main(String[] args) {
         int exitCode = new CommandLine(new CamelToolMain()).execute(args);
@@ -77,34 +75,46 @@ public class CamelToolMain implements Callable<Integer> {
         System.exit(exitCode);
     }
 
-    private JedisPool redisClient() {
-        JedisPoolConfig config = new JedisPoolConfig();
+    public RegistrationManager newRegistrationManager() {
+        String address = DiscoveryHelper.resolveRegistrationAddress(registrationAnnounceAddress);
+        final ServiceTarget serviceTarget = ServiceTarget.newEmptyTarget(name, address, grpcPort, ServiceType.TOOL_INVOKER);
 
-        // It is recommended that you set maxTotal = maxIdle = 2*minIdle for best performance
-        config.setMaxTotal(32);
-        config.setMaxIdle(32);
-        config.setMinIdle(16);
+        final DefaultServiceConfig serviceConfig = DefaultServiceConfig.Builder.newBuilder()
+                .baseUrl(registrationUrl)
+                .serializer(new JacksonSerializer())
+                .build();
 
-        return new JedisPool(config, valkeyHost, valkeyPort, 10, null);
+        DiscoveryServiceHttpClient discoveryServiceHttpClient = new DiscoveryServiceHttpClient(serviceConfig);
+
+        final DefaultRegistrationConfig registrationConfig = DefaultRegistrationConfig.Builder.newBuilder()
+                .initialDelay(initialDelay)
+                .period(period)
+                .dataDir(ServicesHelper.getCanonicalServiceHome(name))
+                .maxRetries(retries)
+                .waitSeconds(retryWaitSeconds)
+                .build();
+
+        ZeroDepRegistrationManager
+                registrationManager = new ZeroDepRegistrationManager(discoveryServiceHttpClient, serviceTarget, registrationConfig, new JacksonDeserializer());
+        registrationManager.start();
+
+        return registrationManager;
     }
 
     @Override
     public Integer call() throws Exception {
-        ValkeyRegistry registry = new ValkeyRegistry(redisClient());
-
+        RegistrationManager registry = newRegistrationManager();
         try {
 
             final ServerBuilder<?> serverBuilder = Grpc.newServerBuilderForPort(grpcPort, InsecureServerCredentials.create());
             final Server server = serverBuilder.addService(new CamelTool(routesPath))
-                    .addService(new InquireBase())
+                    .addService(new ProvisionBase(name))
                     .build();
-
-            registry.register(ServiceTarget.toolInvoker("camel-core", registerHost, grpcPort), Map.of());
 
             server.start();
             server.awaitTermination();
         } finally {
-            registry.deregister("camel-core", ServiceType.TOOL_INVOKER);
+            registry.deregister();
         }
 
         return 0;

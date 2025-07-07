@@ -13,51 +13,12 @@
         <maven.compiler.target>21</maven.compiler.target>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
 
-        <protoc-version>3.25.5</protoc-version>
-        <protobuf-version>4.30.2</protobuf-version>
-        <grpc-version>1.69.1</grpc-version>
-        <protoc-gen-grpc-java>1.72.0</protoc-gen-grpc-java>
-        <annotations-api.version>6.0.53</annotations-api.version>
-
         <camel.version>4.11.0</camel.version>
         <slf4j.version>2.0.16</slf4j.version>
         <log4j.version>2.21.1</log4j.version>
         <picocli.version>4.7.6</picocli.version>
-        <valkey-java.version>5.3.0</valkey-java.version>
+        <wanaku.version>0.0.6-SNAPSHOT</wanaku.version>
     </properties>
-
-    <build>
-        <extensions>
-            <extension>
-                <groupId>kr.motd.maven</groupId>
-                <artifactId>os-maven-plugin</artifactId>
-                <version>1.7.1</version>
-            </extension>
-        </extensions>
-
-        <plugins>
-            <plugin>
-                <groupId>org.xolstice.maven.plugins</groupId>
-                <artifactId>protobuf-maven-plugin</artifactId>
-                <version>0.6.1</version>
-                <configuration>
-                    <protocArtifact>com.google.protobuf:protoc:${protoc-version}:exe:${os.detected.classifier}</protocArtifact>
-                    <pluginId>grpc-java</pluginId>
-                    <pluginArtifact>io.grpc:protoc-gen-grpc-java:${protoc-gen-grpc-java}:exe:${os.detected.classifier}
-                    </pluginArtifact>
-                    <!--                    <outputDirectory>${project.build.directory}/generated-sources/grpc</outputDirectory>-->
-                </configuration>
-                <executions>
-                    <execution>
-                        <goals>
-                            <goal>compile</goal>
-                            <goal>compile-custom</goal>
-                        </goals>
-                    </execution>
-                </executions>
-            </plugin>
-        </plugins>
-    </build>
 
     <dependencyManagement>
         <dependencies>
@@ -75,33 +36,38 @@
                 <type>pom</type>
                 <scope>import</scope>
             </dependency>
-
+            <dependency>
+                <groupId>ai.wanaku.sdk</groupId>
+                <artifactId>capabilities-bom</artifactId>
+                <version>${wanaku.version}</version>
+                <type>pom</type>
+                <scope>import</scope>
+            </dependency>
         </dependencies>
     </dependencyManagement>
 
     <dependencies>
         <dependency>
-            <groupId>io.grpc</groupId>
-            <artifactId>grpc-netty-shaded</artifactId>
-            <version>${grpc-version}</version>
-            <scope>runtime</scope>
+            <groupId>ai.wanaku.sdk</groupId>
+            <artifactId>capabilities-common</artifactId>
         </dependency>
         <dependency>
-            <groupId>io.grpc</groupId>
-            <artifactId>grpc-protobuf</artifactId>
-            <version>${grpc-version}</version>
+            <groupId>ai.wanaku.sdk</groupId>
+            <artifactId>capabilities-discovery</artifactId>
         </dependency>
         <dependency>
-            <groupId>io.grpc</groupId>
-            <artifactId>grpc-stub</artifactId>
-            <version>${grpc-version}</version>
+            <groupId>ai.wanaku.sdk</groupId>
+            <artifactId>capabilities-data-files</artifactId>
         </dependency>
-        <dependency> <!-- necessary for Java 9+ -->
-            <groupId>org.apache.tomcat</groupId>
-            <artifactId>annotations-api</artifactId>
-            <version>${annotations-api.version}</version>
-            <scope>provided</scope>
+        <dependency>
+            <groupId>ai.wanaku.sdk</groupId>
+            <artifactId>capabilities-exchange</artifactId>
         </dependency>
+        <dependency>
+            <groupId>ai.wanaku.sdk</groupId>
+            <artifactId>capabilities-runtime</artifactId>
+        </dependency>
+
 
         <dependency>
             <groupId>org.apache.logging.log4j</groupId>
@@ -121,12 +87,6 @@
         </dependency>
 
         <dependency>
-            <groupId>io.valkey</groupId>
-            <artifactId>valkey-java</artifactId>
-            <version>${valkey-java.version}</version>
-        </dependency>
-
-        <dependency>
             <groupId>org.apache.camel</groupId>
             <artifactId>camel-core</artifactId>
         </dependency>
@@ -139,12 +99,6 @@
         <dependency>
             <groupId>org.apache.camel</groupId>
             <artifactId>camel-kamelet-main</artifactId>
-        </dependency>
-
-        <dependency>
-            <groupId>ai.wanaku</groupId>
-            <artifactId>api</artifactId>
-            <version>0.0.5</version>
         </dependency>
 
     </dependencies>
