@@ -1,5 +1,4 @@
-
 To run: 
 ```
-java -jar ... --valkey-host localhost --valkey-port 6379 --register-host localhost --register-port 9190 --routes-path /Users/opiske/code/java/wanaku/tests/data/routes/camel-route/
+java -jar ... --registration-url http://localhost:8080 --registration-announce-address localhost --grpc-port 9190 --name camel-core --routes-path /Users/opiske/code/java/camel-core-downstream-service/tests/data/routes/camel-core/
 ```
