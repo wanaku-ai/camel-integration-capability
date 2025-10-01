@@ -25,6 +25,7 @@ import ai.wanaku.capabilities.sdk.discovery.DiscoveryServiceHttpClient;
 import ai.wanaku.capabilities.sdk.discovery.ZeroDepRegistrationManager;
 import ai.wanaku.capabilities.sdk.discovery.config.DefaultRegistrationConfig;
 import ai.wanaku.capabilities.sdk.discovery.config.DefaultServiceConfig;
+import ai.wanaku.capabilities.sdk.discovery.config.TokenEndpoint;
 import ai.wanaku.capabilities.sdk.discovery.deserializer.JacksonDeserializer;
 import ai.wanaku.capabilities.sdk.discovery.serializer.JacksonSerializer;
 import ai.wanaku.capabilities.sdk.discovery.util.DiscoveryHelper;
@@ -69,6 +70,15 @@ public class CamelToolMain implements Callable<Integer> {
     @CommandLine.Option(names = {"--routes-path"}, description = "The path to the Camel routes", required = true)
     private String routesPath;
 
+    @CommandLine.Option(names = {"--token-endpoint"}, description = "The base URL for the authentication", required = true)
+    private String tokenEndpoint;
+
+    @CommandLine.Option(names = {"--client-id"}, description = "The client ID authentication", required = true)
+    private String clientId;
+
+    @CommandLine.Option(names = {"--client-secret"}, description = "The client secret authentication", required = true)
+    private String clientSecret;
+
     public static void main(String[] args) {
         int exitCode = new CommandLine(new CamelToolMain()).execute(args);
 
@@ -82,6 +92,9 @@ public class CamelToolMain implements Callable<Integer> {
         final DefaultServiceConfig serviceConfig = DefaultServiceConfig.Builder.newBuilder()
                 .baseUrl(registrationUrl)
                 .serializer(new JacksonSerializer())
+                .clientId(clientId)
+                .tokenEndpoint(TokenEndpoint.fromBaseUrl(tokenEndpoint))
+                .secret(clientSecret)
                 .build();
 
         DiscoveryServiceHttpClient discoveryServiceHttpClient = new DiscoveryServiceHttpClient(serviceConfig);
