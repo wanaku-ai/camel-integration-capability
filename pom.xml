@@ -18,6 +18,7 @@
         <log4j.version>2.21.1</log4j.version>
         <picocli.version>4.7.6</picocli.version>
         <wanaku.version>0.0.8-SNAPSHOT</wanaku.version>
+        <jackson-databind.version>2.17.2</jackson-databind.version>
     </properties>
 
     <dependencyManagement>
@@ -67,6 +68,10 @@
             <groupId>ai.wanaku.sdk</groupId>
             <artifactId>capabilities-runtime</artifactId>
         </dependency>
+        <dependency>
+            <groupId>ai.wanaku.sdk</groupId>
+            <artifactId>capabilities-services-client</artifactId>
+        </dependency>
 
 
         <dependency>
@@ -99,6 +104,25 @@
         <dependency>
             <groupId>org.apache.camel</groupId>
             <artifactId>camel-kamelet-main</artifactId>
+        </dependency>
+
+        <dependency>
+            <groupId>com.fasterxml.jackson.dataformat</groupId>
+            <artifactId>jackson-dataformat-yaml</artifactId>
+            <version>2.17.2</version>
+        </dependency>
+
+        <dependency>
+            <groupId>com.fasterxml.jackson.core</groupId>
+            <artifactId>jackson-databind</artifactId>
+            <version>${jackson-databind.version}</version>
+        </dependency>
+
+        <dependency>
+            <groupId>org.junit.jupiter</groupId>
+            <artifactId>junit-jupiter</artifactId>
+            <version>5.10.2</version>
+            <scope>test</scope>
         </dependency>
 
     </dependencies>

@@ -21,14 +21,16 @@ import ai.wanaku.api.discovery.RegistrationManager;
 import ai.wanaku.api.types.providers.ServiceTarget;
 import ai.wanaku.api.types.providers.ServiceType;
 import ai.wanaku.capabilities.sdk.common.ServicesHelper;
+import ai.wanaku.capabilities.sdk.common.serializer.JacksonSerializer;
 import ai.wanaku.capabilities.sdk.discovery.DiscoveryServiceHttpClient;
 import ai.wanaku.capabilities.sdk.discovery.ZeroDepRegistrationManager;
+import ai.wanaku.capabilities.sdk.discovery.config.DefaultDiscoveryServiceConfig;
 import ai.wanaku.capabilities.sdk.discovery.config.DefaultRegistrationConfig;
-import ai.wanaku.capabilities.sdk.discovery.config.DefaultServiceConfig;
 import ai.wanaku.capabilities.sdk.discovery.config.TokenEndpoint;
 import ai.wanaku.capabilities.sdk.discovery.deserializer.JacksonDeserializer;
-import ai.wanaku.capabilities.sdk.discovery.serializer.JacksonSerializer;
 import ai.wanaku.capabilities.sdk.discovery.util.DiscoveryHelper;
+import ai.wanaku.capabilities.sdk.services.ServicesHttpClient;
+import ai.wanaku.capabilities.sdk.services.config.DefaultServicesClientConfig;
 import ai.wanaku.tool.camel.grpc.CamelTool;
 import ai.wanaku.tool.camel.grpc.ProvisionBase;
 import io.grpc.Grpc;
@@ -67,8 +69,11 @@ public class CamelToolMain implements Callable<Integer> {
     @CommandLine.Option(names = {"--period"}, description = "Period between registration attempts in seconds", defaultValue = "5")
     private long period;
 
-    @CommandLine.Option(names = {"--routes-path"}, description = "The path to the Camel routes", required = true)
+    @CommandLine.Option(names = {"--routes-path"}, description = "The path to the Apache Camel routes YAML file (i.e.: /path/to/routes.camel.yaml)", required = true)
     private String routesPath;
+
+    @CommandLine.Option(names = {"--routes-rules"}, description = "The path to the YAML file with route exposure rules (i.e.: /path/to/routes-expose.yaml)")
+    private String routesRules;
 
     @CommandLine.Option(names = {"--token-endpoint"}, description = "The base URL for the authentication", required = true)
     private String tokenEndpoint;
@@ -89,7 +94,7 @@ public class CamelToolMain implements Callable<Integer> {
         String address = DiscoveryHelper.resolveRegistrationAddress(registrationAnnounceAddress);
         final ServiceTarget serviceTarget = ServiceTarget.newEmptyTarget(name, address, grpcPort, ServiceType.TOOL_INVOKER);
 
-        final DefaultServiceConfig serviceConfig = DefaultServiceConfig.Builder.newBuilder()
+        final DefaultDiscoveryServiceConfig serviceConfig = DefaultDiscoveryServiceConfig.Builder.newBuilder()
                 .baseUrl(registrationUrl)
                 .serializer(new JacksonSerializer())
                 .clientId(clientId)
@@ -114,13 +119,25 @@ public class CamelToolMain implements Callable<Integer> {
         return registrationManager;
     }
 
+    public ServicesHttpClient createClient() {
+        DefaultServicesClientConfig config = DefaultServicesClientConfig
+                .builder()
+                .baseUrl(registrationUrl)
+                .serializer(new JacksonSerializer())
+                .build();
+
+        return new ServicesHttpClient(config);
+    }
+
     @Override
     public Integer call() throws Exception {
         RegistrationManager registry = newRegistrationManager();
+        ServicesHttpClient httpClient = createClient();
+
         try {
 
             final ServerBuilder<?> serverBuilder = Grpc.newServerBuilderForPort(grpcPort, InsecureServerCredentials.create());
-            final Server server = serverBuilder.addService(new CamelTool(routesPath))
+            final Server server = serverBuilder.addService(new CamelTool(routesPath, routesRules, name, httpClient))
                     .addService(new ProvisionBase(name))
                     .build();
 

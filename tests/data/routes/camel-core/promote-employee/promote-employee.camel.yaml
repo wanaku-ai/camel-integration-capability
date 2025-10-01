@@ -1,0 +1,29 @@
+- route:
+    id: route-3103
+    from:
+      id: from-4035
+      uri: direct
+      parameters:
+        name: initiate-promotion
+      steps:
+        - log:
+            id: log-2526
+            message: Initiating promotion process for employee ${header.EMPLOYEE}
+        - setBody:
+            simple:
+              expression: Promotion process for employee ${header.EMPLOYEE} has started.
+- route:
+    id: route-3104
+    from:
+      id: from-4035-1797
+      uri: direct
+      parameters:
+        name: confirm-promotion
+      steps:
+        - log:
+            id: log-2526-2688
+            message: Confirming promotion process for employee ${header.EMPLOYEE}
+        - setBody:
+            simple:
+              expression: Promotion process for employee ${header.EMPLOYEE} has completed. You
+                can now send an email and congratulate him.

@@ -1,0 +1,24 @@
+#  wanaku tools add -n "initiate-employee-promotion"
+#  --description "Run a Camel route as a plugin"
+#  --uri "camel-core-plugin://initiate-employee-promotion"
+#  --type camel-core-plugin --property "route:string,The route to execute" --required route
+
+tools:
+  - initiate-employee-promotion:
+      route:
+        uri: "direct:initiate-promotion"
+      description: "Initiate the promotion process for an employee"
+      properties:
+        - name: employee
+          type: string
+          description: The employee to promote
+          required: true
+  - confirm-employee-promotion:
+      route:
+        uri: "direct:confirm-promotion"
+      description: "Confirm the promotion of an an employee"
+      properties:
+        - name: employee
+          type: string
+          description: The employee to confirm the promotion
+          required: true

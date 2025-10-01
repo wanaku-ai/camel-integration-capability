@@ -4,10 +4,10 @@
       id: from-1702
       uri: direct
       parameters:
-        name: start
+        name: wanaku
       steps:
         - log:
             id: log-2526
             message: Hello ${body}
         - setBody:
-            simple: Hello Camel from ${routeId}
+            simple: Hello ${body} from ${routeId}

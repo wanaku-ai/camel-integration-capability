@@ -1,0 +1,10 @@
+tools:
+  - sends-greeting:
+      route:
+        uri: "direct:wanaku"
+      description: "Sends a greeting message to show that the application is working"
+      properties:
+        - name: wanaku_body
+          type: string
+          description: The greeting message to send
+          required: true
