@@ -4,14 +4,16 @@ import ai.wanaku.capabilities.sdk.services.ServicesHttpClient;
 import ai.wanaku.core.exchange.ToolInvokeReply;
 import ai.wanaku.core.exchange.ToolInvokeRequest;
 import ai.wanaku.core.exchange.ToolInvokerGrpc;
+import ai.wanaku.tool.camel.model.Definition;
 import ai.wanaku.tool.camel.model.Mapping;
+import ai.wanaku.tool.camel.model.McpSpec;
 import ai.wanaku.tool.camel.model.Property;
-import ai.wanaku.tool.camel.model.Tool;
-import ai.wanaku.tool.camel.model.ToolDefinition;
+import ai.wanaku.tool.camel.spec.rules.resources.WanakuResourceRuleProcessor;
 import ai.wanaku.tool.camel.util.ToolRulesManager;
+import ai.wanaku.tool.camel.spec.rules.resources.WanakuResourceTransformer;
 import ai.wanaku.tool.camel.util.WanakuRoutesLoader;
-import ai.wanaku.tool.camel.util.WanakuRuleProcessor;
-import ai.wanaku.tool.camel.util.WanakuToolTransformer;
+import ai.wanaku.tool.camel.spec.rules.tools.WanakuToolRuleProcessor;
+import ai.wanaku.tool.camel.spec.rules.tools.WanakuToolTransformer;
 import io.grpc.stub.StreamObserver;
 import java.net.URI;
 import java.util.HashMap;
@@ -29,13 +31,19 @@ public class CamelTool extends ToolInvokerGrpc.ToolInvokerImplBase {
     private final String routesPath;
 
     private final CamelContext context;
-    private final Tool tool;
+    private final McpSpec mcpSpec;
+    private final ToolRulesManager toolRulesManager;
 
     public CamelTool(String routesPath, String routesRules, String name, ServicesHttpClient servicesClient) {
         this.routesPath = routesPath;
 
-        ToolRulesManager toolRulesManager = new ToolRulesManager(name, routesRules);
-        tool = toolRulesManager.loadTools(new WanakuToolTransformer(name), new WanakuRuleProcessor(servicesClient));
+        this.toolRulesManager = new ToolRulesManager(name, routesRules);
+        final WanakuToolTransformer toolTransformer =
+                new WanakuToolTransformer(name, new WanakuToolRuleProcessor(servicesClient));
+        final WanakuResourceTransformer resourceTransformer =
+                new WanakuResourceTransformer(name, new WanakuResourceRuleProcessor(servicesClient));
+
+        this.mcpSpec = toolRulesManager.loadMcpSpecAndRegister(toolTransformer, resourceTransformer);
 
         context = new DefaultCamelContext();
         loadRoutes();
@@ -58,7 +66,20 @@ public class CamelTool extends ToolInvokerGrpc.ToolInvokerImplBase {
         URI routeUri = URI.create(uri);
         final String host = routeUri.getHost();
 
-        final ToolDefinition toolDefinition = tool.getTools().get(host);
+        // Try to find the definition in tools first, then in resources
+        Map<String, Definition> tools = toolRulesManager.getTools(mcpSpec);
+        Definition toolDefinition = tools.get(host);
+
+        if (toolDefinition == null) {
+            LOG.error("No tool or resource definition found for: {}", host);
+            responseObserver.onNext(
+                    ToolInvokeReply.newBuilder()
+                            .setIsError(true)
+                            .addAllContent(List.of("No tool or resource definition found for: " + host)).build());
+            responseObserver.onCompleted();
+            return;
+        }
+
         final Map<String, Object> headers = extractHeaderParameters(request, toolDefinition);
 
         final ProducerTemplate producerTemplate = context.createProducerTemplate();
@@ -79,7 +100,7 @@ public class CamelTool extends ToolInvokerGrpc.ToolInvokerImplBase {
 
     }
 
-    private static Map<String, Object> extractHeaderParameters(ToolInvokeRequest request, ToolDefinition toolDefinition) {
+    private static Map<String, Object> extractHeaderParameters(ToolInvokeRequest request, Definition toolDefinition) {
         final Map<String, String> argumentsMap = request.getArgumentsMap();
         final List<Property> properties = toolDefinition.getProperties();
         Map<String, Object> headers = new HashMap<>();

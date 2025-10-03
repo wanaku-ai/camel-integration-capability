@@ -17,6 +17,7 @@
 
 package ai.wanaku.tool.camel.util;
 
+import ai.wanaku.tool.camel.model.McpSpec;
 import ai.wanaku.tool.camel.model.Tool;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
@@ -25,21 +26,41 @@ import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 
-public class ToolYamlReader {
+public class McpRulesReader {
     private static final ObjectMapper YAML_MAPPER = new ObjectMapper(new YAMLFactory());
 
+    public static McpSpec readMcpSpecFromFile(String filePath) throws IOException {
+        return YAML_MAPPER.readValue(new File(filePath), McpSpec.class);
+    }
+
+    public static McpSpec readMcpSpecFromFile(File file) throws IOException {
+        return YAML_MAPPER.readValue(file, McpSpec.class);
+    }
+
+    public static McpSpec readMcpSpecFromInputStream(InputStream inputStream) throws IOException {
+        return YAML_MAPPER.readValue(inputStream, McpSpec.class);
+    }
+
+    public static McpSpec readMcpSpecFromString(String yamlContent) throws IOException {
+        return YAML_MAPPER.readValue(yamlContent, McpSpec.class);
+    }
+
+    @Deprecated
     public static Tool readFromFile(String filePath) throws IOException {
         return YAML_MAPPER.readValue(new File(filePath), Tool.class);
     }
 
+    @Deprecated
     public static Tool readFromFile(File file) throws IOException {
         return YAML_MAPPER.readValue(file, Tool.class);
     }
 
+    @Deprecated
     public static Tool readFromInputStream(InputStream inputStream) throws IOException {
         return YAML_MAPPER.readValue(inputStream, Tool.class);
     }
 
+    @Deprecated
     public static Tool readFromString(String yamlContent) throws IOException {
         return YAML_MAPPER.readValue(yamlContent, Tool.class);
     }

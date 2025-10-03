@@ -1,8 +1,10 @@
 package ai.wanaku.tool.camel.util;
 
-import ai.wanaku.tool.camel.model.Tool;
-import ai.wanaku.tool.camel.model.ToolDefinition;
+import ai.wanaku.tool.camel.model.Definition;
+import ai.wanaku.tool.camel.model.McpSpec;
+import ai.wanaku.tool.camel.spec.rules.RulesTransformer;
 import java.io.IOException;
+import java.util.Collections;
 import java.util.Map;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -12,57 +14,72 @@ public class ToolRulesManager {
     private final String name;
     private final String routesRules;
 
-    @FunctionalInterface
-    public interface RulesTransformer <T> {
-        T transform(String name, ToolDefinition toolDefinition);
-    }
-
-    @FunctionalInterface
-    public interface RulesProcessor<T> {
-        void eval(T rule);
-    }
-
     public ToolRulesManager(String name, String routesRules) {
         this.name = name;
         this.routesRules = routesRules;
     }
 
-    private Tool loadToolRules() {
+    private McpSpec loadMcpSpec() {
         if (routesRules == null || routesRules.isEmpty()) {
             LOG.warn("No routes rules file specified");
             return null;
         }
 
         try {
-            Tool loadedTool = ToolYamlReader.readFromFile(routesRules);
-            LOG.info("Successfully loaded tool rules from: {}", routesRules);
-            return loadedTool;
+            McpSpec mcpSpec = McpRulesReader.readMcpSpecFromFile(routesRules);
+            LOG.info("Successfully loaded MCP spec from: {}", routesRules);
+            return mcpSpec;
         } catch (IOException e) {
-            LOG.error("Failed to load tool rules from: {}", routesRules, e);
-            throw new RuntimeException("Failed to load tool rules", e);
+            LOG.error("Failed to load MCP spec from: {}", routesRules, e);
+            throw new RuntimeException("Failed to load MCP spec", e);
         }
     }
 
+    private <T> void registerDefinitions(Map<String, Definition> definitions, RulesTransformer transformer) {
+        if (definitions == null) {
+            return;
+        }
 
-    public <T> void registerTools(Tool tool, RulesTransformer<T> transformer, RulesProcessor<T> processor) {
-        final Map<String, ToolDefinition> tools = tool.getTools();
-
-        for (Map.Entry<String, ToolDefinition> entry : tools.entrySet()) {
-            final ToolDefinition toolDef = entry.getValue();
-            T transformed = transformer.transform(entry.getKey(), toolDef);
-            processor.eval(transformed);
-
+        for (Map.Entry<String, Definition> entry : definitions.entrySet()) {
+            final Definition toolDef = entry.getValue();
+            transformer.transform(entry.getKey(), toolDef);
         }
     }
 
-    public <T> Tool loadTools(RulesTransformer<T> transformer, RulesProcessor<T> processor) {
-        Tool tool = loadToolRules();
-        if (tool != null) {
-            registerTools(tool, transformer, processor);
+    public <T> McpSpec loadMcpSpecAndRegister(RulesTransformer toolTransformer, RulesTransformer resourceTransformer) {
+        McpSpec mcpSpec = loadMcpSpec();
+        if (mcpSpec != null && mcpSpec.getMcp() != null) {
+            McpSpec.McpContent mcp = mcpSpec.getMcp();
+
+            // Register tools
+            if (mcp.getTools() != null) {
+                LOG.info("Registering {} tools", mcp.getTools().getDefinitions().size());
+                registerDefinitions(mcp.getTools().getDefinitions(), toolTransformer);
+            }
+
+            // Register resources
+            if (mcp.getResources() != null) {
+                LOG.info("Registering {} resources", mcp.getResources().getDefinitions().size());
+                registerDefinitions(mcp.getResources().getDefinitions(), toolTransformer);
+            }
         } else {
-            LOG.warn("No tool registered for {}", name);
+            LOG.warn("No MCP spec registered for {}", name);
         }
 
-        return tool;
+        return mcpSpec;
+    }
+
+    public Map<String, Definition> getTools(McpSpec mcpSpec) {
+        if (mcpSpec == null || mcpSpec.getMcp() == null || mcpSpec.getMcp().getTools() == null) {
+            return Collections.emptyMap();
+        }
+        return mcpSpec.getMcp().getTools().getDefinitions();
+    }
+
+    public Map<String, Definition> getResources(McpSpec mcpSpec) {
+        if (mcpSpec == null || mcpSpec.getMcp() == null || mcpSpec.getMcp().getResources() == null) {
+            return Collections.emptyMap();
+        }
+        return mcpSpec.getMcp().getResources().getDefinitions();
     }
 }

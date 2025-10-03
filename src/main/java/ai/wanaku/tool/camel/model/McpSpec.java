@@ -18,41 +18,44 @@
 package ai.wanaku.tool.camel.model;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
-import java.util.List;
 
-public class ToolDefinition {
-    @JsonProperty("route")
-    private Route route;
+public class McpSpec {
+    @JsonProperty("mcp")
+    private McpContent mcp;
 
-    @JsonProperty("description")
-    private String description;
+    public McpSpec() {}
 
-    @JsonProperty("properties")
-    private List<Property> properties;
-
-    public ToolDefinition() {}
-
-    public Route getRoute() {
-        return route;
+    public McpContent getMcp() {
+        return mcp;
     }
 
-    public void setRoute(Route route) {
-        this.route = route;
+    public void setMcp(McpContent mcp) {
+        this.mcp = mcp;
     }
 
-    public String getDescription() {
-        return description;
-    }
+    public static class McpContent {
+        @JsonProperty("tools")
+        private McpEntityWrapper tools;
 
-    public void setDescription(String description) {
-        this.description = description;
-    }
+        @JsonProperty("resources")
+        private McpEntityWrapper resources;
 
-    public List<Property> getProperties() {
-        return properties;
-    }
+        public McpContent() {}
 
-    public void setProperties(List<Property> properties) {
-        this.properties = properties;
+        public McpEntityWrapper getTools() {
+            return tools;
+        }
+
+        public void setTools(McpEntityWrapper tools) {
+            this.tools = tools;
+        }
+
+        public McpEntityWrapper getResources() {
+            return resources;
+        }
+
+        public void setResources(McpEntityWrapper resources) {
+            this.resources = resources;
+        }
     }
 }
