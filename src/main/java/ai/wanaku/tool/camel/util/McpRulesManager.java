@@ -9,12 +9,12 @@ import java.util.Map;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-public class ToolRulesManager {
-    private static final Logger LOG = LoggerFactory.getLogger(ToolRulesManager.class);
+public class McpRulesManager {
+    private static final Logger LOG = LoggerFactory.getLogger(McpRulesManager.class);
     private final String name;
     private final String routesRules;
 
-    public ToolRulesManager(String name, String routesRules) {
+    public McpRulesManager(String name, String routesRules) {
         this.name = name;
         this.routesRules = routesRules;
     }
@@ -60,26 +60,12 @@ public class ToolRulesManager {
             // Register resources
             if (mcp.getResources() != null) {
                 LOG.info("Registering {} resources", mcp.getResources().getDefinitions().size());
-                registerDefinitions(mcp.getResources().getDefinitions(), toolTransformer);
+                registerDefinitions(mcp.getResources().getDefinitions(), resourceTransformer);
             }
         } else {
             LOG.warn("No MCP spec registered for {}", name);
         }
 
         return mcpSpec;
-    }
-
-    public Map<String, Definition> getTools(McpSpec mcpSpec) {
-        if (mcpSpec == null || mcpSpec.getMcp() == null || mcpSpec.getMcp().getTools() == null) {
-            return Collections.emptyMap();
-        }
-        return mcpSpec.getMcp().getTools().getDefinitions();
-    }
-
-    public Map<String, Definition> getResources(McpSpec mcpSpec) {
-        if (mcpSpec == null || mcpSpec.getMcp() == null || mcpSpec.getMcp().getResources() == null) {
-            return Collections.emptyMap();
-        }
-        return mcpSpec.getMcp().getResources().getDefinitions();
     }
 }

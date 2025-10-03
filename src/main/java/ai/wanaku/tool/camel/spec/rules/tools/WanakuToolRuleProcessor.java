@@ -22,8 +22,12 @@ public class WanakuToolRuleProcessor implements RulesProcessor<ToolReference> {
 
     @Override
     public void eval(ToolReference toolReference) {
-        servicesClient.addTool(toolReference);
-        registered.add(toolReference);
+        try {
+            servicesClient.addTool(toolReference);
+            registered.add(toolReference);
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
     }
 
     private void deregisterTools() {

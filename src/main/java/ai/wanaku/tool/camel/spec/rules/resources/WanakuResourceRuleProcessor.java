@@ -17,16 +17,20 @@ public class WanakuResourceRuleProcessor implements RulesProcessor<ResourceRefer
     public WanakuResourceRuleProcessor(ServicesHttpClient servicesClient) {
         this.servicesClient = servicesClient;
 
-        Runtime.getRuntime().addShutdownHook(new Thread(this::deregisterTools));
+        Runtime.getRuntime().addShutdownHook(new Thread(this::deregisterResources));
     }
 
     @Override
     public void eval(ResourceReference toolReference) {
-        servicesClient.exposeResource(toolReference);
-        registered.add(toolReference);
+        try {
+            servicesClient.exposeResource(toolReference);
+            registered.add(toolReference);
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
     }
 
-    private void deregisterTools() {
+    private void deregisterResources() {
         for (ResourceReference ref : registered) {
             try {
                 servicesClient.removeResource(ref.getName());
