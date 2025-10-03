@@ -27,3 +27,25 @@
             simple:
               expression: Promotion process for employee ${header.EMPLOYEE} has completed. You
                 can now send an email and congratulate him.
+- route:
+    id: route-3105
+    autoStartup: false
+    from:
+      id: from-9762
+      uri: file
+      parameters:
+        directoryName: /Users/opiske/code/java/camel-core-downstream-service/tests/data/routes/camel-core/promote-employee
+        fileName: employee-history.txt
+        idempotent: true
+        noop: true
+      steps:
+        - log:
+            id: log-2526-2688-1609
+            message: Obtaining the history for employee
+        - transform:
+            id: transform-3885
+            toType: String.class
+        - setBody:
+            id: setBody-1229
+            simple:
+              expression: ${body}

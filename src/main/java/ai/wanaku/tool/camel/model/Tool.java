@@ -22,15 +22,15 @@ import java.util.Map;
 
 public class Tool {
     @JsonProperty("tools")
-    private ToolsWrapper toolsWrapper;
+    private McpEntityWrapper toolsWrapper;
 
     public Tool() {}
 
-    public Map<String, ToolDefinition> getTools() {
-        return toolsWrapper != null ? toolsWrapper.getTools() : null;
+    public Map<String, Definition> getTools() {
+        return toolsWrapper != null ? toolsWrapper.getDefinitions() : null;
     }
 
-    public void setToolsWrapper(ToolsWrapper toolsWrapper) {
+    public void setToolsWrapper(McpEntityWrapper toolsWrapper) {
         this.toolsWrapper = toolsWrapper;
     }
 }

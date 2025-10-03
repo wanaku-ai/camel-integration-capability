@@ -105,33 +105,50 @@ Camel routes should be defined in YAML format in the file specified by `--routes
 
 ### Route Exposure Rules
 
-Routes can be exposed as tools by defining rules in a YAML file specified by `--routes-rules`. 
+Routes can be exposed as MPC tools or resources by defining rules in a YAML file specified by `--routes-rules`. 
 This file maps route definitions to tool specifications:
 
 ```yaml
-tools:
-  - initiate-employee-promotion:
-      route:
-        uri: "direct:initiate-promotion"
-      description: "Initiate the promotion process for an employee"
-      properties:
-        - name: employee
-          type: string
-          description: The employee to promote
-          required: true
-  - confirm-employee-promotion:
-      route:
-        uri: "direct:confirm-promotion"
-      description: "Confirm the promotion of an employee"
-      properties:
-        - name: employee
-          type: string
-          description: The employee to confirm the promotion
-          required: true
-          mapping:
-            type: header
-            name: EMPLOYEE
+mcp:
+  tools:
+    - initiate-employee-promotion:
+        route:
+          id: "route-3103"
+        description: "Initiate the promotion process for an employee"
+        properties:
+          - name: employee
+            type: string
+            description: The employee to confirm the promotion
+            required: true
+            mapping:
+              type: header
+              name: EMPLOYEE
+    - confirm-employee-promotion:
+        route:
+          id: "route-3104"
+        description: "Confirm the promotion of an an employee"
+        properties:
+          - name: employee
+            type: string
+            description: The employee to confirm the promotion
+            required: true
+            mapping:
+              type: header
+              name: EMPLOYEE
+  resources:
+    - employee-performance-history:
+        route:
+          id: "route-3105"
+        description: "Obtain the employee performance history"
 ```
+
+For resource routes, the code doesn't necessarily run the route. Instead, it 
+uses only the endpoint URI for accessing it via a consumer template. For resources
+the data MUST be convertable to a Java String. 
+
+> [IMPORTANT]
+> Routes serving resources MUST have their auto-start disabled.
+
 
 #### Property Mapping
 

@@ -1,25 +1,31 @@
-tools:
-  - initiate-employee-promotion:
-      route:
-        uri: "direct:initiate-promotion"
-      description: "Initiate the promotion process for an employee"
-      properties:
-        - name: employee
-          type: string
-          description: The employee to confirm the promotion
-          required: true
-          mapping:
-            type: header
-            name: EMPLOYEE
-  - confirm-employee-promotion:
-      route:
-        uri: "direct:confirm-promotion"
-      description: "Confirm the promotion of an an employee"
-      properties:
-        - name: employee
-          type: string
-          description: The employee to confirm the promotion
-          required: true
-          mapping:
-            type: header
-            name: EMPLOYEE
+mcp:
+  tools:
+    - initiate-employee-promotion:
+        route:
+          id: "route-3103"
+        description: "Initiate the promotion process for an employee"
+        properties:
+          - name: employee
+            type: string
+            description: The employee to confirm the promotion
+            required: true
+            mapping:
+              type: header
+              name: EMPLOYEE
+    - confirm-employee-promotion:
+        route:
+          id: "route-3104"
+        description: "Confirm the promotion of an an employee"
+        properties:
+          - name: employee
+            type: string
+            description: The employee to confirm the promotion
+            required: true
+            mapping:
+              type: header
+              name: EMPLOYEE
+  resources:
+    - employee-performance-history:
+        route:
+          id: "route-3105"
+        description: "Obtain the employee performance history"

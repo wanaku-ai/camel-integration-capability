@@ -31,8 +31,15 @@ import ai.wanaku.capabilities.sdk.discovery.deserializer.JacksonDeserializer;
 import ai.wanaku.capabilities.sdk.discovery.util.DiscoveryHelper;
 import ai.wanaku.capabilities.sdk.services.ServicesHttpClient;
 import ai.wanaku.capabilities.sdk.services.config.DefaultServicesClientConfig;
+import ai.wanaku.tool.camel.grpc.CamelResource;
 import ai.wanaku.tool.camel.grpc.CamelTool;
 import ai.wanaku.tool.camel.grpc.ProvisionBase;
+import ai.wanaku.tool.camel.model.McpSpec;
+import ai.wanaku.tool.camel.spec.rules.resources.WanakuResourceRuleProcessor;
+import ai.wanaku.tool.camel.spec.rules.resources.WanakuResourceTransformer;
+import ai.wanaku.tool.camel.spec.rules.tools.WanakuToolRuleProcessor;
+import ai.wanaku.tool.camel.spec.rules.tools.WanakuToolTransformer;
+import ai.wanaku.tool.camel.util.McpRulesManager;
 import io.grpc.Grpc;
 import io.grpc.InsecureServerCredentials;
 import io.grpc.Server;
@@ -90,10 +97,7 @@ public class CamelToolMain implements Callable<Integer> {
         System.exit(exitCode);
     }
 
-    public RegistrationManager newRegistrationManager() {
-        String address = DiscoveryHelper.resolveRegistrationAddress(registrationAnnounceAddress);
-        final ServiceTarget serviceTarget = ServiceTarget.newEmptyTarget(name, address, grpcPort, ServiceType.TOOL_INVOKER);
-
+    public RegistrationManager newRegistrationManager(ServiceTarget serviceTarget) {
         final DefaultDiscoveryServiceConfig serviceConfig = DefaultDiscoveryServiceConfig.Builder.newBuilder()
                 .baseUrl(registrationUrl)
                 .serializer(new JacksonSerializer())
@@ -113,10 +117,15 @@ public class CamelToolMain implements Callable<Integer> {
                 .build();
 
         ZeroDepRegistrationManager
-                registrationManager = new ZeroDepRegistrationManager(discoveryServiceHttpClient, serviceTarget, registrationConfig, new JacksonDeserializer());
-        registrationManager.start();
+                toolRegistrationManager = new ZeroDepRegistrationManager(discoveryServiceHttpClient, serviceTarget, registrationConfig, new JacksonDeserializer());
+        toolRegistrationManager.start();
 
-        return registrationManager;
+        return toolRegistrationManager;
+    }
+
+    private ServiceTarget newServiceTargetTarget() {
+        String address = DiscoveryHelper.resolveRegistrationAddress(registrationAnnounceAddress);
+        return ServiceTarget.newEmptyTarget(name, address, grpcPort, ServiceType.MULTI_CAPABILITY);
     }
 
     public ServicesHttpClient createClient() {
@@ -131,22 +140,38 @@ public class CamelToolMain implements Callable<Integer> {
 
     @Override
     public Integer call() throws Exception {
-        RegistrationManager registry = newRegistrationManager();
+        final ServiceTarget toolInvokerTarget = newServiceTargetTarget();
+        RegistrationManager registrationManager = newRegistrationManager(toolInvokerTarget);
+
         ServicesHttpClient httpClient = createClient();
+        WanakuCamelManager camelManager = new WanakuCamelManager(routesPath);
+
+        McpSpec mcpSpec = createMcpSpec(httpClient);
 
         try {
 
             final ServerBuilder<?> serverBuilder = Grpc.newServerBuilderForPort(grpcPort, InsecureServerCredentials.create());
-            final Server server = serverBuilder.addService(new CamelTool(routesPath, routesRules, name, httpClient))
+            final Server server = serverBuilder.addService(new CamelTool(camelManager, mcpSpec))
+                    .addService(new CamelResource(camelManager, mcpSpec))
                     .addService(new ProvisionBase(name))
                     .build();
 
             server.start();
             server.awaitTermination();
         } finally {
-            registry.deregister();
+            registrationManager.deregister();
         }
 
         return 0;
+    }
+
+    public McpSpec createMcpSpec(ServicesHttpClient servicesClient) {
+        McpRulesManager mcpRulesManager = new McpRulesManager(name, routesRules);
+        final WanakuToolTransformer toolTransformer =
+                new WanakuToolTransformer(name, new WanakuToolRuleProcessor(servicesClient));
+        final WanakuResourceTransformer resourceTransformer =
+                new WanakuResourceTransformer(name, new WanakuResourceRuleProcessor(servicesClient));
+
+        return mcpRulesManager.loadMcpSpecAndRegister(toolTransformer, resourceTransformer);
     }
 }

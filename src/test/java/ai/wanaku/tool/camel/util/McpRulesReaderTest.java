@@ -17,10 +17,10 @@
 
 package ai.wanaku.tool.camel.util;
 
+import ai.wanaku.tool.camel.model.Definition;
 import ai.wanaku.tool.camel.model.Mapping;
+import ai.wanaku.tool.camel.model.McpSpec;
 import ai.wanaku.tool.camel.model.Property;
-import ai.wanaku.tool.camel.model.Tool;
-import ai.wanaku.tool.camel.model.ToolDefinition;
 import org.junit.jupiter.api.Test;
 
 import java.io.InputStream;
@@ -28,27 +28,29 @@ import java.util.Map;
 
 import static org.junit.jupiter.api.Assertions.*;
 
-class ToolYamlReaderTest {
+class McpRulesReaderTest {
 
     @Test
-    void testLoadSampleToolSpec() throws Exception {
+    void testLoadSampleMcpSpec() throws Exception {
         // Load the sample file from test resources
         InputStream inputStream = getClass().getClassLoader().getResourceAsStream("sample-tool-spec.yaml");
-        assertNotNull(inputStream, "Sample tool spec file should exist in test resources");
+        assertNotNull(inputStream, "Sample MCP spec file should exist in test resources");
 
         // Read the YAML file
-        Tool tool = ToolYamlReader.readFromInputStream(inputStream);
+        McpSpec mcpSpec = McpRulesReader.readMcpSpecFromInputStream(inputStream);
 
-        assertNotNull(tool, "Tool should not be null");
+        assertNotNull(mcpSpec, "McpSpec should not be null");
+        assertNotNull(mcpSpec.getMcp(), "Mcp content should not be null");
 
         // Verify the tools map
-        Map<String, ToolDefinition> tools = tool.getTools();
+        assertNotNull(mcpSpec.getMcp().getTools(), "Tools wrapper should not be null");
+        Map<String, Definition> tools = mcpSpec.getMcp().getTools().getDefinitions();
         assertNotNull(tools, "Tools map should not be null");
         assertEquals(2, tools.size(), "Should have 2 tools defined");
 
         // Verify initiate-employee-promotion tool
         assertTrue(tools.containsKey("initiate-employee-promotion"), "Should contain initiate-employee-promotion tool");
-        ToolDefinition initiatePromotion = tools.get("initiate-employee-promotion");
+        Definition initiatePromotion = tools.get("initiate-employee-promotion");
         assertNotNull(initiatePromotion, "initiate-employee-promotion should not be null");
         assertEquals("Initiate the promotion process for an employee", initiatePromotion.getDescription());
         assertEquals("direct:initiate-promotion", initiatePromotion.getRoute().getUri());
@@ -65,7 +67,7 @@ class ToolYamlReaderTest {
 
         // Verify confirm-employee-promotion tool
         assertTrue(tools.containsKey("confirm-employee-promotion"), "Should contain confirm-employee-promotion tool");
-        ToolDefinition confirmPromotion = tools.get("confirm-employee-promotion");
+        Definition confirmPromotion = tools.get("confirm-employee-promotion");
         assertNotNull(confirmPromotion, "confirm-employee-promotion should not be null");
         assertEquals("Confirm the promotion of an an employee", confirmPromotion.getDescription());
         assertEquals("direct:confirm-promotion", confirmPromotion.getRoute().getUri());
@@ -85,5 +87,34 @@ class ToolYamlReaderTest {
         Mapping mapping = confirmEmployeeProperty.getMapping();
         assertEquals("header", mapping.getType(), "Mapping type should be header");
         assertEquals("EMPLOYEE", mapping.getName(), "Mapping name should be EMPLOYEE");
+
+        // Verify the resources map
+        assertNotNull(mcpSpec.getMcp().getResources(), "Resources wrapper should not be null");
+        Map<String, Definition> resources = mcpSpec.getMcp().getResources().getDefinitions();
+        assertNotNull(resources, "Resources map should not be null");
+        assertEquals(1, resources.size(), "Should have 1 resource defined");
+
+        // Verify employee-performance-history resource
+        assertTrue(resources.containsKey("employee-performance-history"), "Should contain employee-performance-history resource");
+        Definition performanceHistory = resources.get("employee-performance-history");
+        assertNotNull(performanceHistory, "employee-performance-history should not be null");
+        assertEquals("Obtain the employee performance history", performanceHistory.getDescription());
+        assertEquals("direct:employee-performance-history", performanceHistory.getRoute().getUri());
+
+        // Verify properties of employee-performance-history
+        assertNotNull(performanceHistory.getProperties(), "Properties should not be null");
+        assertEquals(1, performanceHistory.getProperties().size(), "Should have 1 property");
+
+        Property performanceEmployeeProperty = performanceHistory.getProperties().get(0);
+        assertEquals("employee", performanceEmployeeProperty.getName());
+        assertEquals("string", performanceEmployeeProperty.getType());
+        assertEquals("The employee to obtain the performance history", performanceEmployeeProperty.getDescription());
+        assertTrue(performanceEmployeeProperty.isRequired(), "employee property should be required");
+
+        // Verify mapping of employee-performance-history
+        assertNotNull(performanceEmployeeProperty.getMapping(), "Mapping should not be null");
+        Mapping resourceMapping = performanceEmployeeProperty.getMapping();
+        assertEquals("header", resourceMapping.getType(), "Mapping type should be header");
+        assertEquals("EMPLOYEE", resourceMapping.getName(), "Mapping name should be EMPLOYEE");
     }
 }

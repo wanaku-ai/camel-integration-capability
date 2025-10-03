@@ -28,24 +28,24 @@ import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
 
-@JsonDeserialize(using = ToolsWrapper.ToolsDeserializer.class)
-public class ToolsWrapper {
-    private Map<String, ToolDefinition> tools = new HashMap<>();
+@JsonDeserialize(using = McpEntityWrapper.McpEntityDeserializer.class)
+public class McpEntityWrapper {
+    private Map<String, Definition> tools = new HashMap<>();
 
-    public ToolsWrapper() {}
+    public McpEntityWrapper() {}
 
-    public Map<String, ToolDefinition> getTools() {
+    public Map<String, Definition> getDefinitions() {
         return tools;
     }
 
-    public void setTools(Map<String, ToolDefinition> tools) {
+    public void setTools(Map<String, Definition> tools) {
         this.tools = tools;
     }
 
-    public static class ToolsDeserializer extends JsonDeserializer<ToolsWrapper> {
+    public static class McpEntityDeserializer extends JsonDeserializer<McpEntityWrapper> {
         @Override
-        public ToolsWrapper deserialize(JsonParser p, DeserializationContext ctxt) throws IOException {
-            ToolsWrapper wrapper = new ToolsWrapper();
+        public McpEntityWrapper deserialize(JsonParser p, DeserializationContext ctxt) throws IOException {
+            McpEntityWrapper wrapper = new McpEntityWrapper();
             ObjectMapper mapper = (ObjectMapper) p.getCodec();
 
             if (p.currentToken() == JsonToken.START_ARRAY) {
@@ -54,7 +54,7 @@ public class ToolsWrapper {
                         p.nextToken(); // Move to field name
                         String toolName = p.getCurrentName();
                         p.nextToken(); // Move to tool definition object
-                        ToolDefinition toolDef = mapper.readValue(p, ToolDefinition.class);
+                        Definition toolDef = mapper.readValue(p, Definition.class);
                         wrapper.tools.put(toolName, toolDef);
                         p.nextToken(); // Move past the tool definition object
                     }

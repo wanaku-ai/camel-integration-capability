@@ -18,29 +18,41 @@
 package ai.wanaku.tool.camel.model;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
+import java.util.List;
 
-public class Route {
-    @JsonProperty("uri")
-    private String uri;
+public class Definition {
+    @JsonProperty("route")
+    private Route route;
 
-    @JsonProperty("id")
-    private String id;
+    @JsonProperty("description")
+    private String description;
 
-    public Route() {}
+    @JsonProperty("properties")
+    private List<Property> properties;
 
-    public String getUri() {
-        return uri;
+    public Definition() {}
+
+    public Route getRoute() {
+        return route;
     }
 
-    public void setUri(String uri) {
-        this.uri = uri;
+    public void setRoute(Route route) {
+        this.route = route;
     }
 
-    public String getId() {
-        return id;
+    public String getDescription() {
+        return description;
     }
 
-    public void setId(String id) {
-        this.id = id;
+    public void setDescription(String description) {
+        this.description = description;
+    }
+
+    public List<Property> getProperties() {
+        return properties;
+    }
+
+    public void setProperties(List<Property> properties) {
+        this.properties = properties;
     }
 }

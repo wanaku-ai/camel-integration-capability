@@ -1,23 +1,27 @@
-package ai.wanaku.tool.camel.util;
+package ai.wanaku.tool.camel.spec.rules.tools;
 
 import ai.wanaku.api.types.InputSchema;
 import ai.wanaku.api.types.ToolReference;
+import ai.wanaku.tool.camel.model.Definition;
 import ai.wanaku.tool.camel.model.Property;
-import ai.wanaku.tool.camel.model.ToolDefinition;
+import ai.wanaku.tool.camel.spec.rules.RulesProcessor;
+import ai.wanaku.tool.camel.spec.rules.RulesTransformer;
 import java.util.ArrayList;
 import java.util.List;
 
-public class WanakuToolTransformer implements ToolRulesManager.RulesTransformer<ToolReference> {
+public class WanakuToolTransformer implements RulesTransformer {
     public static final String DEFAULT_INPUT_SCHEMA_TYPE = "object";
     private final String name;
-    private List<String> required = new ArrayList<>();
+    private final RulesProcessor<ToolReference> processor;
+    private final List<String> required = new ArrayList<>();
 
-    public WanakuToolTransformer(String name) {
+    public WanakuToolTransformer(String name, RulesProcessor<ToolReference> processor) {
         this.name = name;
+        this.processor = processor;
     }
 
     @Override
-    public ToolReference transform(String ruleName, ToolDefinition toolDefinition) {
+    public void transform(String ruleName, Definition toolDefinition) {
         ToolReference toolReference = new ToolReference();
 
         toolReference.setName(ruleName);
@@ -47,6 +51,6 @@ public class WanakuToolTransformer implements ToolRulesManager.RulesTransformer<
             toolReference.getInputSchema().setRequired(required);
         }
 
-        return toolReference;
+        processor.eval(toolReference);
     }
 }
