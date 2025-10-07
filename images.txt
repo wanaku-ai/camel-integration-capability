@@ -1,0 +1,1 @@
+quay.io/wanaku/camel-integration-capability:latest
