@@ -98,17 +98,17 @@ jobs:
         tags: quay.io/wanaku/camel-integration-capability:${{ github.ref_name }}-${{ matrix.arch }}
 
   createManifests:
-    needs: build-and-push-images
+    needs: build
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - name: Install podman
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y podman
-      - name: Login to Quay.io
-        run: |
-          echo "${{ secrets.QUAY_PASSWORD }}" | podman login -u "${{ secrets.QUAY_USERNAME }}" --password-stdin quay.io
+      - name: Login to Container Registry
+        if: github.repository == 'wanaku-ai/camel-integration-capability'
+        uses: docker/login-action@v3
+        with:
+          registry: quay.io
+          username: ${{ secrets.QUAY_USERNAME }}
+          password: ${{ secrets.QUAY_PASSWORD }}
       - name: Build and Push Manifests
         run: |
           chmod +x build-manifests.sh
