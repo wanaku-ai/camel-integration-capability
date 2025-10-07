@@ -5,7 +5,7 @@ FROM registry.access.redhat.com/ubi9/openjdk-21-runtime:latest
 WORKDIR /app
 
 # Copy the pre-built JAR from local target directory
-COPY target/camel-core-downstream-service-*-with-dependencies.jar /app/app.jar
+COPY target/camel-core-downstream-service-*-jar-with-dependencies.jar /app/app.jar
 
 # Environment variables for runtime configuration
 ENV REGISTRATION_URL="" \
