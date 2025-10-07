@@ -38,8 +38,12 @@ jobs:
         java-version: '21'
         distribution: 'temurin'
         cache: maven
-    - name: Checkout and build SDK dependency
+    - name: Checkout and build dependencies
       run: |
+        cd ..
+        git clone https://github.com/wanaku-ai/wanaku.git
+        cd wanaku
+        mvn -B install --file pom.xml
         cd ..
         git clone https://github.com/wanaku-ai/wanaku-capabilities-java-sdk.git
         cd wanaku-capabilities-java-sdk
