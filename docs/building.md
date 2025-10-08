@@ -11,6 +11,6 @@ mvn clean compile
 mvn package
 ```
 
-## Dependencies
+## Packaging as Containers
 
-
+You can use the provided Dockerfile to o build a container for this project. 

@@ -11,7 +11,7 @@ hero:
       link: ./docs/usage
 
 features:
-  - title: Contributing
-    details: Learn how to contribute to Wanaku
-    link: ./docs/contributing
+  - title: Building
+    details: Learn how to build and package this capability
+    link: ./docs/building
 ---
