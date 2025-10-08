@@ -18,7 +18,7 @@
         <log4j.version>2.21.1</log4j.version>
         <picocli.version>4.7.6</picocli.version>
         <wanaku.version>0.0.8-SNAPSHOT</wanaku.version>
-        <jackson-databind.version>2.17.2</jackson-databind.version>
+        <jackson-databind.version>2.19.2</jackson-databind.version>
         <project.main.class>ai.wanaku.tool.camel.CamelToolMain</project.main.class>
     </properties>
 
