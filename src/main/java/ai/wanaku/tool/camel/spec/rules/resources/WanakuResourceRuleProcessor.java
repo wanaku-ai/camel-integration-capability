@@ -33,7 +33,7 @@ public class WanakuResourceRuleProcessor implements RulesProcessor<ResourceRefer
     private void deregisterResources() {
         for (ResourceReference ref : registered) {
             try {
-                LOG.info("Deregistering resource {}", ref);
+                LOG.debug("Deregistering resource {}", ref);
                 servicesClient.removeResource(ref.getName());
             } catch (Exception e) {
                 LOG.warn("Unable to deregister tool {}: {}", ref.getName(), e.getMessage());

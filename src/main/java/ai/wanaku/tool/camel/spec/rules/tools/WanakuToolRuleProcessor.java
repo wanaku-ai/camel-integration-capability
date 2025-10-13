@@ -26,13 +26,14 @@ public class WanakuToolRuleProcessor implements RulesProcessor<ToolReference> {
             servicesClient.addTool(toolReference);
             registered.add(toolReference);
         } catch (Exception e) {
-            e.printStackTrace();
+            LOG.warn("Unable to add tool {}", e.getMessage(), e);
         }
     }
 
     private void deregisterTools() {
         for (ToolReference ref : registered) {
             try {
+                LOG.debug("Removing tooling {}", ref);
                 servicesClient.removeTool(ref.getName());
             } catch (Exception e) {
                 LOG.warn("Unable to deregister tool {}: {}", ref.getName(), e.getMessage());
