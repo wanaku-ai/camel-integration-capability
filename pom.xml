@@ -20,6 +20,7 @@
         <wanaku.version>0.0.8-SNAPSHOT</wanaku.version>
         <jackson-databind.version>2.19.2</jackson-databind.version>
         <project.main.class>ai.wanaku.tool.camel.CamelToolMain</project.main.class>
+        <junit-jupiter.version>5.13.3</junit-jupiter.version>
     </properties>
 
     <dependencyManagement>
@@ -135,7 +136,7 @@
         <dependency>
             <groupId>org.junit.jupiter</groupId>
             <artifactId>junit-jupiter</artifactId>
-            <version>5.10.2</version>
+            <version>${junit-jupiter.version}</version>
             <scope>test</scope>
         </dependency>
 
