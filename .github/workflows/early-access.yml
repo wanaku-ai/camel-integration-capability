@@ -1,0 +1,76 @@
+name: early-access
+
+on:
+  workflow_dispatch:
+    inputs:
+      currentDevelopmentVersion:
+        description: 'The current development version'
+        required: true
+
+jobs:
+  build:
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ ubuntu-latest, ubuntu-24.04-arm ]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+      - name: Set up JDK 21
+        uses: actions/setup-java@v4
+        with:
+          java-version: '21'
+          distribution: 'temurin'
+          cache: maven
+      - name: Checkout and build dependencies
+        run: |
+          cd ..
+          git clone https://github.com/wanaku-ai/wanaku.git
+          cd wanaku
+          mvn -DskipTests -DskipTests -B install --file pom.xml
+          cd ..
+          git clone https://github.com/wanaku-ai/wanaku-capabilities-java-sdk.git
+          cd wanaku-capabilities-java-sdk
+          mvn -DskipTests -DskipTests -B install --file pom.xml
+          cd ${{ github.workspace }}
+      - name: Build with Maven
+        run: mvn -B package --file pom.xml
+      - name: Set arch
+        id: arch
+        run: echo "arch=$(uname -m)" >> $GITHUB_OUTPUT
+      - name: Login to Container Registry
+        if: github.repository == 'wanaku-ai/camel-integration-capability'
+        uses: docker/login-action@v3
+        with:
+          registry: quay.io
+          username: ${{ secrets.QUAY_USERNAME }}
+          password: ${{ secrets.QUAY_PASSWORD }}
+      - name: Build containers
+        if: github.repository == 'wanaku-ai/camel-integration-capability'
+        run: podman build -t quay.io/wanaku/camel-integration-capability:${{ github.ref_name }}-${{ steps.arch.outputs.arch }} .
+      - name: Push containers
+        if: github.repository == 'wanaku-ai/camel-integration-capability'
+        run: podman push quay.io/wanaku/camel-integration-capability:${{ github.ref_name }}-${{ steps.arch.outputs.arch }}
+
+      - name: Run JReleaser (Linux)
+        runs-on: ubuntu-latest
+        uses: jreleaser/release-action@v2
+        env:
+          JRELEASER_GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          JRELEASER_PROJECT_VERSION: ${{ github.event.inputs.currentDevelopmentVersion }}
+          JRELEASER_PROJECT_SNAPSHOT_LABEL: early-access
+          JRELEASER_SELECT_CURRENT_PLATFORM: true
+          JRELEASER_GPG_PUBLIC_KEY: ${{ secrets.GPG_PUBLIC_KEY }}
+          JRELEASER_GPG_PASSPHRASE: ${{ secrets.MAVEN_GPG_PASSPHRASE }}
+          JRELEASER_GPG_SECRET_KEY: ${{ secrets.GPG_PRIVATE_KEY }}
+
+      # Persist logs
+
+      - name: JReleaser release output
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: jreleaser-release-linux
+          path: |
+            out/jreleaser/trace.log
+            out/jreleaser/output.properties
