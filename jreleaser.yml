@@ -1,0 +1,41 @@
+project:
+  name: camel-integration-capability
+  description: Camel Integration Capability
+  longDescription: A capability service for the Wanaku MCP Router that provides Apache Camel route execution capabilities.
+
+  authors:
+    - The Wanaku Development Team
+  license: Apache-2.0
+  links:
+    homepage: https://wanaku.ai
+    bugTracker: https://github.com/wanaku-ai/camel-integration-capability/issues
+  languages:
+    java:
+      groupId: ai.wanaku
+      version: 21
+  inceptionYear: 2025
+  tags:
+    - 'ai'
+    - 'mcp'
+    - 'java'
+    - 'agentic'
+    - 'agents'
+
+signing:
+  active: ALWAYS
+
+release:
+  github:
+    owner: wanaku-ai
+    overwrite: false
+    issues:
+      enabled: true
+    update:
+      enabled: true
+    skipTag: true
+
+distributions:
+  camel-integration-capability:
+    artifacts:
+      - path: ./target/camel-core-downstream-service-{{projectVersion}}-jar-with-dependencies.jar
+    type: SINGLE_JAR
