@@ -169,7 +169,7 @@
                                 <mainClass>${project.main.class}</mainClass>
                             </manifest>
                         </archive>
-                        <finalName>${project.artifactId}-${camel.version}</finalName>
+                        <finalName>${project.artifactId}-${project.version}</finalName>
                     </configuration>
                     <executions>
                         <execution>
