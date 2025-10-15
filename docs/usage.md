@@ -152,7 +152,7 @@ Properties can include an optional `mapping` element to specify how parameters s
 
 ## Architecture
 
-- **Main Class**: `ai.wanaku.tool.camel.CamelToolMain` - Entry point and configuration
+- **Main Class**: `ai.wanaku.capability.camel.CamelToolMain` - Entry point and configuration
 - **gRPC Services**:
     - `CamelTool` - Handles route execution requests
     - `ProvisionBase` - Provides basic service information

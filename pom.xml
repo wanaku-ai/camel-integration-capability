@@ -19,7 +19,7 @@
         <picocli.version>4.7.7</picocli.version>
         <wanaku.version>0.0.8-SNAPSHOT</wanaku.version>
         <jackson-databind.version>2.19.2</jackson-databind.version>
-        <project.main.class>ai.wanaku.tool.camel.CamelToolMain</project.main.class>
+        <project.main.class>ai.wanaku.capability.camel.CamelToolMain</project.main.class>
         <junit-jupiter.version>5.13.4</junit-jupiter.version>
     </properties>
 
