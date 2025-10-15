@@ -40,14 +40,19 @@ import ai.wanaku.tool.camel.spec.rules.resources.WanakuResourceTransformer;
 import ai.wanaku.tool.camel.spec.rules.tools.WanakuToolRuleProcessor;
 import ai.wanaku.tool.camel.spec.rules.tools.WanakuToolTransformer;
 import ai.wanaku.tool.camel.util.McpRulesManager;
+import ai.wanaku.tool.camel.util.VersionHelper;
 import io.grpc.Grpc;
 import io.grpc.InsecureServerCredentials;
 import io.grpc.Server;
 import io.grpc.ServerBuilder;
 import java.util.concurrent.Callable;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import picocli.CommandLine;
 
 public class CamelToolMain implements Callable<Integer> {
+    private static final Logger LOG = LoggerFactory.getLogger(CamelToolMain.class);
+
     @CommandLine.Option(names = { "-h", "--help" }, usageHelp = true, description = "display a help message")
     private boolean helpRequested = false;
 
@@ -140,6 +145,7 @@ public class CamelToolMain implements Callable<Integer> {
 
     @Override
     public Integer call() throws Exception {
+        LOG.info("Camel Integration Capability {} is starting", VersionHelper.VERSION);
         final ServiceTarget toolInvokerTarget = newServiceTargetTarget();
         RegistrationManager registrationManager = newRegistrationManager(toolInvokerTarget);
 
