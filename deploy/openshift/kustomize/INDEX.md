@@ -1,26 +1,39 @@
 # Kubernetes/OpenShift Deployment
 
-This directory contains Kubernetes manifests for deploying the Camel Core Downstream Service.
+This directory contains Kustomize manifests for deploying the Camel Core Downstream Service across multiple environments.
+
+## Kustomize Deployment
+
+For comprehensive documentation, see [KUSTOMIZE.md](KUSTOMIZE.md).
+
+**Quick Start:**
+```bash
+# Deploy to dev environment
+kubectl apply -k deploy/openshift/overlays/dev
+
+# Deploy to prod environment
+kubectl apply -k deploy/openshift/overlays/prod
+
+# Preview what will be deployed
+kustomize build deploy/openshift/overlays/dev
+```
+
+**Structure:**
+- `base/` - Base manifests shared across all environments
+- `overlays/dev/` - Development environment configuration
+- `overlays/prod/` - Production environment configuration
 
 ## Files
 
-- `deployment.yaml` - Main deployment with init container for git clone
-- `service.yaml` - Service to expose the gRPC port
-- `configmap.yaml` - ConfigMap for configuration (optional)
-- `secret.yaml.template` - Template for creating secrets (optional)
+### Base Manifests
+- `base/deployment.yaml` - Main deployment with init container for git clone
+- `base/configmap.yaml` - ConfigMap for configuration
+- `base/secret.yaml` - Secret template for sensitive data
+- `base/kustomization.yaml` - Base Kustomize configuration
 
-## Quick Start
-
-### Basic Deployment
-
-```bash
-# Apply all manifests
-kubectl apply -f deploy/openshift/
-
-# Check deployment status
-kubectl get pods -l app=camel-core-downstream-service
-kubectl logs -f deployment/camel-core-downstream-service
-```
+### Environment Overlays
+- `overlays/dev/kustomization.yaml` - Development environment overrides
+- `overlays/prod/kustomization.yaml` - Production environment overrides
 
 ### Using ConfigMap (Optional)
 

@@ -1,18 +1,18 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: camel-core-downstream-service
+  name: camel-integration-capability
   labels:
-    app: camel-core-downstream-service
+    app: camel-integration-capability
 spec:
   replicas: 1
   selector:
     matchLabels:
-      app: camel-core-downstream-service
+      app: camel-integration-capability
   template:
     metadata:
       labels:
-        app: camel-core-downstream-service
+        app: camel-integration-capability
     spec:
       initContainers:
       - name: git-clone
@@ -31,13 +31,16 @@ spec:
           fi
         env:
         - name: GIT_REPO_URL
-          value: "http://github.com/orpiske/wanaku-cic-demo"
+          valueFrom:
+            configMapKeyRef:
+              name: camel-integration-capability-config
+              key: git-repo-url
         volumeMounts:
         - name: data-volume
           mountPath: /data
       containers:
-      - name: camel-core-downstream-service
-        image: camel-core-downstream-service:latest
+      - name: camel-integration-capability
+        image: quay.io/wanaku/camel-integration-capability:latest
         imagePullPolicy: IfNotPresent
         ports:
         - name: grpc
@@ -47,35 +50,47 @@ spec:
         - name: REGISTRATION_URL
           valueFrom:
             configMapKeyRef:
-              name: camel-core-downstream-service-config
+              name: camel-integration-capability-config
               key: registration-url
         - name: REGISTRATION_ANNOUNCE_ADDRESS
           valueFrom:
             configMapKeyRef:
-              name: camel-core-downstream-service-config
+              name: camel-integration-capability-config
               key: registration-announce-address
         - name: GRPC_PORT
-          value: "9190"
+          valueFrom:
+            configMapKeyRef:
+              name: camel-integration-capability-config
+              key: grpc-port
         - name: SERVICE_NAME
-          value: ""
+          valueFrom:
+            configMapKeyRef:
+              name: camel-integration-capability-config
+              key: service-name
         - name: ROUTES_PATH
-          value: ""
+          valueFrom:
+            configMapKeyRef:
+              name: camel-integration-capability-config
+              key: routes-path
         - name: ROUTES_RULES
-          value: ""
+          valueFrom:
+            configMapKeyRef:
+              name: camel-integration-capability-config
+              key: routes-rules
         - name: TOKEN_ENDPOINT
           valueFrom:
             secretKeyRef:
-              name: camel-downstream-secrets
+              name: camel-integration-capability-secrets
               key: token-endpoint
         - name: CLIENT_ID
           valueFrom:
             secretKeyRef:
-              name: camel-downstream-secrets
-              key: client-wanaku-service
+              name: camel-integration-capability-secrets
+              key: client-id
         - name: CLIENT_SECRET
           valueFrom:
             secretKeyRef:
-              name: camel-downstream-secrets
+              name: camel-integration-capability-secrets
               key: client-secret
         volumeMounts:
         - name: data-volume
@@ -100,3 +115,19 @@ spec:
       volumes:
       - name: data-volume
         emptyDir: {}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: camel-core-downstream-service
+  labels:
+    app: camel-core-downstream-service
+spec:
+  type: ClusterIP
+  ports:
+    - name: grpc
+      port: 9190
+      targetPort: 9190
+      protocol: TCP
+  selector:
+    app: camel-core-downstream-service
