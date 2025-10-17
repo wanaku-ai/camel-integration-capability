@@ -18,6 +18,9 @@ ENV REGISTRATION_URL="" \
     CLIENT_ID="" \
     CLIENT_SECRET=""
 
+# Create and declare volume for routes data
+VOLUME /data
+
 # Expose the gRPC port
 EXPOSE ${GRPC_PORT}
 
