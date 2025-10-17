@@ -1,0 +1,102 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: camel-core-downstream-service
+  labels:
+    app: camel-core-downstream-service
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: camel-core-downstream-service
+  template:
+    metadata:
+      labels:
+        app: camel-core-downstream-service
+    spec:
+      initContainers:
+      - name: git-clone
+        image: registry.access.redhat.com/ubi9/ubi-minimal:latest
+        command:
+        - sh
+        - -c
+        - |
+          microdnf install -y git && \
+          cd /data && \
+          if [ -n "$GIT_REPO_URL" ]; then
+            echo "Cloning repository: $GIT_REPO_URL"
+            git clone $GIT_REPO_URL
+          else
+            echo "No GIT_REPO_URL provided, skipping clone"
+          fi
+        env:
+        - name: GIT_REPO_URL
+          value: "http://github.com/orpiske/wanaku-cic-demo"
+        volumeMounts:
+        - name: data-volume
+          mountPath: /data
+      containers:
+      - name: camel-core-downstream-service
+        image: camel-core-downstream-service:latest
+        imagePullPolicy: IfNotPresent
+        ports:
+        - name: grpc
+          containerPort: 9190
+          protocol: TCP
+        env:
+        - name: REGISTRATION_URL
+          valueFrom:
+            configMapKeyRef:
+              name: camel-core-downstream-service-config
+              key: registration-url
+        - name: REGISTRATION_ANNOUNCE_ADDRESS
+          valueFrom:
+            configMapKeyRef:
+              name: camel-core-downstream-service-config
+              key: registration-announce-address
+        - name: GRPC_PORT
+          value: "9190"
+        - name: SERVICE_NAME
+          value: ""
+        - name: ROUTES_PATH
+          value: ""
+        - name: ROUTES_RULES
+          value: ""
+        - name: TOKEN_ENDPOINT
+          valueFrom:
+            secretKeyRef:
+              name: camel-downstream-secrets
+              key: token-endpoint
+        - name: CLIENT_ID
+          valueFrom:
+            secretKeyRef:
+              name: camel-downstream-secrets
+              key: client-wanaku-service
+        - name: CLIENT_SECRET
+          valueFrom:
+            secretKeyRef:
+              name: camel-downstream-secrets
+              key: client-secret
+        volumeMounts:
+        - name: data-volume
+          mountPath: /data
+        resources:
+          requests:
+            memory: "512Mi"
+            cpu: "250m"
+          limits:
+            memory: "1Gi"
+            cpu: "1000m"
+        livenessProbe:
+          tcpSocket:
+            port: 9190
+          initialDelaySeconds: 30
+          periodSeconds: 10
+        readinessProbe:
+          tcpSocket:
+            port: 9190
+          initialDelaySeconds: 10
+          periodSeconds: 5
+      volumes:
+      - name: data-volume
+        emptyDir: {}
