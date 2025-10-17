@@ -69,10 +69,10 @@ public class CamelToolMain implements Callable<Integer> {
     @CommandLine.Option(names = {"--name"}, description = "The service name to use", defaultValue = "camel")
     private String name;
 
-    @CommandLine.Option(names = {"--retries"}, description = "The maximum number of retries for registration", defaultValue = "3")
+    @CommandLine.Option(names = {"--retries"}, description = "The maximum number of retries for registration", defaultValue = "12")
     private int retries;
 
-    @CommandLine.Option(names = {"--wait-seconds"}, description = "The retry wait seconds between attempts", defaultValue = "1")
+    @CommandLine.Option(names = {"--wait-seconds"}, description = "The retry wait seconds between attempts", defaultValue = "5")
     private int retryWaitSeconds;
 
     @CommandLine.Option(names = {"--initial-delay"}, description = "Initial delay for registration attempts in seconds", defaultValue = "5")
