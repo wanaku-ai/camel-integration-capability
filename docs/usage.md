@@ -1,16 +1,19 @@
 # Camel Core Downstream Service
 
-A capability service for the [Wanaku MCP Router](https://wanaku.ai) that provides [Apache Camel](https://camel.apache.org) route execution capabilities.
+A capability service for the [Wanaku MCP Router](https://wanaku.ai) that provides [Apache Camel](https://camel.apache.org) route
+execution capabilities.
 
-This service integrates with the Wanaku ecosystem to execute Camel routes dynamically through Wanaku's gRPC bridge.
+This service integrates with the Wanaku ecosystem to execute Camel routes dynamically through Wanaku's gRPC bridge. 
 
 ## Overview
 
 This service implements a Wanaku capability that can:
 - Execute Apache Camel routes defined in YAML format
 - Register itself with a Wanaku discovery service
-- Provide gRPC endpoints for route execution
 - Support service-to-router authentication via OAuth2/OIDC
+
+> [TIP]
+> Design your Camel routes with ease using the [Kaoto Integration Designer](http://kaoto.io) for Apache Camel.
 
 ## Requirements
 
@@ -19,9 +22,13 @@ This service implements a Wanaku capability that can:
 - Access to a Wanaku discovery service
 - OAuth2/OIDC authentication provider
 
-## Configuration
+## Running this Capability
 
-The service requires several configuration parameters to connect to the Wanaku ecosystem:
+This capability service requires configuration parameters to connect to the Wanaku ecosystem. When launching it, you need to 
+set them so that this capability service can talk to Wanaku and register itself. 
+
+> [NOTE]
+> Although this capability is intended to be run inside Kubernetes or OpenShift, it is entirely possible to execute it locally.
 
 ### Required Parameters
 
@@ -42,24 +49,7 @@ The service requires several configuration parameters to connect to the Wanaku e
 - `--initial-delay`: Initial registration delay in seconds (default: 0)
 - `--period`: Period between registration attempts in seconds (default: 5)
 
-## Running the Service
-
-### Basic Usage
-
-```bash
-java -jar target/camel-core-downstream-service-1.0-SNAPSHOT.jar \
-  --registration-url http://localhost:8080 \
-  --registration-announce-address localhost \
-  --grpc-port 9190 \
-  --name camel-core \
-  --routes-path /path/to/routes.camel.yaml \
-  --routes-rules /path/to/routes-rules.yaml \
-  --token-endpoint http://localhost:8543/realms/wanaku/ \
-  --client-id your-client-id \
-  --client-secret your-client-secret
-```
-
-### Development Environment
+### Basic Example (Local)
 
 For local development with a Wanaku stack:
 
@@ -76,7 +66,18 @@ java -jar target/camel-core-downstream-service-1.0-SNAPSHOT.jar \
   --client-secret aBqsU3EzUPCHumf9sTK5sanxXkB0yFtv
 ```
 
-## Route Definitions
+## Deploying the Service
+
+-- Deployment documentation goes here.
+
+## Designing Routes
+
+The easiest way to design the routes for this project, is to use a visual editor such as [Kaoto](http://kaoto.io) or 
+[Camel Karavan](http://camel.apache.org/karavan) to design the routes. 
+
+Those editors should allow you to visualize the route. For instance: 
+
+![Kaoto Route Example](imgs/kaoto.png)
 
 ### Camel Routes
 
@@ -98,7 +99,7 @@ Camel routes should be defined in YAML format in the file specified by `--routes
 
 ### Route Exposure Rules
 
-Routes can be exposed as MPC tools or resources by defining rules in a YAML file specified by `--routes-rules`.
+Routes can be exposed as MCP tools or resources by defining rules in a YAML file specified by `--routes-rules`.
 This file maps route definitions to tool specifications:
 
 ```yaml
@@ -158,6 +159,3 @@ Properties can include an optional `mapping` element to specify how parameters s
     - `ProvisionBase` - Provides basic service information
 - **Route Loading**: `WanakuRoutesLoader` - Loads and manages Camel routes
 - **Authentication**: Integrated OAuth2/OIDC client for Wanaku ecosystem
-
-
-
