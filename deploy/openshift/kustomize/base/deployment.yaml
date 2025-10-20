@@ -16,19 +16,7 @@ spec:
     spec:
       initContainers:
       - name: git-clone
-        image: registry.access.redhat.com/ubi9/ubi-minimal:latest
-        command:
-        - sh
-        - -c
-        - |
-          microdnf install -y git && \
-          cd /data && \
-          if [ -n "$GIT_REPO_URL" ]; then
-            echo "Cloning repository: $GIT_REPO_URL"
-            git clone $GIT_REPO_URL
-          else
-            echo "No GIT_REPO_URL provided, skipping clone"
-          fi
+        image: quay.io/my-ord/git-init-container:latest
         env:
         - name: GIT_REPO_URL
           valueFrom:

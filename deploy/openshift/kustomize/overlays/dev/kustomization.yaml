@@ -30,7 +30,13 @@ secretGenerator:
 replicas:
 - name: camel-integration-capability
   count: 1
-#
-#images:
-#- name: camel-integration-capability
-#  newTag: dev
+
+images:
+# Configure the main application image
+- name: quay.io/wanaku/camel-integration-capability
+  newName: quay.io/wanaku/camel-integration-capability
+  newTag: latest
+# Configure the git init container image. You have to build this!
+- name: quay.io/my-org/git-init-container:latest
+  newName: quay.io/my-org/git-init-container:latest
+  newTag: latest

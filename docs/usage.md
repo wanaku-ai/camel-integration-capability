@@ -68,7 +68,247 @@ java -jar target/camel-core-downstream-service-1.0-SNAPSHOT.jar \
 
 ## Deploying the Service
 
--- Deployment documentation goes here.
+The service can be deployed to Kubernetes or OpenShift using Kustomize. One requirement is that
+the deployment needs a way to get the route files in the storage used by the container. There is 
+multiple ways to do this. In the provided deployment, it uses an init container that clones your 
+Camel routes repository.
+
+### Init Container Sample
+
+Wanaku does not provide the init-container, but you can create one with a Dockerfile similar to this:
+
+```dockerfile
+FROM registry.access.redhat.com/ubi9/ubi-minimal:latest
+VOLUME /data
+WORKDIR /data
+RUN microdnf install -y git
+
+ENV GIT_REPO_URL="" \
+    GIT_BRANCH=${GIT_BRANCH:-main}
+
+CMD ["/bin/bash", "-c", "git clone -b $GIT_BRANCH $GIT_REPO_URL"]
+```
+
+Build and publish it to the registry of your choice.
+
+
+### Configuration
+
+Before deploying, you need to configure the service by editing the overlay kustomization file for your environment.
+
+Edit `deploy/openshift/kustomize/overlays/dev/kustomization.yaml`:
+
+```yaml
+configMapGenerator:
+- name: camel-integration-capability-config
+  behavior: merge
+  literals:
+  - git-repo-url=http://github.com/your-org/your-routes-repo
+  - grpc-port=9190
+  - registration-url=http://wanaku-router-backend:8080
+  - registration-announce-address=auto
+  - service-name=camel-core-downstream-dev
+  - routes-path=/data/your-routes-repo/routes/your-route.camel.yaml
+  - routes-rules=/data/your-routes-repo/routes/your-route-rules.yaml
+
+secretGenerator:
+- name: camel-integration-capability-secrets
+  behavior: merge
+  literals:
+  - client-id=wanaku-service
+  - client-secret=your-oauth-secret-here
+  - token-endpoint=http://keycloak:8080/realms/wanaku/
+```
+
+#### Required Configuration
+
+| Parameter | Description | Example |
+|-----------|-------------|---------|
+| `git-repo-url` | Git repository containing your Camel routes | `http://github.com/myorg/routes` |
+| `routes-path` | Path to the Camel routes YAML file | `/data/myrepo/route.camel.yaml` |
+| `routes-rules` | Path to the route exposure rules YAML | `/data/myrepo/route-rules.yaml` |
+| `registration-url` | Wanaku discovery service URL | `http://wanaku-router-backend:8080` |
+| `client-secret` | OAuth2 client secret | (secret value) |
+| `token-endpoint` | OAuth2/OIDC token endpoint | `http://keycloak:8080/realms/wanaku/` |
+
+#### Optional Configuration
+
+| Parameter | Description | Default |
+|-----------|-------------|---------|
+| `grpc-port` | gRPC server port | `9190` |
+| `service-name` | Service name for registration | `camel-core-downstream` |
+| `registration-announce-address` | Service announcement address | `auto` |
+| `client-id` | OAuth2 client ID | `wanaku-service` |
+
+
+### Deploying to the Cluster
+
+Deploy to development environment:
+
+```bash
+# Preview what will be deployed
+kubectl kustomize deploy/openshift/kustomize/overlays/dev
+
+# Apply the deployment
+kubectl apply -k deploy/openshift/kustomize/overlays/dev
+```
+
+### Deployment Features
+
+#### Init Container
+
+The deployment includes an init container that:
+- Uses UBI9 minimal image with git
+- Clones the repository specified in `git-repo-url`
+- Stores the cloned repository in `/data` directory (shared with main container)
+- Allows you to deploy routes without rebuilding the container image
+
+#### Resource Limits
+
+Default resource allocation (configurable in `base/deployment.yaml`):
+
+- **Requests**: 512Mi memory, 250m CPU
+- **Limits**: 1Gi memory, 1000m CPU
+
+Adjust these based on your workload:
+
+```yaml
+resources:
+  requests:
+    memory: "1Gi"
+    cpu: "500m"
+  limits:
+    memory: "2Gi"
+    cpu: "2000m"
+```
+
+#### Health Checks
+
+The deployment includes:
+- **Liveness probe**: TCP check on gRPC port (9190)
+  - Initial delay: 30 seconds
+  - Period: 10 seconds
+- **Readiness probe**: TCP check on gRPC port (9190)
+  - Initial delay: 10 seconds
+  - Period: 5 seconds
+
+### Verifying the Deployment
+
+Check deployment status:
+
+```bash
+# Check pods
+kubectl get pods -l app=camel-integration-capability
+
+# Check init container logs
+kubectl logs -f deployment/camel-integration-capability -c git-clone
+
+# Check main container logs
+kubectl logs -f deployment/camel-integration-capability -c camel-integration-capability
+
+# Verify routes were cloned
+kubectl exec deployment/camel-integration-capability -- ls -la /data
+
+# Check service
+kubectl get svc camel-core-downstream-service
+```
+
+### Using Secrets Securely
+
+For production environments, create secrets separately instead of embedding them in kustomization files:
+
+```bash
+# Create secret from literals
+kubectl create secret generic camel-integration-capability-secrets \
+  --from-literal=client-secret=YOUR_SECRET_HERE \
+  --from-literal=token-endpoint=https://keycloak.example.com/realms/wanaku/ \
+  --from-literal=client-id=wanaku-service
+
+# Or from files
+kubectl create secret generic camel-integration-capability-secrets \
+  --from-file=client-secret=./secret.txt \
+  --from-file=token-endpoint=./endpoint.txt
+```
+
+Then remove the secretGenerator from your kustomization.yaml overlay.
+
+### Troubleshooting
+
+Common issues and solutions:
+
+**Routes not found:**
+```bash
+# Verify git clone succeeded
+kubectl exec deployment/camel-integration-capability -- ls -la /data
+
+# Check init container logs
+kubectl logs deployment/camel-integration-capability -c git-clone
+```
+
+**Service not registering:**
+```bash
+# Check environment variables
+kubectl exec deployment/camel-integration-capability -- env | grep -E "(REGISTRATION|TOKEN)"
+
+# View application logs
+kubectl logs -f deployment/camel-integration-capability -c camel-integration-capability
+```
+
+**Connection refused errors:**
+```bash
+# Verify service is running
+kubectl get svc camel-core-downstream-service
+
+# Check pod status
+kubectl describe pod -l app=camel-integration-capability
+
+# Test connectivity
+kubectl run test-pod --rm -it --image=busybox -- telnet camel-core-downstream-service 9190
+```
+
+### Multi-Environment Deployments
+
+For production, create a new overlay:
+
+```bash
+mkdir -p deploy/openshift/kustomize/overlays/prod
+```
+
+Create `deploy/openshift/kustomize/overlays/prod/kustomization.yaml`:
+
+```yaml
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+resources:
+- ../../base
+
+configMapGenerator:
+- name: camel-integration-capability-config
+  behavior: merge
+  literals:
+  - git-repo-url=http://github.com/your-org/prod-routes
+  - grpc-port=9190
+  - registration-url=http://wanaku-router-backend.prod:8080
+  - registration-announce-address=auto
+  - service-name=camel-core-downstream-prod
+  - routes-path=/data/prod-routes/route.camel.yaml
+  - routes-rules=/data/prod-routes/route-rules.yaml
+
+replicas:
+- name: camel-integration-capability
+  count: 3
+
+images:
+- name: camel-integration-capability
+  newTag: v1.0.0
+```
+
+Deploy to production:
+
+```bash
+kubectl apply -k deploy/openshift/kustomize/overlays/prod
+```
 
 ## Designing Routes
 
