@@ -42,10 +42,10 @@ jobs:
           password: ${{ secrets.QUAY_PASSWORD }}
       - name: Build containers
         if: github.repository == 'wanaku-ai/camel-integration-capability'
-        run: podman build -t quay.io/wanaku/camel-integration-capability:${{ github.ref_name }}-${{ steps.arch.outputs.arch }} .
+        run: podman build -t quay.io/wanaku/camel-integration-capability:${{ github.event.inputs.currentDevelopmentVersion }}-${{ steps.arch.outputs.arch }} .
       - name: Push containers
         if: github.repository == 'wanaku-ai/camel-integration-capability'
-        run: podman push quay.io/wanaku/camel-integration-capability:${{ github.ref_name }}-${{ steps.arch.outputs.arch }}
+        run: podman push quay.io/wanaku/camel-integration-capability:${{ github.event.inputs.currentDevelopmentVersion }}-${{ steps.arch.outputs.arch }}
 
   createManifests:
     needs: build
@@ -62,4 +62,4 @@ jobs:
       - name: Build and Push Manifests
         run: |
           chmod +x build-manifests.sh
-          ./build-manifests.sh ${{ github.ref_name }}
+          ./build-manifests.sh ${{ github.event.inputs.currentDevelopmentVersion }}
