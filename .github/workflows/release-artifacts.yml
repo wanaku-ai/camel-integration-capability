@@ -1,4 +1,4 @@
-name: early-access
+name: release-artifacts
 
 on:
   workflow_dispatch:
