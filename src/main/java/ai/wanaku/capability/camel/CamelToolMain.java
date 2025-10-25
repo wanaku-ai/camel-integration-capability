@@ -22,12 +22,14 @@ import ai.wanaku.capability.camel.spec.rules.resources.WanakuResourceRuleProcess
 import ai.wanaku.capability.camel.spec.rules.resources.WanakuResourceTransformer;
 import ai.wanaku.capability.camel.spec.rules.tools.WanakuToolRuleProcessor;
 import ai.wanaku.capability.camel.spec.rules.tools.WanakuToolTransformer;
+import ai.wanaku.capability.camel.util.FileUtil;
 import ai.wanaku.capability.camel.util.McpRulesManager;
 import ai.wanaku.capability.camel.util.VersionHelper;
 import io.grpc.Grpc;
 import io.grpc.InsecureServerCredentials;
 import io.grpc.Server;
 import io.grpc.ServerBuilder;
+import java.io.File;
 import java.util.concurrent.Callable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -79,6 +81,9 @@ public class CamelToolMain implements Callable<Integer> {
     @CommandLine.Option(names = {"--client-secret"}, description = "The client secret authentication", required = true)
     private String clientSecret;
 
+    @CommandLine.Option(names = {"--no-wait"}, description = "Do not wait forever until the files are available", defaultValue = "false")
+    private boolean noWait;
+
     public static void main(String[] args) {
         int exitCode = new CommandLine(new CamelToolMain()).execute(args);
 
@@ -129,6 +134,17 @@ public class CamelToolMain implements Callable<Integer> {
     @Override
     public Integer call() throws Exception {
         LOG.info("Camel Integration Capability {} is starting", VersionHelper.VERSION);
+
+        if (!FileUtil.untilAvailable(new File(routesPath), false)) {
+            LOG.warn("The file {} has never become available", routesPath);
+            return 2;
+        }
+
+        if (!FileUtil.untilAvailable(new File(routesRules), false)) {
+            LOG.warn("The file {} has never become available", routesRules);
+            return 3;
+        }
+
         final ServiceTarget toolInvokerTarget = newServiceTargetTarget();
         RegistrationManager registrationManager = newRegistrationManager(toolInvokerTarget);
 
