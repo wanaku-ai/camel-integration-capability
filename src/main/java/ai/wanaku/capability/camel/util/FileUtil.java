@@ -50,10 +50,14 @@ public final class FileUtil {
                 }
 
                 if (contextPath.toString().equals(input.getName())) {
-                    LOG.debug("File at the build path {} had a matching event of type: {}", input.getParentFile().getPath(),
+                    LOG.debug("File at the path {} had a matching event of type: {}", input.getParentFile().getPath(),
                             event.kind());
 
-                    return false;
+                    if (event.kind() == StandardWatchEventKinds.ENTRY_CREATE ||  event.kind() == StandardWatchEventKinds.ENTRY_MODIFY) {
+                        LOG.info("File at the path {} was created or modified", input.getParentFile().getPath());
+
+                        break;
+                    }
                 } else {
                     LOG.debug("Ignoring a watch event at build path {} of type {} for file: {}", input.getParentFile().getPath(),
                             event.kind(), contextPath.getFileName());
