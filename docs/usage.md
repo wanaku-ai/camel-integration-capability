@@ -38,6 +38,7 @@ set them so that this capability service can talk to Wanaku and register itself.
 - `--token-endpoint`: OAuth2/OIDC token endpoint base URL
 - `--client-id`: OAuth2 client ID for authentication
 - `--client-secret`: OAuth2 client secret for authentication
+- `--routes-rules`: Path to the YAML file with route exposure rules (e.g., `/path/to/routes-expose.yaml`)
 
 ### Optional Parameters
 
