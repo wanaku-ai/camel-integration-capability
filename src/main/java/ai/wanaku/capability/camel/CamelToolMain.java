@@ -84,6 +84,9 @@ public class CamelToolMain implements Callable<Integer> {
     @CommandLine.Option(names = {"--no-wait"}, description = "Do not wait forever until the files are available", defaultValue = "false")
     private boolean noWait;
 
+    @CommandLine.Option(names = {"-d", "--dependencies"}, description = "The list of dependencies to include in runtime (comma-separated)")
+    private String dependenciesList;
+
     public static void main(String[] args) {
         int exitCode = new CommandLine(new CamelToolMain()).execute(args);
 
@@ -149,7 +152,7 @@ public class CamelToolMain implements Callable<Integer> {
         RegistrationManager registrationManager = newRegistrationManager(toolInvokerTarget);
 
         ServicesHttpClient httpClient = createClient();
-        WanakuCamelManager camelManager = new WanakuCamelManager(routesPath);
+        WanakuCamelManager camelManager = new WanakuCamelManager(routesPath, dependenciesList);
 
         McpSpec mcpSpec = createMcpSpec(httpClient);
 

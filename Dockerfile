@@ -16,7 +16,8 @@ ENV REGISTRATION_URL="" \
     ROUTES_RULES="" \
     TOKEN_ENDPOINT="" \
     CLIENT_ID="" \
-    CLIENT_SECRET=""
+    CLIENT_SECRET="" \
+    DEPENDENCIES=""
 
 # Create and declare volume for routes data
 VOLUME /data
@@ -34,4 +35,5 @@ ENTRYPOINT ["sh", "-c", "java -jar /app/app.jar \
     ${ROUTES_RULES:+--routes-rules $ROUTES_RULES} \
     ${TOKEN_ENDPOINT:+--token-endpoint $TOKEN_ENDPOINT} \
     ${CLIENT_ID:+--client-id $CLIENT_ID} \
-    ${CLIENT_SECRET:+--client-secret $CLIENT_SECRET}"]
+    ${CLIENT_SECRET:+--client-secret $CLIENT_SECRET} \
+    ${DEPENDENCIES:+--dependencies $DEPENDENCIES}"]
