@@ -39,12 +39,12 @@ set them so that this capability service can talk to Wanaku and register itself.
 - `--client-id`: OAuth2 client ID for authentication
 - `--client-secret`: OAuth2 client secret for authentication
 - `--routes-rules`: Path to the YAML file with route exposure rules (e.g., `/path/to/routes-expose.yaml`)
+- `--dependencies`: A comma-separated list of dependencies to include on the classpath (they are automatically downloaded and added to the classpath)
 
 ### Optional Parameters
 
 - `--grpc-port`: gRPC server port (default: 9190)
 - `--name`: Service name for registration (default: "camel")
-- `--routes-rules`: Path to the YAML file with route exposure rules (e.g., `/path/to/routes-expose.yaml`)
 - `--retries`: Maximum registration retries (default: 3)
 - `--wait-seconds`: Wait time between retries (default: 1)
 - `--initial-delay`: Initial registration delay in seconds (default: 0)
@@ -65,14 +65,16 @@ java -jar target/camel-core-downstream-service-1.0-SNAPSHOT.jar \
   --token-endpoint http://localhost:8543/realms/wanaku/ \
   --client-id wanaku-service \
   --client-secret aBqsU3EzUPCHumf9sTK5sanxXkB0yFtv
+  --dependencies org.apache.camel:camel-http:4.14.1,org.apache.camel:camel-jackson:4.14.1
 ```
 
 ## Deploying the Service
 
 The service can be deployed to Kubernetes or OpenShift using Kustomize. One requirement is that
 the deployment needs a way to get the route files in the storage used by the container. There is 
-multiple ways to do this. In the provided deployment, it uses an init container that clones your 
-Camel routes repository.
+multiple ways to do this (such as using an init container of copying the files using `kubectl cp`. 
+
+In the provided deployment, it uses an init container that clones your Camel routes repository.
 
 ### Init Container Sample
 
