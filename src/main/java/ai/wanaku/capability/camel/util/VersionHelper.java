@@ -29,7 +29,7 @@ public final class VersionHelper {
      * @return The current version of this library.
      */
     private static String initVersion() {
-        try (InputStream stream = VersionHelper.class.getResourceAsStream("/version.txt")) {
+        try (InputStream stream = VersionHelper.class.getResourceAsStream("/cic-version.txt")) {
             assert stream != null;
             byte[] bytes = stream.readAllBytes();
             return new String(bytes);
