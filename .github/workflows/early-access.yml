@@ -52,7 +52,7 @@ jobs:
         run: podman build -t quay.io/wanaku/camel-integration-capability:${{ github.event.inputs.currentDevelopmentVersion }}-${{ steps.arch.outputs.arch }} .
       - name: Push containers
         if: github.repository == 'wanaku-ai/camel-integration-capability'
-        run: podman push quay.io/wanaku/camel-integration-capability:${{ github.event.inputs.currentDevelopmentVersion }}-${{ steps.arch.outputs.arch }} .
+        run: podman push quay.io/wanaku/camel-integration-capability:${{ github.event.inputs.currentDevelopmentVersion }}-${{ steps.arch.outputs.arch }}
 
       - name: Run JReleaser (Linux)
         if: matrix.os == 'ubuntu-latest' && github.repository == 'wanaku-ai/camel-integration-capability'
