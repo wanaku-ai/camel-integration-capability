@@ -37,5 +37,5 @@ release:
 distributions:
   camel-integration-capability:
     artifacts:
-      - path: ./target/camel-core-downstream-service-{{projectVersion}}-jar-with-dependencies.jar
+      - path: ./target/camel-integration-capability-{{projectVersion}}-jar-with-dependencies.jar
     type: SINGLE_JAR

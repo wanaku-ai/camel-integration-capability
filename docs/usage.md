@@ -55,7 +55,7 @@ set them so that this capability service can talk to Wanaku and register itself.
 For local development with a Wanaku stack:
 
 ```bash
-java -jar target/camel-core-downstream-service-1.0-SNAPSHOT.jar \
+java -jar target/camel-integration-capability-1.0-SNAPSHOT.jar \
   --registration-url http://localhost:8080 \
   --registration-announce-address localhost \
   --grpc-port 9190 \
@@ -110,7 +110,7 @@ configMapGenerator:
   - grpc-port=9190
   - registration-url=http://wanaku-router-backend:8080
   - registration-announce-address=auto
-  - service-name=camel-core-downstream-dev
+  - service-name=camel-integration-capability-dev
   - routes-path=/data/your-routes-repo/routes/your-route.camel.yaml
   - routes-rules=/data/your-routes-repo/routes/your-route-rules.yaml
 
@@ -136,12 +136,12 @@ secretGenerator:
 
 #### Optional Configuration
 
-| Parameter | Description | Default |
-|-----------|-------------|---------|
-| `grpc-port` | gRPC server port | `9190` |
-| `service-name` | Service name for registration | `camel-core-downstream` |
-| `registration-announce-address` | Service announcement address | `auto` |
-| `client-id` | OAuth2 client ID | `wanaku-service` |
+| Parameter | Description | Default           |
+|-----------|-------------|-------------------|
+| `grpc-port` | gRPC server port | `9190`            |
+| `service-name` | Service name for registration | `my-service-name` |
+| `registration-announce-address` | Service announcement address | `auto`            |
+| `client-id` | OAuth2 client ID | `wanaku-service`  |
 
 
 ### Deploying to the Cluster
@@ -213,7 +213,7 @@ kubectl logs -f deployment/camel-integration-capability -c camel-integration-cap
 kubectl exec deployment/camel-integration-capability -- ls -la /data
 
 # Check service
-kubectl get svc camel-core-downstream-service
+kubectl get svc camel-integration-capability
 ```
 
 ### Using Secrets Securely
@@ -260,13 +260,13 @@ kubectl logs -f deployment/camel-integration-capability -c camel-integration-cap
 **Connection refused errors:**
 ```bash
 # Verify service is running
-kubectl get svc camel-core-downstream-service
+kubectl get svc camel-integration-capability
 
 # Check pod status
 kubectl describe pod -l app=camel-integration-capability
 
 # Test connectivity
-kubectl run test-pod --rm -it --image=busybox -- telnet camel-core-downstream-service 9190
+kubectl run test-pod --rm -it --image=busybox -- telnet camel-integration-capability 9190
 ```
 
 ### Multi-Environment Deployments
@@ -294,7 +294,7 @@ configMapGenerator:
   - grpc-port=9190
   - registration-url=http://wanaku-router-backend.prod:8080
   - registration-announce-address=auto
-  - service-name=camel-core-downstream-prod
+  - service-name=camel-integration-capability-prod
   - routes-path=/data/prod-routes/route.camel.yaml
   - routes-rules=/data/prod-routes/route-rules.yaml
 

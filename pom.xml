@@ -3,7 +3,7 @@
     <modelVersion>4.0.0</modelVersion>
 
     <groupId>ai.wanaku</groupId>
-    <artifactId>camel-core-downstream-service</artifactId>
+    <artifactId>camel-integration-capability</artifactId>
     <version>0.0.9-SNAPSHOT</version>
 
     <properties>

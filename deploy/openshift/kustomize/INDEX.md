@@ -95,14 +95,14 @@ If deploying on OpenShift, you may need to:
 
 1. Create an ImageStream:
 ```bash
-oc create imagestream camel-core-downstream-service
+oc create imagestream camel-integration-capability
 ```
 
 2. Build and push the image:
 ```bash
-podman build -t camel-core-downstream-service:latest .
-podman tag camel-core-downstream-service:latest <registry>/camel-core-downstream-service:latest
-podman push <registry>/camel-core-downstream-service:latest
+podman build -t camel-integration-capability:latest .
+podman tag camel-integration-capability:latest <registry>/camel-integration-capability:latest
+podman push <registry>/camel-integration-capability:latest
 ```
 
 3. Update the deployment to use the ImageStream or registry URL.
@@ -127,14 +127,14 @@ These ensure the service is running and ready to accept connections.
 
 ```bash
 # Check init container logs
-kubectl logs -f deployment/camel-core-downstream-service -c git-clone
+kubectl logs -f deployment/camel-integration-capability -c git-clone
 
 # Check main container logs
-kubectl logs -f deployment/camel-core-downstream-service -c camel-core-downstream-service
+kubectl logs -f deployment/camel-integration-capability -c camel-integration-capability
 
 # Verify git clone succeeded
-kubectl exec deployment/camel-core-downstream-service -- ls -la /data
+kubectl exec deployment/camel-integration-capability -- ls -la /data
 
 # Check environment variables
-kubectl exec deployment/camel-core-downstream-service -- env | grep -E "(GIT_REPO|ROUTES_PATH)"
+kubectl exec deployment/camel-integration-capability -- env | grep -E "(GIT_REPO|ROUTES_PATH)"
 ```
