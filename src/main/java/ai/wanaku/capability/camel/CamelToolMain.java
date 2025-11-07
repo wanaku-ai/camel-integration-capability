@@ -14,6 +14,10 @@ import ai.wanaku.capabilities.sdk.discovery.deserializer.JacksonDeserializer;
 import ai.wanaku.capabilities.sdk.discovery.util.DiscoveryHelper;
 import ai.wanaku.capabilities.sdk.services.ServicesHttpClient;
 import ai.wanaku.capabilities.sdk.services.config.DefaultServicesClientConfig;
+import ai.wanaku.capability.camel.downloader.DataStoreDownloader;
+import ai.wanaku.capability.camel.downloader.ResourceDownloaderCallback;
+import ai.wanaku.capability.camel.downloader.ResourceRefs;
+import ai.wanaku.capability.camel.downloader.ResourceType;
 import ai.wanaku.capability.camel.grpc.CamelResource;
 import ai.wanaku.capability.camel.grpc.CamelTool;
 import ai.wanaku.capability.camel.grpc.ProvisionBase;
@@ -22,14 +26,16 @@ import ai.wanaku.capability.camel.spec.rules.resources.WanakuResourceRuleProcess
 import ai.wanaku.capability.camel.spec.rules.resources.WanakuResourceTransformer;
 import ai.wanaku.capability.camel.spec.rules.tools.WanakuToolRuleProcessor;
 import ai.wanaku.capability.camel.spec.rules.tools.WanakuToolTransformer;
-import ai.wanaku.capability.camel.util.FileUtil;
 import ai.wanaku.capability.camel.util.McpRulesManager;
 import ai.wanaku.capability.camel.util.VersionHelper;
 import io.grpc.Grpc;
 import io.grpc.InsecureServerCredentials;
 import io.grpc.Server;
 import io.grpc.ServerBuilder;
-import java.io.File;
+import java.net.URI;
+import java.nio.file.Path;
+import java.util.List;
+import java.util.Map;
 import java.util.concurrent.Callable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -66,11 +72,11 @@ public class CamelToolMain implements Callable<Integer> {
     @CommandLine.Option(names = {"--period"}, description = "Period between registration attempts in seconds", defaultValue = "5")
     private long period;
 
-    @CommandLine.Option(names = {"--routes-path"}, description = "The path to the Apache Camel routes YAML file (i.e.: /path/to/routes.camel.yaml)", required = true)
-    private String routesPath;
+    @CommandLine.Option(names = {"--routes-ref"}, description = "The reference path to the Apache Camel routes YAML file (i.e.: datastore://routes.camel.yaml)", required = true)
+    private String routesRef;
 
-    @CommandLine.Option(names = {"--routes-rules"}, description = "The path to the YAML file with route exposure rules (i.e.: /path/to/routes-expose.yaml)")
-    private String routesRules;
+    @CommandLine.Option(names = {"--rules-ref"}, description = "The path to the YAML file with route exposure rules (i.e.: datastore://routes-expose.yaml)")
+    private String rulesRef;
 
     @CommandLine.Option(names = {"--token-endpoint"}, description = "The base URL for the authentication", required = true)
     private String tokenEndpoint;
@@ -93,7 +99,7 @@ public class CamelToolMain implements Callable<Integer> {
         System.exit(exitCode);
     }
 
-    public RegistrationManager newRegistrationManager(ServiceTarget serviceTarget) {
+    public RegistrationManager newRegistrationManager(ServiceTarget serviceTarget, ResourceDownloaderCallback resourcesDownloaderCallback) {
         final DefaultDiscoveryServiceConfig serviceConfig = DefaultDiscoveryServiceConfig.Builder.newBuilder()
                 .baseUrl(registrationUrl)
                 .serializer(new JacksonSerializer())
@@ -113,10 +119,12 @@ public class CamelToolMain implements Callable<Integer> {
                 .build();
 
         ZeroDepRegistrationManager
-                toolRegistrationManager = new ZeroDepRegistrationManager(discoveryServiceHttpClient, serviceTarget, registrationConfig, new JacksonDeserializer());
-        toolRegistrationManager.start();
+                registrationManager = new ZeroDepRegistrationManager(discoveryServiceHttpClient, serviceTarget, registrationConfig, new JacksonDeserializer());
 
-        return toolRegistrationManager;
+        registrationManager.addCallBack(resourcesDownloaderCallback);
+        registrationManager.start();
+
+        return registrationManager;
     }
 
     private ServiceTarget newServiceTargetTarget() {
@@ -138,23 +146,33 @@ public class CamelToolMain implements Callable<Integer> {
     public Integer call() throws Exception {
         LOG.info("Camel Integration Capability {} is starting", VersionHelper.VERSION);
 
-        if (!FileUtil.untilAvailable(new File(routesPath), false)) {
-            LOG.warn("The file {} has never become available", routesPath);
-            return 2;
-        }
+        final ResourceRefs<URI> pathResourceRefs =
+                ResourceRefs.newRoutesRef(routesRef);
 
-        if (!FileUtil.untilAvailable(new File(routesRules), false)) {
-            LOG.warn("The file {} has never become available", routesRules);
-            return 3;
-        }
+        final ResourceRefs<URI> pathRulesRefs1 =
+                ResourceRefs.newRulesRef(rulesRef);
 
-        final ServiceTarget toolInvokerTarget = newServiceTargetTarget();
-        RegistrationManager registrationManager = newRegistrationManager(toolInvokerTarget);
+        final ResourceRefs<URI> depPath =
+                ResourceRefs.newDependencyRef(dependenciesList);
 
         ServicesHttpClient httpClient = createClient();
-        WanakuCamelManager camelManager = new WanakuCamelManager(routesPath, dependenciesList);
+        DataStoreDownloader downloader = new DataStoreDownloader(httpClient);
+        ResourceDownloaderCallback resourcesDownloaderCallback = new ResourceDownloaderCallback(downloader,
+                List.of(pathResourceRefs, pathRulesRefs1, depPath));
 
-        McpSpec mcpSpec = createMcpSpec(httpClient);
+        final ServiceTarget toolInvokerTarget = newServiceTargetTarget();
+        RegistrationManager registrationManager = newRegistrationManager(toolInvokerTarget, resourcesDownloaderCallback);
+
+        if (!resourcesDownloaderCallback.waitForDownloads()) {
+            LOG.error("Failed to download required resources (check the logs)");
+            return 1;
+        }
+
+        final Map<ResourceType, Path> downloadedResources =
+                resourcesDownloaderCallback.getDownloadedResources();
+        WanakuCamelManager camelManager = new WanakuCamelManager(downloadedResources);
+
+        McpSpec mcpSpec = createMcpSpec(httpClient, downloadedResources);
 
         try {
 
@@ -173,8 +191,10 @@ public class CamelToolMain implements Callable<Integer> {
         return 0;
     }
 
-    public McpSpec createMcpSpec(ServicesHttpClient servicesClient) {
-        McpRulesManager mcpRulesManager = new McpRulesManager(name, routesRules);
+    public McpSpec createMcpSpec(ServicesHttpClient servicesClient,
+            Map<ResourceType, Path> downloadedResources) {
+        String rulesRef = downloadedResources.get(ResourceType.RULES_REF).toAbsolutePath().toString();
+        McpRulesManager mcpRulesManager = new McpRulesManager(name, rulesRef);
         final WanakuToolTransformer toolTransformer =
                 new WanakuToolTransformer(name, new WanakuToolRuleProcessor(servicesClient));
         final WanakuResourceTransformer resourceTransformer =

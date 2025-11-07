@@ -1,6 +1,11 @@
 package ai.wanaku.capability.camel;
 
+import ai.wanaku.capability.camel.downloader.ResourceType;
 import ai.wanaku.capability.camel.util.WanakuRoutesLoader;
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.util.Map;
 import org.apache.camel.CamelContext;
 import org.apache.camel.impl.DefaultCamelContext;
 
@@ -9,10 +14,16 @@ public class WanakuCamelManager {
     private final String routesPath;
     private final String dependenciesList;
 
-    public WanakuCamelManager(String routesPath, String dependenciesList) {
-        this.routesPath = routesPath;
-        this.dependenciesList = dependenciesList;
+    public WanakuCamelManager(Map<ResourceType, Path> downloadedResources) {
         context = new DefaultCamelContext();
+
+        this.routesPath = downloadedResources.get(ResourceType.ROUTES_REF).toString();
+        String dependenciesPath = downloadedResources.get(ResourceType.DEPENDENCY_REF).toString();
+        try {
+            this.dependenciesList = Files.readString(Path.of(dependenciesPath));
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
 
         loadRoutes();
     }
