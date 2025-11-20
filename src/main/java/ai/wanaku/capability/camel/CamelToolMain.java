@@ -4,16 +4,16 @@ import ai.wanaku.api.discovery.RegistrationManager;
 import ai.wanaku.api.types.providers.ServiceTarget;
 import ai.wanaku.api.types.providers.ServiceType;
 import ai.wanaku.capabilities.sdk.common.ServicesHelper;
+import ai.wanaku.capabilities.sdk.common.config.DefaultServiceConfig;
+import ai.wanaku.capabilities.sdk.common.config.ServiceConfig;
 import ai.wanaku.capabilities.sdk.common.serializer.JacksonSerializer;
 import ai.wanaku.capabilities.sdk.discovery.DiscoveryServiceHttpClient;
 import ai.wanaku.capabilities.sdk.discovery.ZeroDepRegistrationManager;
-import ai.wanaku.capabilities.sdk.discovery.config.DefaultDiscoveryServiceConfig;
 import ai.wanaku.capabilities.sdk.discovery.config.DefaultRegistrationConfig;
-import ai.wanaku.capabilities.sdk.discovery.config.TokenEndpoint;
 import ai.wanaku.capabilities.sdk.discovery.deserializer.JacksonDeserializer;
 import ai.wanaku.capabilities.sdk.discovery.util.DiscoveryHelper;
+import ai.wanaku.capabilities.sdk.security.TokenEndpoint;
 import ai.wanaku.capabilities.sdk.services.ServicesHttpClient;
-import ai.wanaku.capabilities.sdk.services.config.DefaultServicesClientConfig;
 import ai.wanaku.capability.camel.downloader.DataStoreDownloader;
 import ai.wanaku.capability.camel.downloader.ResourceDownloaderCallback;
 import ai.wanaku.capability.camel.downloader.ResourceRefs;
@@ -99,15 +99,8 @@ public class CamelToolMain implements Callable<Integer> {
         System.exit(exitCode);
     }
 
-    public RegistrationManager newRegistrationManager(ServiceTarget serviceTarget, ResourceDownloaderCallback resourcesDownloaderCallback) {
-        final DefaultDiscoveryServiceConfig serviceConfig = DefaultDiscoveryServiceConfig.Builder.newBuilder()
-                .baseUrl(registrationUrl)
-                .serializer(new JacksonSerializer())
-                .clientId(clientId)
-                .tokenEndpoint(TokenEndpoint.fromBaseUrl(tokenEndpoint))
-                .secret(clientSecret)
-                .build();
-
+    public RegistrationManager newRegistrationManager(ServiceTarget serviceTarget, ResourceDownloaderCallback resourcesDownloaderCallback,
+            ServiceConfig serviceConfig) {
         DiscoveryServiceHttpClient discoveryServiceHttpClient = new DiscoveryServiceHttpClient(serviceConfig);
 
         final DefaultRegistrationConfig registrationConfig = DefaultRegistrationConfig.Builder.newBuilder()
@@ -132,14 +125,8 @@ public class CamelToolMain implements Callable<Integer> {
         return ServiceTarget.newEmptyTarget(name, address, grpcPort, ServiceType.MULTI_CAPABILITY);
     }
 
-    public ServicesHttpClient createClient() {
-        DefaultServicesClientConfig config = DefaultServicesClientConfig
-                .builder()
-                .baseUrl(registrationUrl)
-                .serializer(new JacksonSerializer())
-                .build();
-
-        return new ServicesHttpClient(config);
+    public ServicesHttpClient createClient(ServiceConfig serviceConfig) {
+        return new ServicesHttpClient(serviceConfig);
     }
 
     @Override
@@ -155,13 +142,21 @@ public class CamelToolMain implements Callable<Integer> {
         final ResourceRefs<URI> depPath =
                 ResourceRefs.newDependencyRef(dependenciesList);
 
-        ServicesHttpClient httpClient = createClient();
+        final ServiceConfig serviceConfig = DefaultServiceConfig.Builder.newBuilder()
+                .baseUrl(registrationUrl)
+                .serializer(new JacksonSerializer())
+                .clientId(clientId)
+                .tokenEndpoint(TokenEndpoint.fromBaseUrl(tokenEndpoint))
+                .secret(clientSecret)
+                .build();
+
+        ServicesHttpClient httpClient = createClient(serviceConfig);
         DataStoreDownloader downloader = new DataStoreDownloader(httpClient);
         ResourceDownloaderCallback resourcesDownloaderCallback = new ResourceDownloaderCallback(downloader,
                 List.of(pathResourceRefs, pathRulesRefs1, depPath));
 
         final ServiceTarget toolInvokerTarget = newServiceTargetTarget();
-        RegistrationManager registrationManager = newRegistrationManager(toolInvokerTarget, resourcesDownloaderCallback);
+        RegistrationManager registrationManager = newRegistrationManager(toolInvokerTarget, resourcesDownloaderCallback, serviceConfig);
 
         if (!resourcesDownloaderCallback.waitForDownloads()) {
             LOG.error("Failed to download required resources (check the logs)");
