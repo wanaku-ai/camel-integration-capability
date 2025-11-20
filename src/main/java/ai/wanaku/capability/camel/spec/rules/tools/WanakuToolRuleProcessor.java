@@ -1,6 +1,7 @@
 package ai.wanaku.capability.camel.spec.rules.tools;
 
 import ai.wanaku.api.types.ToolReference;
+import ai.wanaku.capabilities.sdk.common.exceptions.WanakuWebException;
 import ai.wanaku.capabilities.sdk.services.ServicesHttpClient;
 import ai.wanaku.capability.camel.spec.rules.RulesProcessor;
 import java.util.List;
@@ -25,6 +26,12 @@ public class WanakuToolRuleProcessor implements RulesProcessor<ToolReference> {
         try {
             servicesClient.addTool(toolReference);
             registered.add(toolReference);
+        } catch (WanakuWebException e) {
+            if (e.getStatusCode() == 409) {
+                LOG.warn("Skipping adding tool {} because it already exists", toolReference.getName());
+            } else {
+                LOG.warn("Unable to add tool {}", e.getMessage(), e);
+            }
         } catch (Exception e) {
             LOG.warn("Unable to add tool {}", e.getMessage(), e);
         }
