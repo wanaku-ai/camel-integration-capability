@@ -6,7 +6,6 @@ import ai.wanaku.capabilities.sdk.services.ServicesHttpClient;
 import java.net.URI;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.util.Base64;
 import java.util.List;
 import java.util.Map;
@@ -16,9 +15,11 @@ import org.slf4j.LoggerFactory;
 public class DataStoreDownloader implements Downloader {
     private static final Logger LOG = LoggerFactory.getLogger(DataStoreDownloader.class);
     private final ServicesHttpClient servicesHttpClient;
+    private final Path dataDir;
 
-    public DataStoreDownloader(ServicesHttpClient servicesHttpClient) {
+    public DataStoreDownloader(ServicesHttpClient servicesHttpClient, Path dataDir) {
         this.servicesHttpClient = servicesHttpClient;
+        this.dataDir = dataDir;
     }
 
     @Override
@@ -47,8 +48,8 @@ public class DataStoreDownloader implements Downloader {
             // Decode from base64
             byte[] decodedData = Base64.getDecoder().decode(dataStore.getData());
 
-            // Save to current directory
-            Path filePath = Paths.get(resourceFileName);
+            // Save to the configured data directory
+            Path filePath = dataDir.resolve(resourceFileName);
             Files.write(filePath, decodedData);
             downloadedResources.put(resourceName.resourceType(), filePath);
 
