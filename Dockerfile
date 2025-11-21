@@ -31,8 +31,8 @@ ENTRYPOINT ["sh", "-c", "java -jar /app/app.jar \
     ${REGISTRATION_ANNOUNCE_ADDRESS:+--registration-announce-address $REGISTRATION_ANNOUNCE_ADDRESS} \
     ${GRPC_PORT:+--grpc-port $GRPC_PORT} \
     ${SERVICE_NAME:+--name $SERVICE_NAME} \
-    ${ROUTES_PATH:+--routes-path $ROUTES_PATH} \
-    ${ROUTES_RULES:+--routes-rules $ROUTES_RULES} \
+    ${ROUTES_PATH:+--routes-ref $ROUTES_PATH} \
+    ${ROUTES_RULES:+--routes-ref $ROUTES_RULES} \
     ${TOKEN_ENDPOINT:+--token-endpoint $TOKEN_ENDPOINT} \
     ${CLIENT_ID:+--client-id $CLIENT_ID} \
     ${CLIENT_SECRET:+--client-secret $CLIENT_SECRET} \
