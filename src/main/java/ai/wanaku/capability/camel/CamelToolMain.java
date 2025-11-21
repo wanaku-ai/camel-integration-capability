@@ -33,7 +33,9 @@ import io.grpc.InsecureServerCredentials;
 import io.grpc.Server;
 import io.grpc.ServerBuilder;
 import java.net.URI;
+import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.Callable;
@@ -93,6 +95,9 @@ public class CamelToolMain implements Callable<Integer> {
     @CommandLine.Option(names = {"-d", "--dependencies"}, description = "The list of dependencies to include in runtime (comma-separated)")
     private String dependenciesList;
 
+    @CommandLine.Option(names = {"--data-dir"}, description = "The directory where downloaded files will be saved", defaultValue = "/tmp")
+    private String dataDir;
+
     public static void main(String[] args) {
         int exitCode = new CommandLine(new CamelToolMain()).execute(args);
 
@@ -150,8 +155,13 @@ public class CamelToolMain implements Callable<Integer> {
                 .secret(clientSecret)
                 .build();
 
+        // Create the data directory if it doesn't exist
+        Path dataDirPath = Paths.get(dataDir);
+        Files.createDirectories(dataDirPath);
+        LOG.info("Using data directory: {}", dataDirPath.toAbsolutePath());
+
         ServicesHttpClient httpClient = createClient(serviceConfig);
-        DataStoreDownloader downloader = new DataStoreDownloader(httpClient);
+        DataStoreDownloader downloader = new DataStoreDownloader(httpClient, dataDirPath);
         ResourceDownloaderCallback resourcesDownloaderCallback = new ResourceDownloaderCallback(downloader,
                 List.of(pathResourceRefs, pathRulesRefs1, depPath));
 

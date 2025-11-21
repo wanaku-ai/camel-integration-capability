@@ -49,6 +49,7 @@ set them so that this capability service can talk to Wanaku and register itself.
 - `--wait-seconds`: Wait time between retries (default: 1)
 - `--initial-delay`: Initial registration delay in seconds (default: 0)
 - `--period`: Period between registration attempts in seconds (default: 5)
+- `--data-dir`: Directory where downloaded files will be saved (default: `/tmp` for CLI, `/data` for Docker)
 
 ### Basic Example (Local)
 
@@ -60,12 +61,19 @@ java -jar target/camel-integration-capability-1.0-SNAPSHOT.jar \
   --registration-announce-address localhost \
   --grpc-port 9190 \
   --name camel-core \
-  --routes-path ./tests/data/routes/camel-core/promote-employee/promote-employee.camel.yaml \
-  --routes-rules ./tests/data/routes/camel-core/promote-employee/promote-employee-rules.yaml \
+  --routes-ref datastore://promote-employee.camel.yaml \
+  --rules-ref datastore://promote-employee-rules.yaml \
   --token-endpoint http://localhost:8543/realms/wanaku/ \
   --client-id wanaku-service \
-  --client-secret aBqsU3EzUPCHumf9sTK5sanxXkB0yFtv
-  --dependencies org.apache.camel:camel-http:4.14.1,org.apache.camel:camel-jackson:4.14.1
+  --client-secret aBqsU3EzUPCHumf9sTK5sanxXkB0yFtv \
+  --dependencies datastore://promote-employee-dependencies.txt \
+  --data-dir /tmp/camel-data
+```
+
+Where `promote-employee-dependencies.txt` is a text file containing the dependencies in a comma-separated list:
+
+```shell
+org.apache.camel:camel-http:4.14.2,org.apache.camel:camel-jackson:4.14.2
 ```
 
 ## Deploying the Service
@@ -142,6 +150,7 @@ secretGenerator:
 | `service-name` | Service name for registration | `my-service-name` |
 | `registration-announce-address` | Service announcement address | `auto`            |
 | `client-id` | OAuth2 client ID | `wanaku-service`  |
+| `data-dir` | Directory where downloaded files are saved | `/data`           |
 
 
 ### Deploying to the Cluster
