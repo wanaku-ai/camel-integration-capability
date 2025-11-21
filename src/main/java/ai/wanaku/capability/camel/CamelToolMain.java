@@ -80,7 +80,7 @@ public class CamelToolMain implements Callable<Integer> {
     @CommandLine.Option(names = {"--rules-ref"}, description = "The path to the YAML file with route exposure rules (i.e.: datastore://routes-expose.yaml)")
     private String rulesRef;
 
-    @CommandLine.Option(names = {"--token-endpoint"}, description = "The base URL for the authentication", required = true)
+    @CommandLine.Option(names = {"--token-endpoint"}, description = "The base URL for the authentication", required = false)
     private String tokenEndpoint;
 
     @CommandLine.Option(names = {"--client-id"}, description = "The client ID authentication", required = true)
@@ -151,7 +151,7 @@ public class CamelToolMain implements Callable<Integer> {
                 .baseUrl(registrationUrl)
                 .serializer(new JacksonSerializer())
                 .clientId(clientId)
-                .tokenEndpoint(TokenEndpoint.fromBaseUrl(tokenEndpoint))
+                .tokenEndpoint(TokenEndpoint.autoResolve(registrationUrl, tokenEndpoint))
                 .secret(clientSecret)
                 .build();
 

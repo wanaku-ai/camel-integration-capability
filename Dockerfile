@@ -26,7 +26,10 @@ VOLUME /data
 # Expose the gRPC port
 EXPOSE ${GRPC_PORT}
 
-# Run the application with environment variables
+# Run the application with environment variables.
+# This part uses shell parameter expansion to conditionally add command-line arguments to the Java application.
+# The Syntax: ${VARIABLE:+value} means: "If VARIABLE is set and is not null (i.e., not empty), substitute this whole expression
+# with value. Otherwise, substitute it with nothing (an empty string)."
 ENTRYPOINT ["sh", "-c", "java -jar /app/app.jar \
     ${REGISTRATION_URL:+--registration-url $REGISTRATION_URL} \
     ${REGISTRATION_ANNOUNCE_ADDRESS:+--registration-announce-address $REGISTRATION_ANNOUNCE_ADDRESS} \
