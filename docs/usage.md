@@ -34,15 +34,16 @@ set them so that this capability service can talk to Wanaku and register itself.
 
 - `--registration-url`: URL of the Wanaku discovery service
 - `--registration-announce-address`: Address to announce for service discovery
-- `--routes-path`: Path to the Apache Camel routes YAML file (e.g., `/path/to/routes.camel.yaml`)
+- `--routes-ref`: Reference to the Apache Camel routes YAML file. Supports `datastore://` and `file://` schemes
 - `--token-endpoint`: OAuth2/OIDC token endpoint base URL
 - `--client-id`: OAuth2 client ID for authentication
 - `--client-secret`: OAuth2 client secret for authentication
-- `--routes-rules`: Path to the YAML file with route exposure rules (e.g., `/path/to/routes-expose.yaml`)
-- `--dependencies`: A comma-separated list of dependencies to include on the classpath (they are automatically downloaded and added to the classpath)
 
 ### Optional Parameters
 
+- `--rules-ref`: Reference to the YAML file with route exposure rules. Supports `datastore://` and `file://` schemes
+- `--dependencies`: Comma-separated list of dependencies. Supports `datastore://` and `file://` schemes
+- `--init-from`: Git repository URL to clone during initialization (SSH or HTTPS format)
 - `--grpc-port`: gRPC server port (default: 9190)
 - `--name`: Service name for registration (default: "camel")
 - `--retries`: Maximum registration retries (default: 3)
@@ -50,6 +51,13 @@ set them so that this capability service can talk to Wanaku and register itself.
 - `--initial-delay`: Initial registration delay in seconds (default: 0)
 - `--period`: Period between registration attempts in seconds (default: 5)
 - `--data-dir`: Directory where downloaded files will be saved (default: `/tmp` for CLI, `/data` for Docker)
+
+### URI Schemes
+
+The service supports multiple URI schemes for resource references:
+
+- **datastore://**: Fetches files from the Wanaku DataStore service.
+- **file://**: References local files (absolute paths required)
 
 ### Basic Example (Local)
 
@@ -78,11 +86,8 @@ org.apache.camel:camel-http:4.14.2,org.apache.camel:camel-jackson:4.14.2
 
 ## Deploying the Service
 
-The service can be deployed to Kubernetes or OpenShift using Kustomize. One requirement is that
-the deployment needs a way to get the route files in the storage used by the container. There is 
-multiple ways to do this (such as using an init container of copying the files using `kubectl cp`. 
+The service can be deployed to Kubernetes or OpenShift using Kustomize. 
 
-In the provided deployment, it uses an init container that clones your Camel routes repository.
 
 ### Init Container Sample
 
@@ -321,6 +326,40 @@ Deploy to production:
 ```bash
 kubectl apply -k deploy/openshift/kustomize/overlays/prod
 ```
+
+## Running the Capability and Exposing Camel Routes as MCP Tools
+
+Route files can be provided using:
+
+1. **From Wanaku's Data Store**: This uses Wanaku's Data Store to download files automatically after registration.
+2. **Built-in Git initialization**: Use `--init-from` to clone a repository during startup
+3. **Init container**: Use a separate container to clone files before the main container starts (see example below)
+4. **Volume mounts**: Mount ConfigMaps or persistent volumes containing route files
+
+The provided deployment examples use an init container, but `--init-from` provides the same functionality with simpler configuration.
+
+### Using Git Initialization
+
+To clone a Git repository containing routes and reference files directly:
+
+```bash
+java -jar target/camel-integration-capability-1.0-SNAPSHOT.jar \
+  --registration-url http://localhost:8080 \
+  --registration-announce-address localhost \
+  --grpc-port 9190 \
+  --name camel-core \
+  --init-from git@github.com:wanaku-ai/wanaku-recipes.git \
+  --routes-ref file:///tmp/cloned-repo/routes/promote-employee.camel.yaml \
+  --rules-ref file:///tmp/cloned-repo/rules/promote-employee-rules.yaml \
+  --dependencies file:///tmp/cloned-repo/dependencies/promote-employee-dependencies.txt \
+  --token-endpoint http://localhost:8543/realms/wanaku/ \
+  --client-id wanaku-service \
+  --client-secret aBqsU3EzUPCHumf9sTK5sanxXkB0yFtv \
+  --data-dir /tmp
+```
+
+The `--init-from` option clones the repository to `/tmp/cloned-repo` during startup. Files are then referenced using `file://` URIs with absolute paths.
+
 
 ## Designing Routes
 

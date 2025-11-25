@@ -19,12 +19,12 @@ public class ResourceDownloaderCallback implements DiscoveryCallback {
     private final List<ResourceRefs<URI>> resources;
     private final CountDownLatch countDownLatch = new CountDownLatch(1);
 
-    private final Downloader downloader;
+    private final DownloaderFactory downloaderFactory;
     private Map<ResourceType, Path> downloadedResources = new HashMap<>();
 
-    public ResourceDownloaderCallback(Downloader downloader, List<ResourceRefs<URI>> resources) {
+    public ResourceDownloaderCallback(DownloaderFactory downloaderFactory, List<ResourceRefs<URI>> resources) {
         this.resources = resources;
-        this.downloader = downloader;
+        this.downloaderFactory = downloaderFactory;
     }
 
 
@@ -54,6 +54,7 @@ public class ResourceDownloaderCallback implements DiscoveryCallback {
 
             for (ResourceRefs<URI> resourceName : resources) {
                 try {
+                    Downloader downloader = downloaderFactory.getDownloader(resourceName.ref());
                     downloader.downloadResource(resourceName, downloadedResources);
                 } catch (WanakuWebException e) {
                     if (e.getStatusCode() == 404) {

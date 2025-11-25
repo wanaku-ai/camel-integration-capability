@@ -14,13 +14,15 @@ import ai.wanaku.capabilities.sdk.discovery.deserializer.JacksonDeserializer;
 import ai.wanaku.capabilities.sdk.discovery.util.DiscoveryHelper;
 import ai.wanaku.capabilities.sdk.security.TokenEndpoint;
 import ai.wanaku.capabilities.sdk.services.ServicesHttpClient;
-import ai.wanaku.capability.camel.downloader.DataStoreDownloader;
+import ai.wanaku.capability.camel.downloader.DownloaderFactory;
 import ai.wanaku.capability.camel.downloader.ResourceDownloaderCallback;
 import ai.wanaku.capability.camel.downloader.ResourceRefs;
 import ai.wanaku.capability.camel.downloader.ResourceType;
 import ai.wanaku.capability.camel.grpc.CamelResource;
 import ai.wanaku.capability.camel.grpc.CamelTool;
 import ai.wanaku.capability.camel.grpc.ProvisionBase;
+import ai.wanaku.capability.camel.init.Initializer;
+import ai.wanaku.capability.camel.init.InitializerFactory;
 import ai.wanaku.capability.camel.model.McpSpec;
 import ai.wanaku.capability.camel.spec.rules.resources.WanakuResourceRuleProcessor;
 import ai.wanaku.capability.camel.spec.rules.resources.WanakuResourceTransformer;
@@ -74,10 +76,10 @@ public class CamelToolMain implements Callable<Integer> {
     @CommandLine.Option(names = {"--period"}, description = "Period between registration attempts in seconds", defaultValue = "5")
     private long period;
 
-    @CommandLine.Option(names = {"--routes-ref"}, description = "The reference path to the Apache Camel routes YAML file (i.e.: datastore://routes.camel.yaml)", required = true)
+    @CommandLine.Option(names = {"--routes-ref"}, description = "The reference path to the Apache Camel routes YAML file. Supports datastore:// and file:// schemes (e.g., datastore://routes.camel.yaml or file:///path/to/routes.yaml)", required = true)
     private String routesRef;
 
-    @CommandLine.Option(names = {"--rules-ref"}, description = "The path to the YAML file with route exposure rules (i.e.: datastore://routes-expose.yaml)")
+    @CommandLine.Option(names = {"--rules-ref"}, description = "The path to the YAML file with route exposure rules. Supports datastore:// and file:// schemes (e.g., datastore://routes-expose.yaml or file:///path/to/rules.yaml)")
     private String rulesRef;
 
     @CommandLine.Option(names = {"--token-endpoint"}, description = "The base URL for the authentication", required = false)
@@ -92,11 +94,14 @@ public class CamelToolMain implements Callable<Integer> {
     @CommandLine.Option(names = {"--no-wait"}, description = "Do not wait forever until the files are available", defaultValue = "false")
     private boolean noWait;
 
-    @CommandLine.Option(names = {"-d", "--dependencies"}, description = "The list of dependencies to include in runtime (comma-separated)")
+    @CommandLine.Option(names = {"-d", "--dependencies"}, description = "The list of dependencies to include in runtime. Supports datastore:// and file:// schemes (comma-separated)")
     private String dependenciesList;
 
     @CommandLine.Option(names = {"--data-dir"}, description = "The directory where downloaded files will be saved", defaultValue = "/tmp")
     private String dataDir;
+
+    @CommandLine.Option(names = {"--init-from"}, description = "Git repository URL to clone during initialization. Cloned files can be referenced using file:// (e.g., git@github.com:wanaku-ai/wanaku-recipes.git)")
+    private String initFrom;
 
     public static void main(String[] args) {
         int exitCode = new CommandLine(new CamelToolMain()).execute(args);
@@ -138,6 +143,15 @@ public class CamelToolMain implements Callable<Integer> {
     public Integer call() throws Exception {
         LOG.info("Camel Integration Capability {} is starting", VersionHelper.VERSION);
 
+        // Create the data directory first (needed by initializers)
+        Path dataDirPath = Paths.get(dataDir);
+        Files.createDirectories(dataDirPath);
+        LOG.info("Using data directory: {}", dataDirPath.toAbsolutePath());
+
+        // Resource initialization / acquisition should happen here (except, of course, for the ones from the datastore)
+        Initializer initializer = InitializerFactory.createInitializer(initFrom, dataDirPath);
+        initializer.initialize();
+
         final ResourceRefs<URI> pathResourceRefs =
                 ResourceRefs.newRoutesRef(routesRef);
 
@@ -155,14 +169,9 @@ public class CamelToolMain implements Callable<Integer> {
                 .secret(clientSecret)
                 .build();
 
-        // Create the data directory if it doesn't exist
-        Path dataDirPath = Paths.get(dataDir);
-        Files.createDirectories(dataDirPath);
-        LOG.info("Using data directory: {}", dataDirPath.toAbsolutePath());
-
         ServicesHttpClient httpClient = createClient(serviceConfig);
-        DataStoreDownloader downloader = new DataStoreDownloader(httpClient, dataDirPath);
-        ResourceDownloaderCallback resourcesDownloaderCallback = new ResourceDownloaderCallback(downloader,
+        DownloaderFactory downloaderFactory = new DownloaderFactory(httpClient, dataDirPath);
+        ResourceDownloaderCallback resourcesDownloaderCallback = new ResourceDownloaderCallback(downloaderFactory,
                 List.of(pathResourceRefs, pathRulesRefs1, depPath));
 
         final ServiceTarget toolInvokerTarget = newServiceTargetTarget();
