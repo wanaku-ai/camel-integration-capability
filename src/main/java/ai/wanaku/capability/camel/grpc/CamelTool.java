@@ -13,6 +13,7 @@ import java.net.URI;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+import org.apache.camel.CamelContext;
 import org.apache.camel.ProducerTemplate;
 import org.apache.camel.Route;
 import org.slf4j.Logger;
@@ -41,7 +42,7 @@ public class CamelTool extends ToolInvokerGrpc.ToolInvokerImplBase {
         LOG.debug("About to run a Camel route as tool");
 
         final String uri = request.getUri();
-        URI routeUri = URI.create(uri);
+        final URI routeUri = URI.create(uri);
         final String host = routeUri.getHost();
 
         // Try to find the definition in tools first, then in resources
@@ -58,28 +59,51 @@ public class CamelTool extends ToolInvokerGrpc.ToolInvokerImplBase {
             return;
         }
 
-        final ProducerTemplate producerTemplate = camelManager.getCamelContext().createProducerTemplate();
+        final CamelContext camelContext = camelManager.getCamelContext();
+        final String endpointUri = resolveEndpoint(toolDefinition, camelContext);
 
+        try (ProducerTemplate producerTemplate = camelContext.createProducerTemplate()) {
+            final Object reply;
+
+            if (!request.getArgumentsMap().isEmpty()) {
+                final Map<String, Object> headers = extractHeaderParameters(request, toolDefinition);
+
+                reply = producerTemplate.requestBodyAndHeaders(endpointUri, request.getBody(), headers);
+            } else {
+                reply = producerTemplate.requestBody(endpointUri, request.getBody());
+            }
+
+            responseObserver.onNext(ToolInvokeReply.newBuilder()
+                    .setIsError(false)
+                    .addAllContent(List.of(reply.toString()))
+                    .build());
+        } catch (Exception e) {
+            reportRouteFailure(responseObserver, e, toolDefinition);
+        } finally {
+            responseObserver.onCompleted();
+        }
+    }
+
+    private static void reportRouteFailure(
+            StreamObserver<ToolInvokeReply> responseObserver, Exception e, Definition toolDefinition) {
         final String routeId = toolDefinition.getRoute().getId();
-        final Route route = camelManager.getCamelContext().getRoute(routeId);
-        final String endpointUri = route.getEndpoint().getEndpointUri();
 
-        final Object o;
-
-        if (!request.getArgumentsMap().isEmpty()) {
-            final Map<String, Object> headers = extractHeaderParameters(request, toolDefinition);
-
-            o = producerTemplate.requestBodyAndHeaders(endpointUri, request.getBody(), headers);
+        if (LOG.isDebugEnabled()) {
+            LOG.error("Camel route {} could not be invoked: {}", routeId, e.getMessage(), e);
         } else {
-            o = producerTemplate.requestBody(endpointUri, request.getBody());
+            LOG.error("Camel route {} could not be invoked: {}", routeId, e.getMessage());
         }
 
         responseObserver.onNext(ToolInvokeReply.newBuilder()
-                .setIsError(false)
-                .addAllContent(List.of(o.toString()))
+                .setIsError(true)
+                .addAllContent(List.of(String.format("Unable to invoke tool: %s", e.getMessage())))
                 .build());
+    }
 
-        responseObserver.onCompleted();
+    private static String resolveEndpoint(Definition toolDefinition, CamelContext camelContext) {
+        final String routeId = toolDefinition.getRoute().getId();
+        final Route route = camelContext.getRoute(routeId);
+        return route.getEndpoint().getEndpointUri();
     }
 
     private static Map<String, Object> extractHeaderParameters(ToolInvokeRequest request, Definition toolDefinition) {
