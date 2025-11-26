@@ -46,9 +46,9 @@ set them so that this capability service can talk to Wanaku and register itself.
 - `--init-from`: Git repository URL to clone during initialization (SSH or HTTPS format)
 - `--grpc-port`: gRPC server port (default: 9190)
 - `--name`: Service name for registration (default: "camel")
-- `--retries`: Maximum registration retries (default: 3)
-- `--wait-seconds`: Wait time between retries (default: 1)
-- `--initial-delay`: Initial registration delay in seconds (default: 0)
+- `--retries`: Maximum registration retries (default: 12)
+- `--wait-seconds`: Wait time between retries in seconds (default: 5)
+- `--initial-delay`: Initial registration delay in seconds (default: 5)
 - `--period`: Period between registration attempts in seconds (default: 5)
 - `--data-dir`: Directory where downloaded files will be saved (default: `/tmp` for CLI, `/data` for Docker)
 
@@ -86,168 +86,62 @@ org.apache.camel:camel-http:4.14.2,org.apache.camel:camel-jackson:4.14.2
 
 ## Deploying the Service
 
-The service can be deployed to Kubernetes or OpenShift using Kustomize. 
-
-
-### Init Container Sample
-
-Wanaku does not provide the init-container, but you can create one with a Dockerfile similar to this:
-
-```dockerfile
-FROM registry.access.redhat.com/ubi9/ubi-minimal:latest
-VOLUME /data
-WORKDIR /data
-RUN microdnf install -y git
-
-ENV GIT_REPO_URL="" \
-    GIT_BRANCH=${GIT_BRANCH:-main}
-
-CMD ["/bin/bash", "-c", "git clone -b $GIT_BRANCH $GIT_REPO_URL"]
-```
-
-Build and publish it to the registry of your choice.
-
-
-### Configuration
-
-Before deploying, you need to configure the service by editing the overlay kustomization file for your environment.
-
-Edit `deploy/openshift/kustomize/overlays/dev/kustomization.yaml`:
+The service can be deployed to Kubernetes or OpenShift using the Wanaku's operator. 
 
 ```yaml
-configMapGenerator:
-- name: camel-integration-capability-config
-  behavior: merge
-  literals:
-  - git-repo-url=http://github.com/your-org/your-routes-repo
-  - grpc-port=9190
-  - registration-url=http://wanaku-router-backend:8080
-  - registration-announce-address=auto
-  - service-name=camel-integration-capability-dev
-  - routes-path=/data/your-routes-repo/routes/your-route.camel.yaml
-  - routes-rules=/data/your-routes-repo/routes/your-route-rules.yaml
-
-secretGenerator:
-- name: camel-integration-capability-secrets
-  behavior: merge
-  literals:
-  - client-id=wanaku-service
-  - client-secret=your-oauth-secret-here
-  - token-endpoint=http://keycloak:8080/realms/wanaku/
+apiVersion: "wanaku.ai/v1alpha1"
+kind: Wanaku
+metadata:
+  name: wanaku-dev
+spec:
+  auth:
+    authServer: http://address-of-the-keycloak-instance
+    # Address of the proxy (could be the same as the auth server - default) or "auto" (for using Wanaku as the proxy via OIDC proxy)
+    authProxy: "auto"
+  router:
+    image: quay.io/wanaku/wanaku-router-backend:latest
+    imagePullPolicy: Always
+  secrets:
+    oidcCredentialsSecret: <credentials-go-here>
+  capabilities:
+    - name: wanaku-http
+      image: quay.io/wanaku/wanaku-tool-service-http:latest
+    - name: employee-system
+      type: camel-integration-capability
+      image: quay.io/wanaku/camel-integration-capability:latest
+      # When using a camel integration capability, must always set the routes and rules references
+      env:
+        # Reference to the Camel routes YAML file (supports datastore:// and file:// schemes)
+        - name: ROUTES_REF
+          value: "datastore://employee-backend.camel.yaml"
+        # Reference to the route exposure rules YAML (supports datastore:// and file:// schemes)
+        - name: RULES_REF
+          value: "datastore://employee-backend-rules.yaml"
+        # Reference to dependencies file (supports datastore:// and file:// schemes)
+        - name: DEPENDENCIES
+          value: "datastore://employee-backend-dependencies.txt"
 ```
 
 #### Required Configuration
 
-| Parameter | Description | Example |
-|-----------|-------------|---------|
-| `git-repo-url` | Git repository containing your Camel routes | `http://github.com/myorg/routes` |
-| `routes-path` | Path to the Camel routes YAML file | `/data/myrepo/route.camel.yaml` |
-| `routes-rules` | Path to the route exposure rules YAML | `/data/myrepo/route-rules.yaml` |
-| `registration-url` | Wanaku discovery service URL | `http://wanaku-router-backend:8080` |
-| `client-secret` | OAuth2 client secret | (secret value) |
-| `token-endpoint` | OAuth2/OIDC token endpoint | `http://keycloak:8080/realms/wanaku/` |
+| Parameter    | Description                                                | Example                        |
+|--------------|------------------------------------------------------------|--------------------------------|
+| `ROUTES_REF` | Reference to the Camel routes YAML file                    | `datastore://route.camel.yaml` |
+| `RULES_REF`  | Reference to the route exposure rules YAML                 | `datastore://route-rules.yaml` |
+| `DEPENDENCIES` | Reference to a text file containing a list of dependencies | `datastore://dependencies.txt` |
+
+> [NOTE]
+> See the running documentation below for details on each of these.
 
 #### Optional Configuration
 
-| Parameter | Description | Default           |
-|-----------|-------------|-------------------|
-| `grpc-port` | gRPC server port | `9190`            |
-| `service-name` | Service name for registration | `my-service-name` |
-| `registration-announce-address` | Service announcement address | `auto`            |
-| `client-id` | OAuth2 client ID | `wanaku-service`  |
-| `data-dir` | Directory where downloaded files are saved | `/data`           |
+| Parameter   | Description                                 | Example                                      |
+|-------------|---------------------------------------------|----------------------------------------------|
+| `INIT_FROM` | Git repository URL to clone during startup  | `git@github.com:org/repo.git`                |
+| `DATA_DIR`  | Directory where downloaded files are saved  | `/data`                                      |
 
-
-### Deploying to the Cluster
-
-Deploy to development environment:
-
-```bash
-# Preview what will be deployed
-kubectl kustomize deploy/openshift/kustomize/overlays/dev
-
-# Apply the deployment
-kubectl apply -k deploy/openshift/kustomize/overlays/dev
-```
-
-### Deployment Features
-
-#### Init Container
-
-The deployment includes an init container that:
-- Uses UBI9 minimal image with git
-- Clones the repository specified in `git-repo-url`
-- Stores the cloned repository in `/data` directory (shared with main container)
-- Allows you to deploy routes without rebuilding the container image
-
-#### Resource Limits
-
-Default resource allocation (configurable in `base/deployment.yaml`):
-
-- **Requests**: 512Mi memory, 250m CPU
-- **Limits**: 1Gi memory, 1000m CPU
-
-Adjust these based on your workload:
-
-```yaml
-resources:
-  requests:
-    memory: "1Gi"
-    cpu: "500m"
-  limits:
-    memory: "2Gi"
-    cpu: "2000m"
-```
-
-#### Health Checks
-
-The deployment includes:
-- **Liveness probe**: TCP check on gRPC port (9190)
-  - Initial delay: 30 seconds
-  - Period: 10 seconds
-- **Readiness probe**: TCP check on gRPC port (9190)
-  - Initial delay: 10 seconds
-  - Period: 5 seconds
-
-### Verifying the Deployment
-
-Check deployment status:
-
-```bash
-# Check pods
-kubectl get pods -l app=camel-integration-capability
-
-# Check init container logs
-kubectl logs -f deployment/camel-integration-capability -c git-clone
-
-# Check main container logs
-kubectl logs -f deployment/camel-integration-capability -c camel-integration-capability
-
-# Verify routes were cloned
-kubectl exec deployment/camel-integration-capability -- ls -la /data
-
-# Check service
-kubectl get svc camel-integration-capability
-```
-
-### Using Secrets Securely
-
-For production environments, create secrets separately instead of embedding them in kustomization files:
-
-```bash
-# Create secret from literals
-kubectl create secret generic camel-integration-capability-secrets \
-  --from-literal=client-secret=YOUR_SECRET_HERE \
-  --from-literal=token-endpoint=https://keycloak.example.com/realms/wanaku/ \
-  --from-literal=client-id=wanaku-service
-
-# Or from files
-kubectl create secret generic camel-integration-capability-secrets \
-  --from-file=client-secret=./secret.txt \
-  --from-file=token-endpoint=./endpoint.txt
-```
-
-Then remove the secretGenerator from your kustomization.yaml overlay.
+> [NOTE]
+> See the running documentation below for details on each of these.
 
 ### Troubleshooting
 
@@ -257,9 +151,6 @@ Common issues and solutions:
 ```bash
 # Verify git clone succeeded
 kubectl exec deployment/camel-integration-capability -- ls -la /data
-
-# Check init container logs
-kubectl logs deployment/camel-integration-capability -c git-clone
 ```
 
 **Service not registering:**
@@ -283,84 +174,6 @@ kubectl describe pod -l app=camel-integration-capability
 kubectl run test-pod --rm -it --image=busybox -- telnet camel-integration-capability 9190
 ```
 
-### Multi-Environment Deployments
-
-For production, create a new overlay:
-
-```bash
-mkdir -p deploy/openshift/kustomize/overlays/prod
-```
-
-Create `deploy/openshift/kustomize/overlays/prod/kustomization.yaml`:
-
-```yaml
-apiVersion: kustomize.config.k8s.io/v1beta1
-kind: Kustomization
-
-resources:
-- ../../base
-
-configMapGenerator:
-- name: camel-integration-capability-config
-  behavior: merge
-  literals:
-  - git-repo-url=http://github.com/your-org/prod-routes
-  - grpc-port=9190
-  - registration-url=http://wanaku-router-backend.prod:8080
-  - registration-announce-address=auto
-  - service-name=camel-integration-capability-prod
-  - routes-path=/data/prod-routes/route.camel.yaml
-  - routes-rules=/data/prod-routes/route-rules.yaml
-
-replicas:
-- name: camel-integration-capability
-  count: 3
-
-images:
-- name: camel-integration-capability
-  newTag: v1.0.0
-```
-
-Deploy to production:
-
-```bash
-kubectl apply -k deploy/openshift/kustomize/overlays/prod
-```
-
-## Running the Capability and Exposing Camel Routes as MCP Tools
-
-Route files can be provided using:
-
-1. **From Wanaku's Data Store**: This uses Wanaku's Data Store to download files automatically after registration.
-2. **Built-in Git initialization**: Use `--init-from` to clone a repository during startup
-3. **Init container**: Use a separate container to clone files before the main container starts (see example below)
-4. **Volume mounts**: Mount ConfigMaps or persistent volumes containing route files
-
-The provided deployment examples use an init container, but `--init-from` provides the same functionality with simpler configuration.
-
-### Using Git Initialization
-
-To clone a Git repository containing routes and reference files directly:
-
-```bash
-java -jar target/camel-integration-capability-1.0-SNAPSHOT.jar \
-  --registration-url http://localhost:8080 \
-  --registration-announce-address localhost \
-  --grpc-port 9190 \
-  --name camel-core \
-  --init-from git@github.com:wanaku-ai/wanaku-recipes.git \
-  --routes-ref file:///tmp/cloned-repo/routes/promote-employee.camel.yaml \
-  --rules-ref file:///tmp/cloned-repo/rules/promote-employee-rules.yaml \
-  --dependencies file:///tmp/cloned-repo/dependencies/promote-employee-dependencies.txt \
-  --token-endpoint http://localhost:8543/realms/wanaku/ \
-  --client-id wanaku-service \
-  --client-secret aBqsU3EzUPCHumf9sTK5sanxXkB0yFtv \
-  --data-dir /tmp
-```
-
-The `--init-from` option clones the repository to `/tmp/cloned-repo` during startup. Files are then referenced using `file://` URIs with absolute paths.
-
-
 ## Designing Routes
 
 The easiest way to design the routes for this project, is to use a visual editor such as [Kaoto](http://kaoto.io) or 
@@ -372,7 +185,7 @@ Those editors should allow you to visualize the route. For instance:
 
 ### Camel Routes
 
-Camel routes should be defined in YAML format in the file specified by `--routes-path`. Example route structure:
+Camel routes should be defined in YAML format in the file specified by `--routes-ref`. Example route structure:
 
 ```yaml
 - route:
@@ -390,7 +203,7 @@ Camel routes should be defined in YAML format in the file specified by `--routes
 
 ### Route Exposure Rules
 
-Routes can be exposed as MCP tools or resources by defining rules in a YAML file specified by `--routes-rules`.
+Routes can be exposed as MCP tools or resources by defining rules in a YAML file specified by `--rules-ref`.
 This file maps route definitions to tool specifications:
 
 ```yaml
@@ -442,11 +255,77 @@ Properties can include an optional `mapping` element to specify how parameters s
 - `type`: The mapping type (e.g., `header`, `body`)
 - `name`: The target name in the Camel exchange (e.g., header name)
 
-## Architecture
+### Handling Dependencies 
 
-- **Main Class**: `ai.wanaku.capability.camel.CamelToolMain` - Entry point and configuration
-- **gRPC Services**:
-    - `CamelTool` - Handles route execution requests
-    - `ProvisionBase` - Provides basic service information
-- **Route Loading**: `WanakuRoutesLoader` - Loads and manages Camel routes
-- **Authentication**: Integrated OAuth2/OIDC client for Wanaku ecosystem
+The capability only comes with a subset of the Apache Camel dependencies. 
+In many cases, it will be necessary to provide a list of additional dependencies required for running it.
+The capability can automatically download and include on the classpath all these dependencies.
+
+For instance, to include the `camel-http` and `camel-jackson` dependencies, you can create a text file 
+with the following contents:
+
+```
+org.apache.camel:camel-http:4.14.2,org.apache.camel:camel-jackson:4.14.2
+```
+
+Then publish it to Wanaku's Data Store (or, git, if using the git initializer) and refer to the file accordingly
+
+* `--dependencies datastore://filename.txt` if using the data store 
+* `--dependencies file:///path/to/filename.txt` if using the git initializer
+
+## Running the Capability and Exposing Camel Routes
+
+After designing the routes, you will need to have the capability use them and expose them as MCP 
+tools or MCP resources. To do so, the capability needs to have access to the files. 
+
+Route files can be provided to the capability using one of the following methods:
+
+1. **From Wanaku's Data Store**: This uses Wanaku's Data Store to download files automatically after registration.
+2. **Built-in Git initialization**: Use `--init-from` to clone a repository during startup
+3. **Init container**: Use a separate container to clone files before the main container starts (see example below)
+4. **Volume mounts**: Mount ConfigMaps or persistent volumes containing route files
+
+### Using Wanaku's Data Store
+
+This is the recommended way to obtain the route files. In this mode, the capability downloads files
+directly from Wanaku after its registration is complete.
+
+When running manually, the command looks like this:
+
+```bash
+java -jar target/camel-integration-capability-1.0-SNAPSHOT.jar \
+  --registration-url http://localhost:8080 \
+  --registration-announce-address localhost \
+  --grpc-port 9190 \
+  --name camel-core \
+  --routes-ref datastore://promote-employee.camel.yaml \
+  --rules-ref datastore://promote-employee-rules.yaml \
+  --dependencies datastore://promote-employee-dependencies.txt \
+  --token-endpoint http://localhost:8543/realms/wanaku/ \
+  --client-id wanaku-service \
+  --client-secret aBqsU3EzUPCHumf9sTK5sanxXkB0yFtv \
+  --data-dir /tmp
+```
+
+### Using Git Initialization
+
+To clone a Git repository containing routes and reference files directly:
+
+```bash
+java -jar target/camel-integration-capability-1.0-SNAPSHOT.jar \
+  --registration-url http://localhost:8080 \
+  --registration-announce-address localhost \
+  --grpc-port 9190 \
+  --name camel-core \
+  --init-from git@github.com:wanaku-ai/wanaku-recipes.git \
+  --routes-ref file:///tmp/cloned-repo/routes/promote-employee.camel.yaml \
+  --rules-ref file:///tmp/cloned-repo/rules/promote-employee-rules.yaml \
+  --dependencies file:///tmp/cloned-repo/dependencies/promote-employee-dependencies.txt \
+  --token-endpoint http://localhost:8543/realms/wanaku/ \
+  --client-id wanaku-service \
+  --client-secret aBqsU3EzUPCHumf9sTK5sanxXkB0yFtv \
+  --data-dir /tmp
+```
+
+The `--init-from` option clones the repository to `/tmp/cloned-repo` during startup.
+Files are then referenced using `file://` URIs with absolute paths.
