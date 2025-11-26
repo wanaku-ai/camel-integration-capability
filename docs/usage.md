@@ -248,12 +248,148 @@ the data MUST be convertable to a Java String.
 > Routes serving resources MUST have their auto-start disabled.
 
 
-#### Property Mapping
+#### Parameter to Header Mapping
 
-Properties can include an optional `mapping` element to specify how parameters should be passed to the Camel route:
+The capability automatically maps MCP tool parameters to Apache Camel headers. There are two mapping strategies:
 
-- `type`: The mapping type (e.g., `header`, `body`)
-- `name`: The target name in the Camel exchange (e.g., header name)
+##### Automatic Mapping (Default)
+
+When no `properties` are defined in the tool definition, **all MCP parameters are automatically mapped to Camel headers** with a `Wanaku.` prefix.
+
+**Example tool definition without properties:**
+
+```yaml
+mcp:
+  tools:
+    - get-employee-info:
+        route:
+          id: "get-employee-route"
+        description: "Retrieve employee information"
+```
+
+**How it works:**
+
+When an AI agent invokes this tool with parameters like:
+
+```json
+{
+  "employeeId": "12345",
+  "includeHistory": "true"
+}
+```
+
+The capability automatically creates these Camel headers:
+
+- `Wanaku.employeeId` → `"12345"`
+- `Wanaku.includeHistory` → `"true"`
+
+**Accessing parameters in Camel routes:**
+
+```yaml
+- route:
+    id: get-employee-route
+    from:
+      uri: direct:get-employee-route
+      steps:
+        - log:
+            message: "Fetching employee ${header.Wanaku.employeeId}"
+        - toD: "https://api.example.com/employees/${header.Wanaku.employeeId}?history=${header.Wanaku.includeHistory}"
+```
+
+> [!NOTE]
+> Automatic mapping is ideal for quick prototypes or when you want all parameters passed through without explicit control.
+
+##### Explicit Mapping (Filtered)
+
+When you define `properties` with `mapping` elements, only those explicitly mapped parameters are passed to the Camel route. 
+This provides fine-grained control over parameter names and validation.
+
+**Example tool definition with explicit mappings:**
+
+```yaml
+mcp:
+  tools:
+    - initiate-employee-promotion:
+        route:
+          id: "route-3103"
+        description: "Initiate the promotion process for an employee"
+        properties:
+          - name: employee
+            type: string
+            description: The employee ID to promote
+            required: true
+            mapping:
+              type: header
+              name: EMPLOYEE
+          - name: newLevel
+            type: string
+            description: The new organizational level
+            required: true
+            mapping:
+              type: header
+              name: NEW_LEVEL
+```
+
+**How it works:**
+
+When invoked with parameters:
+
+```json
+{
+  "employee": "EMP-789",
+  "newLevel": "Senior Manager"
+}
+```
+
+The capability creates these Camel headers:
+
+- `EMPLOYEE` → `"EMP-789"`
+- `NEW_LEVEL` → `"Senior Manager"`
+
+**Accessing parameters in Camel routes:**
+
+```yaml
+- route:
+    id: route-3103
+    from:
+      uri: direct:route-3103
+      steps:
+        - log:
+            message: "Promoting ${header.EMPLOYEE} to ${header.NEW_LEVEL}"
+        - setHeader:
+            name: CamelHttpMethod
+            constant: POST
+        - toD: "https://hr-api.example.com/promotions?emp=${header.EMPLOYEE}&level=${header.NEW_LEVEL}"
+```
+
+> [!IMPORTANT]
+> With explicit mapping, **only** the defined properties are mapped. Any additional parameters sent by the AI agent will be ignored.
+
+##### Mapping Configuration
+
+The `mapping` element supports the following options:
+
+- **`type`**: The mapping type
+  - `header`: Map to a Camel header (most common)
+  - Additional types may be supported in future versions
+- **`name`**: The target header name in the Camel exchange
+
+##### Choosing a Mapping Strategy
+
+| Strategy | When to Use | Pros | Cons |
+|----------|-------------|------|------|
+| **Automatic** | Quick prototypes, flexible parameter sets | Simple configuration, all parameters available | Less control, `Wanaku.` prefix required in routes |
+| **Explicit** | Production use, strict API contracts | Full control over naming, validation, documentation | More verbose configuration, must update for new parameters |
+
+**Best Practices:**
+
+1. **Use automatic mapping** during development and prototyping
+2. **Switch to explicit mapping** for production deployments when you need:
+   - Custom header names without prefixes
+   - Parameter validation and required fields
+   - Clear API documentation for tool consumers
+   - To restrict which parameters are passed to backend systems
+3. **Never mix both**: Either define properties with mappings (explicit) OR omit properties entirely (automatic)
 
 ### Handling Dependencies 
 
