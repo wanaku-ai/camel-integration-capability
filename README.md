@@ -77,7 +77,7 @@ The capability service:
        from:
          uri: direct:get-employee-info
          steps:
-           - to: https://api.example.com/employees/${header.employeeId}
+           - toD: https://api.example.com/employees/${header.Wanaku.employeeId}
    ```
 
 3. **Prepare route exposure rules** (example `my-rules.yaml`):
@@ -89,6 +89,11 @@ The capability service:
              id: get-employee-info
             description: "Fetches core profile data for a specific employee"
    ```
+
+   > [!NOTE]
+   > This example uses automatic parameter mapping. 
+   > All MCP parameters are mapped to Camel headers with the `Wanaku.` prefix (e.g., `employeeId` → `Wanaku.employeeId`). 
+   > For explicit control over parameter names, see the [Usage Guide](docs/usage.md#parameter-to-header-mapping).
 
 4. **Run the capability**:
    ```bash

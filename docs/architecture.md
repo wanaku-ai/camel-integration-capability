@@ -287,6 +287,31 @@ sequenceDiagram
 - Requires network access at startup
 - Potential version conflicts if not carefully managed
 
+### 7. Flexible Parameter Mapping
+
+**Decision**: Support both automatic and explicit parameter-to-header mapping strategies.
+
+**Rationale**:
+- **Automatic mapping** (default): All MCP parameters automatically map to Camel headers with `Wanaku.` prefix
+  - Simplifies development and prototyping
+  - No configuration needed for basic use cases
+  - All parameters are available to routes
+- **Explicit mapping**: Properties with defined mappings control exactly what gets passed
+  - Production-grade control over parameter names
+  - Validation and documentation through schema
+  - Security through parameter filtering
+
+**Implementation**:
+The `HeaderMapperFactory` selects the appropriate mapper:
+- `NoopHeaderMapper`: When tool definition is null (no headers)
+- `AutoMapper`: When properties are not defined (all parameters with `Wanaku.` prefix)
+- `FilteredMapper`: When properties with mappings are defined (explicit control)
+
+**Trade-offs**:
+- Automatic mapping is convenient but requires `Wanaku.` prefix in routes
+- Explicit mapping is more verbose but provides better control and documentation
+- Users must choose one strategy per tool (mixing is not supported)
+
 ## Integration Points
 
 ### Wanaku Ecosystem Integration
