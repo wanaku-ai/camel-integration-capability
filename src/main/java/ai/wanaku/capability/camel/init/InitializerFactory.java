@@ -25,5 +25,4 @@ public final class InitializerFactory {
         // Examples: git@github.com:user/repo.git or https://github.com/user/repo.git
         return new GitInitializer(normalizedInitFrom, dataDir);
     }
-
 }

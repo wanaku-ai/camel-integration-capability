@@ -27,11 +27,8 @@ public class ResourceDownloaderCallback implements DiscoveryCallback {
         this.downloaderFactory = downloaderFactory;
     }
 
-
     @Override
-    public void onPing(RegistrationManager manager, ServiceTarget target, int status) {
-
-    }
+    public void onPing(RegistrationManager manager, ServiceTarget target, int status) {}
 
     @Override
     public void onRegistration(RegistrationManager manager, ServiceTarget target) {
@@ -39,9 +36,7 @@ public class ResourceDownloaderCallback implements DiscoveryCallback {
     }
 
     @Override
-    public void onDeregistration(RegistrationManager manager, ServiceTarget target, int status) {
-
-    }
+    public void onDeregistration(RegistrationManager manager, ServiceTarget target, int status) {}
 
     private void downloadResources() {
         if (resources == null || resources.isEmpty()) {
@@ -58,7 +53,10 @@ public class ResourceDownloaderCallback implements DiscoveryCallback {
                     downloader.downloadResource(resourceName, downloadedResources);
                 } catch (WanakuWebException e) {
                     if (e.getStatusCode() == 404) {
-                        LOG.error("Failed to download resource (resource not found) '{}': {}", resourceName, e.getMessage());
+                        LOG.error(
+                                "Failed to download resource (resource not found) '{}': {}",
+                                resourceName,
+                                e.getMessage());
                     } else {
                         LOG.error("Failed to download resource '{}': {}", resourceName, e.getMessage());
                     }

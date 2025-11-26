@@ -14,21 +14,24 @@ public class McpUtil {
 
     private McpUtil() {}
 
-    public static Map<String, Object> convertMcpMapToCamelHeaders(Definition toolDefinition, Map<String, String> argumentsMap) {
+    public static Map<String, Object> convertMcpMapToCamelHeaders(
+            Definition toolDefinition, Map<String, String> argumentsMap) {
         final List<Property> properties = toolDefinition.getProperties();
         Map<String, Object> headers = new HashMap<>();
 
-        for  (Property property : properties) {
+        for (Property property : properties) {
             final Mapping mapping = property.getMapping();
             if (mapping != null) {
                 final String mappingType = mapping.getType();
 
                 if (mappingType.equals("header")) {
-                    LOG.info("Adding header named {} with value {}", mapping.getName(), argumentsMap.get(property.getName()));
+                    LOG.info(
+                            "Adding header named {} with value {}",
+                            mapping.getName(),
+                            argumentsMap.get(property.getName()));
                     headers.put(mapping.getName(), argumentsMap.get(property.getName()));
                 }
             }
-
         }
         return headers;
     }

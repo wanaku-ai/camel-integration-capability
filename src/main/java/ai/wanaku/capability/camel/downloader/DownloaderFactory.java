@@ -30,7 +30,9 @@ public class DownloaderFactory {
         return switch (scheme) {
             case "datastore" -> getDataStoreDownloader();
             case "file" -> getFileDownloader();
-            default -> throw new IllegalArgumentException("Unsupported URI scheme: " + scheme + ". Supported schemes: datastore://, file://");
+            default ->
+                throw new IllegalArgumentException(
+                        "Unsupported URI scheme: " + scheme + ". Supported schemes: datastore://, file://");
         };
     }
 

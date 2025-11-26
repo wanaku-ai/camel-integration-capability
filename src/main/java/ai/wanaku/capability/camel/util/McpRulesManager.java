@@ -58,7 +58,9 @@ public class McpRulesManager {
 
             // Register resources
             if (mcp.getResources() != null) {
-                LOG.info("Registering {} resources", mcp.getResources().getDefinitions().size());
+                LOG.info(
+                        "Registering {} resources",
+                        mcp.getResources().getDefinitions().size());
                 registerDefinitions(mcp.getResources().getDefinitions(), resourceTransformer);
             }
         } else {

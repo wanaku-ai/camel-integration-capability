@@ -27,8 +27,8 @@ public class ProvisionBase extends ProvisionerGrpc.ProvisionerImplBase {
 
         responseObserver.onNext(ProvisionReply.newBuilder()
                 .putAllProperties(properties())
-                        .setConfigurationUri(provision.configurationsUri().toString())
-                        .setSecretUri(provision.secretsUri().toString())
+                .setConfigurationUri(provision.configurationsUri().toString())
+                .setSecretUri(provision.secretsUri().toString())
                 .build());
         responseObserver.onCompleted();
     }

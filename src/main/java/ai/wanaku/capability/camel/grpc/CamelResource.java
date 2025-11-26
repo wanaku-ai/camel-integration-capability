@@ -1,11 +1,11 @@
 package ai.wanaku.capability.camel.grpc;
 
-import ai.wanaku.core.exchange.ResourceAcquirerGrpc;
-import ai.wanaku.core.exchange.ResourceReply;
-import ai.wanaku.core.exchange.ResourceRequest;
 import ai.wanaku.capability.camel.WanakuCamelManager;
 import ai.wanaku.capability.camel.model.Definition;
 import ai.wanaku.capability.camel.model.McpSpec;
+import ai.wanaku.core.exchange.ResourceAcquirerGrpc;
+import ai.wanaku.core.exchange.ResourceReply;
+import ai.wanaku.core.exchange.ResourceRequest;
 import io.grpc.stub.StreamObserver;
 import java.net.URI;
 import java.util.Collections;
@@ -47,10 +47,10 @@ public class CamelResource extends ResourceAcquirerGrpc.ResourceAcquirerImplBase
 
         if (definition == null) {
             LOG.error("No resource definition found for: {}", host);
-            responseObserver.onNext(
-                    ResourceReply.newBuilder()
-                            .setIsError(true)
-                            .addAllContent(List.of("No resource definition found for: " + host)).build());
+            responseObserver.onNext(ResourceReply.newBuilder()
+                    .setIsError(true)
+                    .addAllContent(List.of("No resource definition found for: " + host))
+                    .build());
             responseObserver.onCompleted();
             return;
         }
@@ -60,18 +60,19 @@ public class CamelResource extends ResourceAcquirerGrpc.ResourceAcquirerImplBase
         try {
             final String endpointUri = route.getEndpoint().getEndpointUri();
             LOG.info("Consuming from {} as {}", endpointUri, routeUri);
-            final ConsumerTemplate consumerTemplate = camelManager.getCamelContext().createConsumerTemplate();
+            final ConsumerTemplate consumerTemplate =
+                    camelManager.getCamelContext().createConsumerTemplate();
             Object ret = consumerTemplate.receiveBody(endpointUri, 5000, String.class);
             if (ret != null) {
-                responseObserver.onNext(
-                        ResourceReply.newBuilder()
-                                .setIsError(false)
-                                .addAllContent(List.of(ret.toString())).build());
+                responseObserver.onNext(ResourceReply.newBuilder()
+                        .setIsError(false)
+                        .addAllContent(List.of(ret.toString()))
+                        .build());
             } else {
-                responseObserver.onNext(
-                        ResourceReply.newBuilder()
-                                .setIsError(true)
-                                .addAllContent(List.of("No response for the requested resource call")).build());
+                responseObserver.onNext(ResourceReply.newBuilder()
+                        .setIsError(true)
+                        .addAllContent(List.of("No response for the requested resource call"))
+                        .build());
             }
 
             responseObserver.onCompleted();
@@ -79,6 +80,4 @@ public class CamelResource extends ResourceAcquirerGrpc.ResourceAcquirerImplBase
             throw new RuntimeException(e);
         }
     }
-
-
 }

@@ -2,7 +2,7 @@ package ai.wanaku.capability.camel.downloader;
 
 import java.net.URI;
 
-public record ResourceRefs <T>(ResourceType resourceType, T ref) {
+public record ResourceRefs<T>(ResourceType resourceType, T ref) {
 
     public static ResourceRefs<URI> newRoutesRef(String routesRef) {
         return new ResourceRefs<>(ResourceType.ROUTES_REF, URI.create(routesRef));
@@ -15,5 +15,4 @@ public record ResourceRefs <T>(ResourceType resourceType, T ref) {
     public static ResourceRefs<URI> newDependencyRef(String dependencyRef) {
         return new ResourceRefs<>(ResourceType.DEPENDENCY_REF, URI.create(dependencyRef));
     }
-
 }

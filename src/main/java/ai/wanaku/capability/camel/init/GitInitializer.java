@@ -2,7 +2,6 @@ package ai.wanaku.capability.camel.init;
 
 import java.io.File;
 import java.io.IOException;
-import java.nio.file.Files;
 import java.nio.file.Path;
 import org.eclipse.jgit.api.Git;
 import org.eclipse.jgit.api.errors.GitAPIException;
@@ -37,8 +36,7 @@ public class GitInitializer implements Initializer {
                 return;
             } catch (IOException e) {
                 throw new IOException(
-                        "Existing cloned repository at " + clonedRepoPath + " is not a valid Git repository",
-                        e);
+                        "Existing cloned repository at " + clonedRepoPath + " is not a valid Git repository", e);
             }
         }
 

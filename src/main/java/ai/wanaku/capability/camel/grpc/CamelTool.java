@@ -1,12 +1,12 @@
 package ai.wanaku.capability.camel.grpc;
 
-import ai.wanaku.core.exchange.ToolInvokeReply;
-import ai.wanaku.core.exchange.ToolInvokeRequest;
-import ai.wanaku.core.exchange.ToolInvokerGrpc;
 import ai.wanaku.capability.camel.WanakuCamelManager;
 import ai.wanaku.capability.camel.model.Definition;
 import ai.wanaku.capability.camel.model.McpSpec;
 import ai.wanaku.capability.camel.util.McpUtil;
+import ai.wanaku.core.exchange.ToolInvokeReply;
+import ai.wanaku.core.exchange.ToolInvokeRequest;
+import ai.wanaku.core.exchange.ToolInvokerGrpc;
 import io.grpc.stub.StreamObserver;
 import java.net.URI;
 import java.util.Collections;
@@ -27,7 +27,6 @@ public class CamelTool extends ToolInvokerGrpc.ToolInvokerImplBase {
         this.camelManager = camelManager;
         this.mcpSpec = spec;
     }
-
 
     public Map<String, Definition> getTools(McpSpec mcpSpec) {
         if (mcpSpec == null || mcpSpec.getMcp() == null || mcpSpec.getMcp().getTools() == null) {
@@ -50,10 +49,10 @@ public class CamelTool extends ToolInvokerGrpc.ToolInvokerImplBase {
 
         if (toolDefinition == null) {
             LOG.error("No tool definition found for: {}", host);
-            responseObserver.onNext(
-                    ToolInvokeReply.newBuilder()
-                            .setIsError(true)
-                            .addAllContent(List.of("No tool or resource definition found for: " + host)).build());
+            responseObserver.onNext(ToolInvokeReply.newBuilder()
+                    .setIsError(true)
+                    .addAllContent(List.of("No tool or resource definition found for: " + host))
+                    .build());
             responseObserver.onCompleted();
             return;
         }
@@ -73,19 +72,16 @@ public class CamelTool extends ToolInvokerGrpc.ToolInvokerImplBase {
             o = producerTemplate.requestBody(endpointUri, request.getBody());
         }
 
-        responseObserver.onNext(
-                ToolInvokeReply.newBuilder()
-                        .setIsError(false)
-                        .addAllContent(List.of(o.toString())).build());
+        responseObserver.onNext(ToolInvokeReply.newBuilder()
+                .setIsError(false)
+                .addAllContent(List.of(o.toString()))
+                .build());
 
         responseObserver.onCompleted();
-
     }
 
     private static Map<String, Object> extractHeaderParameters(ToolInvokeRequest request, Definition toolDefinition) {
         final Map<String, String> argumentsMap = request.getArgumentsMap();
         return McpUtil.convertMcpMapToCamelHeaders(toolDefinition, argumentsMap);
     }
-
-
 }
