@@ -23,7 +23,8 @@ public class FileDownloader implements Downloader {
     }
 
     @Override
-    public void downloadResource(ResourceRefs<URI> resourceName, Map<ResourceType, Path> downloadedResources) throws Exception {
+    public void downloadResource(ResourceRefs<URI> resourceName, Map<ResourceType, Path> downloadedResources)
+            throws Exception {
         final URI fileUri = resourceName.ref();
         LOG.debug("Processing file resource: {}", fileUri);
 
@@ -45,6 +46,9 @@ public class FileDownloader implements Downloader {
         Files.copy(sourceFile, targetPath, StandardCopyOption.REPLACE_EXISTING);
         downloadedResources.put(resourceName.resourceType(), targetPath);
 
-        LOG.info("Successfully copied file resource '{}' to {}", sourceFile.toAbsolutePath(), targetPath.toAbsolutePath());
+        LOG.info(
+                "Successfully copied file resource '{}' to {}",
+                sourceFile.toAbsolutePath(),
+                targetPath.toAbsolutePath());
     }
 }

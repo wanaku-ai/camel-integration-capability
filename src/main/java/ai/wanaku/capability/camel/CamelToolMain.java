@@ -48,59 +48,114 @@ import picocli.CommandLine;
 public class CamelToolMain implements Callable<Integer> {
     private static final Logger LOG = LoggerFactory.getLogger(CamelToolMain.class);
 
-    @CommandLine.Option(names = { "-h", "--help" }, usageHelp = true, description = "display a help message")
+    @CommandLine.Option(
+            names = {"-h", "--help"},
+            usageHelp = true,
+            description = "display a help message")
     private boolean helpRequested = false;
 
-    @CommandLine.Option(names = {"--registration-url"}, description = "The registration URL to use", required = true)
+    @CommandLine.Option(
+            names = {"--registration-url"},
+            description = "The registration URL to use",
+            required = true)
     private String registrationUrl;
 
-    @CommandLine.Option(names = {"--grpc-port"}, description = "The gRPC port to use", defaultValue = "9190")
+    @CommandLine.Option(
+            names = {"--grpc-port"},
+            description = "The gRPC port to use",
+            defaultValue = "9190")
     private int grpcPort;
 
-    @CommandLine.Option(names = {"--registration-announce-address"}, description = "The announce address to use when registering",
-        defaultValue = "auto", required = true)
+    @CommandLine.Option(
+            names = {"--registration-announce-address"},
+            description = "The announce address to use when registering",
+            defaultValue = "auto",
+            required = true)
     private String registrationAnnounceAddress;
 
-    @CommandLine.Option(names = {"--name"}, description = "The service name to use", defaultValue = "camel")
+    @CommandLine.Option(
+            names = {"--name"},
+            description = "The service name to use",
+            defaultValue = "camel")
     private String name;
 
-    @CommandLine.Option(names = {"--retries"}, description = "The maximum number of retries for registration", defaultValue = "12")
+    @CommandLine.Option(
+            names = {"--retries"},
+            description = "The maximum number of retries for registration",
+            defaultValue = "12")
     private int retries;
 
-    @CommandLine.Option(names = {"--wait-seconds"}, description = "The retry wait seconds between attempts", defaultValue = "5")
+    @CommandLine.Option(
+            names = {"--wait-seconds"},
+            description = "The retry wait seconds between attempts",
+            defaultValue = "5")
     private int retryWaitSeconds;
 
-    @CommandLine.Option(names = {"--initial-delay"}, description = "Initial delay for registration attempts in seconds", defaultValue = "5")
+    @CommandLine.Option(
+            names = {"--initial-delay"},
+            description = "Initial delay for registration attempts in seconds",
+            defaultValue = "5")
     private long initialDelay;
 
-    @CommandLine.Option(names = {"--period"}, description = "Period between registration attempts in seconds", defaultValue = "5")
+    @CommandLine.Option(
+            names = {"--period"},
+            description = "Period between registration attempts in seconds",
+            defaultValue = "5")
     private long period;
 
-    @CommandLine.Option(names = {"--routes-ref"}, description = "The reference path to the Apache Camel routes YAML file. Supports datastore:// and file:// schemes (e.g., datastore://routes.camel.yaml or file:///path/to/routes.yaml)", required = true)
+    @CommandLine.Option(
+            names = {"--routes-ref"},
+            description =
+                    "The reference path to the Apache Camel routes YAML file. Supports datastore:// and file:// schemes (e.g., datastore://routes.camel.yaml or file:///path/to/routes.yaml)",
+            required = true)
     private String routesRef;
 
-    @CommandLine.Option(names = {"--rules-ref"}, description = "The path to the YAML file with route exposure rules. Supports datastore:// and file:// schemes (e.g., datastore://routes-expose.yaml or file:///path/to/rules.yaml)")
+    @CommandLine.Option(
+            names = {"--rules-ref"},
+            description =
+                    "The path to the YAML file with route exposure rules. Supports datastore:// and file:// schemes (e.g., datastore://routes-expose.yaml or file:///path/to/rules.yaml)")
     private String rulesRef;
 
-    @CommandLine.Option(names = {"--token-endpoint"}, description = "The base URL for the authentication", required = false)
+    @CommandLine.Option(
+            names = {"--token-endpoint"},
+            description = "The base URL for the authentication",
+            required = false)
     private String tokenEndpoint;
 
-    @CommandLine.Option(names = {"--client-id"}, description = "The client ID authentication", required = true)
+    @CommandLine.Option(
+            names = {"--client-id"},
+            description = "The client ID authentication",
+            required = true)
     private String clientId;
 
-    @CommandLine.Option(names = {"--client-secret"}, description = "The client secret authentication", required = true)
+    @CommandLine.Option(
+            names = {"--client-secret"},
+            description = "The client secret authentication",
+            required = true)
     private String clientSecret;
 
-    @CommandLine.Option(names = {"--no-wait"}, description = "Do not wait forever until the files are available", defaultValue = "false")
+    @CommandLine.Option(
+            names = {"--no-wait"},
+            description = "Do not wait forever until the files are available",
+            defaultValue = "false")
     private boolean noWait;
 
-    @CommandLine.Option(names = {"-d", "--dependencies"}, description = "The list of dependencies to include in runtime. Supports datastore:// and file:// schemes (comma-separated)")
+    @CommandLine.Option(
+            names = {"-d", "--dependencies"},
+            description =
+                    "The list of dependencies to include in runtime. Supports datastore:// and file:// schemes (comma-separated)")
     private String dependenciesList;
 
-    @CommandLine.Option(names = {"--data-dir"}, description = "The directory where downloaded files will be saved", defaultValue = "/tmp")
+    @CommandLine.Option(
+            names = {"--data-dir"},
+            description = "The directory where downloaded files will be saved",
+            defaultValue = "/tmp")
     private String dataDir;
 
-    @CommandLine.Option(names = {"--init-from"}, description = "Git repository URL to clone during initialization. Cloned files can be referenced using file:// (e.g., git@github.com:wanaku-ai/wanaku-recipes.git)")
+    @CommandLine.Option(
+            names = {"--init-from"},
+            description =
+                    "Git repository URL to clone during initialization. Cloned files can be referenced using file:// (e.g., git@github.com:wanaku-ai/wanaku-recipes.git)")
     private String initFrom;
 
     public static void main(String[] args) {
@@ -109,7 +164,9 @@ public class CamelToolMain implements Callable<Integer> {
         System.exit(exitCode);
     }
 
-    public RegistrationManager newRegistrationManager(ServiceTarget serviceTarget, ResourceDownloaderCallback resourcesDownloaderCallback,
+    public RegistrationManager newRegistrationManager(
+            ServiceTarget serviceTarget,
+            ResourceDownloaderCallback resourcesDownloaderCallback,
             ServiceConfig serviceConfig) {
         DiscoveryServiceHttpClient discoveryServiceHttpClient = new DiscoveryServiceHttpClient(serviceConfig);
 
@@ -121,8 +178,8 @@ public class CamelToolMain implements Callable<Integer> {
                 .waitSeconds(retryWaitSeconds)
                 .build();
 
-        ZeroDepRegistrationManager
-                registrationManager = new ZeroDepRegistrationManager(discoveryServiceHttpClient, serviceTarget, registrationConfig, new JacksonDeserializer());
+        ZeroDepRegistrationManager registrationManager = new ZeroDepRegistrationManager(
+                discoveryServiceHttpClient, serviceTarget, registrationConfig, new JacksonDeserializer());
 
         registrationManager.addCallBack(resourcesDownloaderCallback);
         registrationManager.start();
@@ -152,14 +209,11 @@ public class CamelToolMain implements Callable<Integer> {
         Initializer initializer = InitializerFactory.createInitializer(initFrom, dataDirPath);
         initializer.initialize();
 
-        final ResourceRefs<URI> pathResourceRefs =
-                ResourceRefs.newRoutesRef(routesRef);
+        final ResourceRefs<URI> pathResourceRefs = ResourceRefs.newRoutesRef(routesRef);
 
-        final ResourceRefs<URI> pathRulesRefs1 =
-                ResourceRefs.newRulesRef(rulesRef);
+        final ResourceRefs<URI> pathRulesRefs1 = ResourceRefs.newRulesRef(rulesRef);
 
-        final ResourceRefs<URI> depPath =
-                ResourceRefs.newDependencyRef(dependenciesList);
+        final ResourceRefs<URI> depPath = ResourceRefs.newDependencyRef(dependenciesList);
 
         final ServiceConfig serviceConfig = DefaultServiceConfig.Builder.newBuilder()
                 .baseUrl(registrationUrl)
@@ -171,27 +225,29 @@ public class CamelToolMain implements Callable<Integer> {
 
         ServicesHttpClient httpClient = createClient(serviceConfig);
         DownloaderFactory downloaderFactory = new DownloaderFactory(httpClient, dataDirPath);
-        ResourceDownloaderCallback resourcesDownloaderCallback = new ResourceDownloaderCallback(downloaderFactory,
-                List.of(pathResourceRefs, pathRulesRefs1, depPath));
+        ResourceDownloaderCallback resourcesDownloaderCallback =
+                new ResourceDownloaderCallback(downloaderFactory, List.of(pathResourceRefs, pathRulesRefs1, depPath));
 
         final ServiceTarget toolInvokerTarget = newServiceTargetTarget();
-        RegistrationManager registrationManager = newRegistrationManager(toolInvokerTarget, resourcesDownloaderCallback, serviceConfig);
+        RegistrationManager registrationManager =
+                newRegistrationManager(toolInvokerTarget, resourcesDownloaderCallback, serviceConfig);
 
         if (!resourcesDownloaderCallback.waitForDownloads()) {
             LOG.error("Failed to download required resources (check the logs)");
             return 1;
         }
 
-        final Map<ResourceType, Path> downloadedResources =
-                resourcesDownloaderCallback.getDownloadedResources();
+        final Map<ResourceType, Path> downloadedResources = resourcesDownloaderCallback.getDownloadedResources();
         WanakuCamelManager camelManager = new WanakuCamelManager(downloadedResources);
 
         McpSpec mcpSpec = createMcpSpec(httpClient, downloadedResources);
 
         try {
 
-            final ServerBuilder<?> serverBuilder = Grpc.newServerBuilderForPort(grpcPort, InsecureServerCredentials.create());
-            final Server server = serverBuilder.addService(new CamelTool(camelManager, mcpSpec))
+            final ServerBuilder<?> serverBuilder =
+                    Grpc.newServerBuilderForPort(grpcPort, InsecureServerCredentials.create());
+            final Server server = serverBuilder
+                    .addService(new CamelTool(camelManager, mcpSpec))
                     .addService(new CamelResource(camelManager, mcpSpec))
                     .addService(new ProvisionBase(name))
                     .build();
@@ -205,9 +261,9 @@ public class CamelToolMain implements Callable<Integer> {
         return 0;
     }
 
-    public McpSpec createMcpSpec(ServicesHttpClient servicesClient,
-            Map<ResourceType, Path> downloadedResources) {
-        String rulesRef = downloadedResources.get(ResourceType.RULES_REF).toAbsolutePath().toString();
+    public McpSpec createMcpSpec(ServicesHttpClient servicesClient, Map<ResourceType, Path> downloadedResources) {
+        String rulesRef =
+                downloadedResources.get(ResourceType.RULES_REF).toAbsolutePath().toString();
         McpRulesManager mcpRulesManager = new McpRulesManager(name, rulesRef);
         final WanakuToolTransformer toolTransformer =
                 new WanakuToolTransformer(name, new WanakuToolRuleProcessor(servicesClient));

@@ -23,13 +23,13 @@ public class DataStoreDownloader implements Downloader {
     }
 
     @Override
-    public void downloadResource(ResourceRefs<URI> resourceName, Map<ResourceType, Path> downloadedResources) throws Exception {
+    public void downloadResource(ResourceRefs<URI> resourceName, Map<ResourceType, Path> downloadedResources)
+            throws Exception {
         final String resourceFileName = resourceName.ref().getHost();
         LOG.debug("Downloading resource: {}", resourceName.ref().getPath());
 
         // Retrieve the data stores from the API
-        WanakuResponse<List<DataStore>> response = servicesHttpClient
-                .getDataStoresByName(resourceFileName);
+        WanakuResponse<List<DataStore>> response = servicesHttpClient.getDataStoresByName(resourceFileName);
 
         if (response == null || response.data() == null || response.data().isEmpty()) {
             LOG.warn("No data found for resource: {}", resourceName);

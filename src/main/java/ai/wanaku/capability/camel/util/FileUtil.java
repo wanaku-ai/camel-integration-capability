@@ -41,8 +41,8 @@ public final class FileUtil {
             for (WatchEvent<?> event : watchKey.pollEvents()) {
 
                 /*
-                  It should return a Path object for ENTRY_CREATE and ENTRY_MODIFY events
-                 */
+                 It should return a Path object for ENTRY_CREATE and ENTRY_MODIFY events
+                */
                 Object context = event.context();
                 if (!(context instanceof Path contextPath)) {
                     LOG.warn("Received an unexpected event of kind {} for context {}", event.kind(), event.context());
@@ -50,17 +50,25 @@ public final class FileUtil {
                 }
 
                 if (contextPath.toString().equals(input.getName())) {
-                    LOG.debug("File at the path {} had a matching event of type: {}", input.getParentFile().getPath(),
+                    LOG.debug(
+                            "File at the path {} had a matching event of type: {}",
+                            input.getParentFile().getPath(),
                             event.kind());
 
-                    if (event.kind() == StandardWatchEventKinds.ENTRY_CREATE ||  event.kind() == StandardWatchEventKinds.ENTRY_MODIFY) {
-                        LOG.info("File at the path {} was created or modified", input.getParentFile().getPath());
+                    if (event.kind() == StandardWatchEventKinds.ENTRY_CREATE
+                            || event.kind() == StandardWatchEventKinds.ENTRY_MODIFY) {
+                        LOG.info(
+                                "File at the path {} was created or modified",
+                                input.getParentFile().getPath());
 
                         break;
                     }
                 } else {
-                    LOG.debug("Ignoring a watch event at build path {} of type {} for file: {}", input.getParentFile().getPath(),
-                            event.kind(), contextPath.getFileName());
+                    LOG.debug(
+                            "Ignoring a watch event at build path {} of type {} for file: {}",
+                            input.getParentFile().getPath(),
+                            event.kind(),
+                            contextPath.getFileName());
                 }
             }
             watchKey.reset();

@@ -17,16 +17,15 @@
 
 package ai.wanaku.capability.camel.util;
 
+import static org.junit.jupiter.api.Assertions.*;
+
 import ai.wanaku.capability.camel.model.Definition;
 import ai.wanaku.capability.camel.model.Mapping;
 import ai.wanaku.capability.camel.model.McpSpec;
 import ai.wanaku.capability.camel.model.Property;
-import org.junit.jupiter.api.Test;
-
 import java.io.InputStream;
 import java.util.Map;
-
-import static org.junit.jupiter.api.Assertions.*;
+import org.junit.jupiter.api.Test;
 
 class McpRulesReaderTest {
 
@@ -95,17 +94,22 @@ class McpRulesReaderTest {
         assertEquals(1, resources.size(), "Should have 1 resource defined");
 
         // Verify employee-performance-history resource
-        assertTrue(resources.containsKey("employee-performance-history"), "Should contain employee-performance-history resource");
+        assertTrue(
+                resources.containsKey("employee-performance-history"),
+                "Should contain employee-performance-history resource");
         Definition performanceHistory = resources.get("employee-performance-history");
         assertNotNull(performanceHistory, "employee-performance-history should not be null");
         assertEquals("Obtain the employee performance history", performanceHistory.getDescription());
-        assertEquals("direct:employee-performance-history", performanceHistory.getRoute().getUri());
+        assertEquals(
+                "direct:employee-performance-history",
+                performanceHistory.getRoute().getUri());
 
         // Verify properties of employee-performance-history
         assertNotNull(performanceHistory.getProperties(), "Properties should not be null");
         assertEquals(1, performanceHistory.getProperties().size(), "Should have 1 property");
 
-        Property performanceEmployeeProperty = performanceHistory.getProperties().get(0);
+        Property performanceEmployeeProperty =
+                performanceHistory.getProperties().get(0);
         assertEquals("employee", performanceEmployeeProperty.getName());
         assertEquals("string", performanceEmployeeProperty.getType());
         assertEquals("The employee to obtain the performance history", performanceEmployeeProperty.getDescription());

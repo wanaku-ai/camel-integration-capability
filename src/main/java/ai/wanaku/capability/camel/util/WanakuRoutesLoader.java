@@ -69,7 +69,8 @@ public class WanakuRoutesLoader {
         if (dependenciesList != null) {
             final String[] dependencies = dependenciesList.split(",");
             for (String dependency : dependencies) {
-                downloader.downloadDependency(GavUtil.group(dependency), GavUtil.artifact(dependency), GavUtil.version(dependency));
+                downloader.downloadDependency(
+                        GavUtil.group(dependency), GavUtil.artifact(dependency), GavUtil.version(dependency));
             }
 
             cl.getDownloaded().forEach(d -> LOG.debug("Downloaded {}", d));
