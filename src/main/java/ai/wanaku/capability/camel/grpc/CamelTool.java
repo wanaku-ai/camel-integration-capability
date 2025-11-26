@@ -3,7 +3,8 @@ package ai.wanaku.capability.camel.grpc;
 import ai.wanaku.capability.camel.WanakuCamelManager;
 import ai.wanaku.capability.camel.model.Definition;
 import ai.wanaku.capability.camel.model.McpSpec;
-import ai.wanaku.capability.camel.util.McpUtil;
+import ai.wanaku.capability.camel.spec.rules.tools.mapping.HeaderMapper;
+import ai.wanaku.capability.camel.spec.rules.tools.mapping.HeaderMapperFactory;
 import ai.wanaku.core.exchange.ToolInvokeReply;
 import ai.wanaku.core.exchange.ToolInvokeRequest;
 import ai.wanaku.core.exchange.ToolInvokerGrpc;
@@ -57,8 +58,6 @@ public class CamelTool extends ToolInvokerGrpc.ToolInvokerImplBase {
             return;
         }
 
-        final Map<String, Object> headers = extractHeaderParameters(request, toolDefinition);
-
         final ProducerTemplate producerTemplate = camelManager.getCamelContext().createProducerTemplate();
 
         final String routeId = toolDefinition.getRoute().getId();
@@ -66,7 +65,10 @@ public class CamelTool extends ToolInvokerGrpc.ToolInvokerImplBase {
         final String endpointUri = route.getEndpoint().getEndpointUri();
 
         final Object o;
-        if (!headers.isEmpty()) {
+
+        if (!request.getArgumentsMap().isEmpty()) {
+            final Map<String, Object> headers = extractHeaderParameters(request, toolDefinition);
+
             o = producerTemplate.requestBodyAndHeaders(endpointUri, request.getBody(), headers);
         } else {
             o = producerTemplate.requestBody(endpointUri, request.getBody());
@@ -81,7 +83,8 @@ public class CamelTool extends ToolInvokerGrpc.ToolInvokerImplBase {
     }
 
     private static Map<String, Object> extractHeaderParameters(ToolInvokeRequest request, Definition toolDefinition) {
-        final Map<String, String> argumentsMap = request.getArgumentsMap();
-        return McpUtil.convertMcpMapToCamelHeaders(toolDefinition, argumentsMap);
+        HeaderMapper headerMapper = HeaderMapperFactory.create(toolDefinition);
+
+        return headerMapper.map(request, toolDefinition);
     }
 }
