@@ -16,6 +16,7 @@ import ai.wanaku.capabilities.sdk.security.TokenEndpoint;
 import ai.wanaku.capabilities.sdk.services.ServicesHttpClient;
 import ai.wanaku.capability.camel.downloader.DownloaderFactory;
 import ai.wanaku.capability.camel.downloader.ResourceDownloaderCallback;
+import ai.wanaku.capability.camel.downloader.ResourceListBuilder;
 import ai.wanaku.capability.camel.downloader.ResourceRefs;
 import ai.wanaku.capability.camel.downloader.ResourceType;
 import ai.wanaku.capability.camel.grpc.CamelResource;
@@ -143,7 +144,7 @@ public class CamelToolMain implements Callable<Integer> {
     @CommandLine.Option(
             names = {"-d", "--dependencies"},
             description =
-                    "The list of dependencies to include in runtime. Supports datastore:// and file:// schemes (comma-separated)")
+                    "The dependencies to include in runtime. Supports datastore:// and file:// schemes (comma-separated)")
     private String dependenciesList;
 
     @CommandLine.Option(
@@ -209,12 +210,6 @@ public class CamelToolMain implements Callable<Integer> {
         Initializer initializer = InitializerFactory.createInitializer(initFrom, dataDirPath);
         initializer.initialize();
 
-        final ResourceRefs<URI> pathResourceRefs = ResourceRefs.newRoutesRef(routesRef);
-
-        final ResourceRefs<URI> pathRulesRefs1 = ResourceRefs.newRulesRef(rulesRef);
-
-        final ResourceRefs<URI> depPath = ResourceRefs.newDependencyRef(dependenciesList);
-
         final ServiceConfig serviceConfig = DefaultServiceConfig.Builder.newBuilder()
                 .baseUrl(registrationUrl)
                 .serializer(new JacksonSerializer())
@@ -225,8 +220,15 @@ public class CamelToolMain implements Callable<Integer> {
 
         ServicesHttpClient httpClient = createClient(serviceConfig);
         DownloaderFactory downloaderFactory = new DownloaderFactory(httpClient, dataDirPath);
+
+        List<ResourceRefs<URI>> resources = ResourceListBuilder.newBuilder()
+                .addRoutesRef(routesRef)
+                .addRulesRef(rulesRef)
+                .addDependenciesRef(dependenciesList)
+                .build();
+
         ResourceDownloaderCallback resourcesDownloaderCallback =
-                new ResourceDownloaderCallback(downloaderFactory, List.of(pathResourceRefs, pathRulesRefs1, depPath));
+                new ResourceDownloaderCallback(downloaderFactory, resources);
 
         final ServiceTarget toolInvokerTarget = newServiceTargetTarget();
         RegistrationManager registrationManager =

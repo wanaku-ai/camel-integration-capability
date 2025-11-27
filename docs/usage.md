@@ -394,14 +394,19 @@ The `mapping` element supports the following options:
 ### Handling Dependencies 
 
 The capability only comes with a subset of the Apache Camel dependencies. 
-In many cases, it will be necessary to provide a list of additional dependencies required for running it.
+As such, when running it for the first time, the capability will automatically download the dependencies required for the 
+integration. 
+
+However, external dependencies, such as those containing the beans for your integration, 
+will have to be provided externally. 
+You can do so by providing a list of external dependencies to download and store that list in a text file.
 The capability can automatically download and include on the classpath all these dependencies.
 
-For instance, to include the `camel-http` and `camel-jackson` dependencies, you can create a text file 
+For instance, to include the `com.mycompany:beans-app1:2.0.0` and `com.mycompany:beans-support:1.5.0` dependencies, you can create a text file 
 with the following contents:
 
 ```
-org.apache.camel:camel-http:4.14.2,org.apache.camel:camel-jackson:4.14.2
+com.mycompany:beans-app1:2.0.0,com.mycompany:beans-support:1.5.0
 ```
 
 Then publish it to Wanaku's Data Store (or, git, if using the git initializer) and refer to the file accordingly
