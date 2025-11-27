@@ -18,12 +18,16 @@ public class WanakuCamelManager {
         context = new DefaultCamelContext();
 
         this.routesPath = downloadedResources.get(ResourceType.ROUTES_REF).toString();
-        String dependenciesPath =
-                downloadedResources.get(ResourceType.DEPENDENCY_REF).toString();
-        try {
-            this.dependenciesList = Files.readString(Path.of(dependenciesPath));
-        } catch (IOException e) {
-            throw new RuntimeException(e);
+        if (downloadedResources.containsKey(ResourceType.DEPENDENCY_REF)) {
+            String dependenciesPath =
+                    downloadedResources.get(ResourceType.DEPENDENCY_REF).toString();
+            try {
+                this.dependenciesList = Files.readString(Path.of(dependenciesPath));
+            } catch (IOException e) {
+                throw new RuntimeException(e);
+            }
+        } else {
+            this.dependenciesList = null;
         }
 
         loadRoutes();

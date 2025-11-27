@@ -1,0 +1,53 @@
+- route:
+    id: test-component-resolver
+    from:
+      uri: direct:test-component
+      steps:
+        - to: https://api.example.com/test
+
+- route:
+    id: test-dataformat-resolver
+    from:
+      uri: direct:test-dataformat
+      steps:
+        - marshal:
+            json: {}
+        - log: "Marshalled to JSON"
+
+- route:
+    id: test-language-resolver
+    from:
+      uri: direct:test-language
+      steps:
+        - setBody:
+            jsonpath: "$.employee.name"
+        - log: "Extracted name using JSONPath: ${body}"
+
+- route:
+    id: test-transformer-resolver
+    from:
+      uri: direct:test-transformer
+      steps:
+        - transform:
+            jq: ".employee"
+        - log: "Transformed using JQ"
+
+- route:
+    id: test-uri-factory-resolver
+    from:
+      uri: direct:test-uri-factory
+      steps:
+        - toD: "kafka:${header.topic}"
+
+- route:
+    id: test-groovy-with-dependency
+    from:
+      uri: direct:test-groovy
+      steps:
+        - setBody:
+            groovy:
+              expression: |
+                import com.github.curiousoddman.rgxgen.RgxGen
+                def rgxGen = new RgxGen('[a-z]{5}\\d{3}')
+                return rgxGen.generate()
+        - log: "Generated random string: ${body}"
