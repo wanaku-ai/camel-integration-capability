@@ -21,17 +21,29 @@ import org.apache.camel.CamelContext;
 import org.apache.camel.ExtendedCamelContext;
 import org.apache.camel.main.download.DependencyDownloader;
 import org.apache.camel.main.download.DependencyDownloaderClassLoader;
+import org.apache.camel.main.download.DependencyDownloaderComponentResolver;
+import org.apache.camel.main.download.DependencyDownloaderDataFormatResolver;
+import org.apache.camel.main.download.DependencyDownloaderLanguageResolver;
 import org.apache.camel.main.download.DependencyDownloaderRoutesLoader;
+import org.apache.camel.main.download.DependencyDownloaderTransformerResolver;
+import org.apache.camel.main.download.DependencyDownloaderUriFactoryResolver;
 import org.apache.camel.main.download.MavenDependencyDownloader;
+import org.apache.camel.spi.ComponentResolver;
+import org.apache.camel.spi.DataFormatResolver;
+import org.apache.camel.spi.LanguageResolver;
 import org.apache.camel.spi.Resource;
 import org.apache.camel.spi.ResourceLoader;
 import org.apache.camel.spi.RoutesLoader;
+import org.apache.camel.spi.TransformerResolver;
+import org.apache.camel.spi.UriFactoryResolver;
 import org.apache.camel.support.PluginHelper;
 
 public class WanakuRoutesLoader {
     private static final org.slf4j.Logger LOG = org.slf4j.LoggerFactory.getLogger(WanakuRoutesLoader.class);
 
     private final String dependenciesList;
+    private final DependencyDownloaderClassLoader cl;
+    private final MavenDependencyDownloader downloader;
 
     public WanakuRoutesLoader() {
         this(null);
@@ -39,12 +51,34 @@ public class WanakuRoutesLoader {
 
     public WanakuRoutesLoader(String dependenciesList) {
         this.dependenciesList = dependenciesList;
+        this.cl = createClassLoader();
+        this.downloader = createDownloader(cl);
     }
 
     public void loadRoute(CamelContext context, String path) {
         final ExtendedCamelContext camelContextExtension = context.getCamelContextExtension();
 
-        downloadDependencies(camelContextExtension);
+        try {
+            context.addService(downloader);
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
+
+        camelContextExtension.addContextPlugin(
+                ComponentResolver.class, new DependencyDownloaderComponentResolver(context, null, false, false));
+        camelContextExtension.addContextPlugin(
+                DataFormatResolver.class, new DependencyDownloaderDataFormatResolver(context, null, false));
+        camelContextExtension.addContextPlugin(
+                LanguageResolver.class, new DependencyDownloaderLanguageResolver(context, null, false));
+        camelContextExtension.addContextPlugin(
+                TransformerResolver.class, new DependencyDownloaderTransformerResolver(context, null, false));
+        camelContextExtension.addContextPlugin(
+                UriFactoryResolver.class, new DependencyDownloaderUriFactoryResolver(context));
+        // TODO: is it needed?
+        //        camelContextExtension.addContextPlugin(ResourceLoader.class,
+        //                new DependencyDownloaderResourceLoader(context, null));
+
+        downloadDependencies(context);
 
         DependencyDownloaderRoutesLoader loader = new DependencyDownloaderRoutesLoader(context);
         camelContextExtension.addContextPlugin(RoutesLoader.class, loader);
@@ -62,15 +96,18 @@ public class WanakuRoutesLoader {
         context.build();
     }
 
-    private void downloadDependencies(ExtendedCamelContext camelContextExtension) {
-        final DependencyDownloaderClassLoader cl = createClassLoader();
-        final MavenDependencyDownloader downloader = createDownloader(cl);
+    private void downloadDependencies(CamelContext camelContext) {
+        ExtendedCamelContext camelContextExtension = camelContext.getCamelContextExtension();
 
         if (dependenciesList != null) {
             final String[] dependencies = dependenciesList.split(",");
             for (String dependency : dependencies) {
-                downloader.downloadDependency(
-                        GavUtil.group(dependency), GavUtil.artifact(dependency), GavUtil.version(dependency));
+                // In case of empty file
+                if (!dependency.isEmpty()) {
+                    dependency = dependency.trim();
+                    downloader.downloadDependency(
+                            GavUtil.group(dependency), GavUtil.artifact(dependency), GavUtil.version(dependency));
+                }
             }
 
             cl.getDownloaded().forEach(d -> LOG.debug("Downloaded {}", d));
