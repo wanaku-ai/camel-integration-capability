@@ -1,8 +1,8 @@
 package ai.wanaku.capability.camel.downloader;
 
-import ai.wanaku.api.discovery.DiscoveryCallback;
-import ai.wanaku.api.discovery.RegistrationManager;
-import ai.wanaku.api.types.providers.ServiceTarget;
+import ai.wanaku.capabilities.sdk.api.discovery.DiscoveryCallback;
+import ai.wanaku.capabilities.sdk.api.discovery.RegistrationManager;
+import ai.wanaku.capabilities.sdk.api.types.providers.ServiceTarget;
 import ai.wanaku.capabilities.sdk.common.exceptions.WanakuWebException;
 import java.net.URI;
 import java.nio.file.Path;

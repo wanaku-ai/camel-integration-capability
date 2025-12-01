@@ -1,6 +1,6 @@
 package ai.wanaku.capability.camel.spec.rules.tools;
 
-import ai.wanaku.api.types.ToolReference;
+import ai.wanaku.capabilities.sdk.api.types.ToolReference;
 import ai.wanaku.capabilities.sdk.common.exceptions.WanakuWebException;
 import ai.wanaku.capabilities.sdk.services.ServicesHttpClient;
 import ai.wanaku.capability.camel.spec.rules.RulesProcessor;

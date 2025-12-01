@@ -115,7 +115,7 @@ graph TB
 | **WanakuResourceTransformer** | `ai.wanaku.capability.camel.spec.rules.resources` | Transforms Camel routes into MCP resource definitions |
 | **McpRulesManager** | `ai.wanaku.capability.camel.util` | Applies exposure rules to routes |
 | **DownloaderFactory** | `ai.wanaku.capability.camel.downloader` | Creates appropriate downloaders for URI schemes |
-| **RegistrationManager** | `ai.wanaku.api.discovery` | Handles service registration with Wanaku MCP Router |
+| **RegistrationManager** | `ai.wanaku.capabilities.sdk.api.discovery` | Handles service registration with Wanaku MCP Router |
 
 ## Data Flow
 

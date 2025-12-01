@@ -1,8 +1,8 @@
 package ai.wanaku.capability.camel;
 
-import ai.wanaku.api.discovery.RegistrationManager;
-import ai.wanaku.api.types.providers.ServiceTarget;
-import ai.wanaku.api.types.providers.ServiceType;
+import ai.wanaku.capabilities.sdk.api.discovery.RegistrationManager;
+import ai.wanaku.capabilities.sdk.api.types.providers.ServiceTarget;
+import ai.wanaku.capabilities.sdk.api.types.providers.ServiceType;
 import ai.wanaku.capabilities.sdk.common.ServicesHelper;
 import ai.wanaku.capabilities.sdk.common.config.DefaultServiceConfig;
 import ai.wanaku.capabilities.sdk.common.config.ServiceConfig;
