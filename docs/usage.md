@@ -213,6 +213,7 @@ mcp:
         route:
           id: "route-3103"
         description: "Initiate the promotion process for an employee"
+        namespace: hr-operations
         properties:
           - name: employee
             type: string
@@ -225,6 +226,7 @@ mcp:
         route:
           id: "route-3104"
         description: "Confirm the promotion of an an employee"
+        namespace: hr-operations
         properties:
           - name: employee
             type: string
@@ -238,7 +240,17 @@ mcp:
         route:
           id: "route-3105"
         description: "Obtain the employee performance history"
+        namespace: hr-data
 ```
+
+#### Namespace Configuration
+
+Each tool or resource can optionally specify a `namespace` to organize routes within the Wanaku router:
+
+- **`namespace`**: The namespace where the tool or resource will be registered (optional)
+  - If not specified, the route is registered in the default namespace
+  - Useful for organizing related tools/resources together
+  - Example: `namespace: hr-operations`
 
 For resource routes, the code doesn't necessarily run the route. Instead, it
 uses only the endpoint URI for accessing it via a consumer template. For resources

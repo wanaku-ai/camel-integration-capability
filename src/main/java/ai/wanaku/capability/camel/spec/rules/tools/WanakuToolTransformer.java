@@ -28,6 +28,7 @@ public class WanakuToolTransformer implements RulesTransformer {
         toolReference.setDescription(toolDefinition.getDescription());
         toolReference.setUri(String.format("%s://%s", name, ruleName));
         toolReference.setType(name);
+        toolReference.setNamespace(toolDefinition.getNamespace());
 
         InputSchema inputSchema = new InputSchema();
         inputSchema.setType(DEFAULT_INPUT_SCHEMA_TYPE);
