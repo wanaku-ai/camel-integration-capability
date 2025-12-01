@@ -13,6 +13,9 @@ public class Definition {
     @JsonProperty("properties")
     private List<Property> properties;
 
+    @JsonProperty("namespace")
+    private String namespace;
+
     public Definition() {}
 
     public Route getRoute() {
@@ -37,5 +40,13 @@ public class Definition {
 
     public void setProperties(List<Property> properties) {
         this.properties = properties;
+    }
+
+    public String getNamespace() {
+        return namespace;
+    }
+
+    public void setNamespace(String namespace) {
+        this.namespace = namespace;
     }
 }

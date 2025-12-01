@@ -21,6 +21,7 @@ public class WanakuResourceTransformer implements RulesTransformer {
         resourceReference.setDescription(toolDefinition.getDescription());
         resourceReference.setLocation(String.format("%s://%s", name, ruleName));
         resourceReference.setType(name);
+        resourceReference.setNamespace(toolDefinition.getNamespace());
 
         processor.eval(resourceReference);
     }
