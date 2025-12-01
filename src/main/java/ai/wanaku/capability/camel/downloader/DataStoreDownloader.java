@@ -1,7 +1,7 @@
 package ai.wanaku.capability.camel.downloader;
 
-import ai.wanaku.api.types.DataStore;
-import ai.wanaku.api.types.WanakuResponse;
+import ai.wanaku.capabilities.sdk.api.types.DataStore;
+import ai.wanaku.capabilities.sdk.api.types.WanakuResponse;
 import ai.wanaku.capabilities.sdk.services.ServicesHttpClient;
 import java.net.URI;
 import java.nio.file.Files;

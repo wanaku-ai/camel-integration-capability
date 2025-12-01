@@ -1,9 +1,9 @@
 package ai.wanaku.capability.camel.spec.rules.tools;
 
-import ai.wanaku.api.types.InputSchema;
-import ai.wanaku.api.types.ToolReference;
+import ai.wanaku.capabilities.sdk.api.types.InputSchema;
+import ai.wanaku.capabilities.sdk.api.types.Property;
+import ai.wanaku.capabilities.sdk.api.types.ToolReference;
 import ai.wanaku.capability.camel.model.Definition;
-import ai.wanaku.capability.camel.model.Property;
 import ai.wanaku.capability.camel.spec.rules.RulesProcessor;
 import ai.wanaku.capability.camel.spec.rules.RulesTransformer;
 import java.util.ArrayList;
@@ -32,9 +32,9 @@ public class WanakuToolTransformer implements RulesTransformer {
         InputSchema inputSchema = new InputSchema();
         inputSchema.setType(DEFAULT_INPUT_SCHEMA_TYPE);
 
-        final List<Property> properties = toolDefinition.getProperties();
-        for (Property property : properties) {
-            ai.wanaku.api.types.Property wanakuProperty = new ai.wanaku.api.types.Property();
+        final List<ai.wanaku.capability.camel.model.Property> properties = toolDefinition.getProperties();
+        for (var property : properties) {
+            Property wanakuProperty = new ai.wanaku.capabilities.sdk.api.types.Property();
             wanakuProperty.setType(property.getType());
             wanakuProperty.setDescription(property.getDescription());
 

@@ -1,6 +1,6 @@
 package ai.wanaku.capability.camel.spec.rules.resources;
 
-import ai.wanaku.api.types.ResourceReference;
+import ai.wanaku.capabilities.sdk.api.types.ResourceReference;
 import ai.wanaku.capabilities.sdk.services.ServicesHttpClient;
 import ai.wanaku.capability.camel.spec.rules.RulesProcessor;
 import java.util.List;
