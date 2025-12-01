@@ -20,7 +20,7 @@
         <project.main.class>ai.wanaku.capability.camel.CamelToolMain</project.main.class>
         <junit-jupiter.version>5.14.1</junit-jupiter.version>
         <jgit.version>7.4.0.202509020913-r</jgit.version>
-        <spotless-maven-plugin.version>3.0.0</spotless-maven-plugin.version>
+        <spotless-maven-plugin.version>3.1.0</spotless-maven-plugin.version>
     </properties>
 
     <developers>
