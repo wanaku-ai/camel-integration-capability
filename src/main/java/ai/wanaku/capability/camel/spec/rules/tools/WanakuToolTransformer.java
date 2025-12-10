@@ -34,8 +34,20 @@ public class WanakuToolTransformer implements RulesTransformer {
         inputSchema.setType(DEFAULT_INPUT_SCHEMA_TYPE);
 
         final List<ai.wanaku.capability.camel.model.Property> properties = toolDefinition.getProperties();
+        parseProperties(properties, inputSchema);
+
+        toolReference.setInputSchema(inputSchema);
+
+        processor.eval(toolReference);
+    }
+
+    private void parseProperties(List<ai.wanaku.capability.camel.model.Property> properties, InputSchema inputSchema) {
+        if (properties == null) {
+            return;
+        }
+
         for (var property : properties) {
-            Property wanakuProperty = new ai.wanaku.capabilities.sdk.api.types.Property();
+            Property wanakuProperty = new Property();
             wanakuProperty.setType(property.getType());
             wanakuProperty.setDescription(property.getDescription());
 
@@ -46,12 +58,8 @@ public class WanakuToolTransformer implements RulesTransformer {
             inputSchema.getProperties().put(property.getName(), wanakuProperty);
         }
 
-        toolReference.setInputSchema(inputSchema);
-
         if (!required.isEmpty()) {
-            toolReference.getInputSchema().setRequired(required);
+            inputSchema.setRequired(required);
         }
-
-        processor.eval(toolReference);
     }
 }
