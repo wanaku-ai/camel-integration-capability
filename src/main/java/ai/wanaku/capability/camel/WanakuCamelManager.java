@@ -13,8 +13,10 @@ public class WanakuCamelManager {
     private final CamelContext context;
     private final String routesPath;
     private final String dependenciesList;
+    private final String repositoriesList;
 
-    public WanakuCamelManager(Map<ResourceType, Path> downloadedResources) {
+    public WanakuCamelManager(Map<ResourceType, Path> downloadedResources, String repositoriesList) {
+        this.repositoriesList = repositoriesList;
         context = new DefaultCamelContext();
 
         this.routesPath = downloadedResources.get(ResourceType.ROUTES_REF).toString();
@@ -34,7 +36,7 @@ public class WanakuCamelManager {
     }
 
     private void loadRoutes() {
-        WanakuRoutesLoader routesLoader = new WanakuRoutesLoader(dependenciesList);
+        WanakuRoutesLoader routesLoader = new WanakuRoutesLoader(dependenciesList, repositoriesList);
 
         String routeFileUrl = String.format("file://%s", routesPath);
         routesLoader.loadRoute(context, routeFileUrl);

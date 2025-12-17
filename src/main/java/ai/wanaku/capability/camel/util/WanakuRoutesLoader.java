@@ -37,20 +37,19 @@ import org.apache.camel.spi.RoutesLoader;
 import org.apache.camel.spi.TransformerResolver;
 import org.apache.camel.spi.UriFactoryResolver;
 import org.apache.camel.support.PluginHelper;
+import org.slf4j.Logger;
 
 public class WanakuRoutesLoader {
-    private static final org.slf4j.Logger LOG = org.slf4j.LoggerFactory.getLogger(WanakuRoutesLoader.class);
+    private static final Logger LOG = org.slf4j.LoggerFactory.getLogger(WanakuRoutesLoader.class);
 
     private final String dependenciesList;
+    private final String repositoriesList;
     private final DependencyDownloaderClassLoader cl;
     private final MavenDependencyDownloader downloader;
 
-    public WanakuRoutesLoader() {
-        this(null);
-    }
-
-    public WanakuRoutesLoader(String dependenciesList) {
+    public WanakuRoutesLoader(String dependenciesList, String repositoriesList) {
         this.dependenciesList = dependenciesList;
+        this.repositoriesList = repositoriesList;
         this.cl = createClassLoader();
         this.downloader = createDownloader(cl);
     }
@@ -74,9 +73,6 @@ public class WanakuRoutesLoader {
                 TransformerResolver.class, new DependencyDownloaderTransformerResolver(context, null, false));
         camelContextExtension.addContextPlugin(
                 UriFactoryResolver.class, new DependencyDownloaderUriFactoryResolver(context));
-        // TODO: is it needed?
-        //        camelContextExtension.addContextPlugin(ResourceLoader.class,
-        //                new DependencyDownloaderResourceLoader(context, null));
 
         downloadDependencies(context);
 
@@ -117,9 +113,15 @@ public class WanakuRoutesLoader {
         camelContextExtension.addContextPlugin(DependencyDownloader.class, downloader);
     }
 
-    private static MavenDependencyDownloader createDownloader(DependencyDownloaderClassLoader cl) {
+    private MavenDependencyDownloader createDownloader(DependencyDownloaderClassLoader cl) {
         MavenDependencyDownloader downloader = new MavenDependencyDownloader();
         downloader.setClassLoader(cl);
+
+        if (repositoriesList != null) {
+            downloader.setRepositories(repositoriesList);
+        }
+
+
         downloader.start();
         return downloader;
     }
