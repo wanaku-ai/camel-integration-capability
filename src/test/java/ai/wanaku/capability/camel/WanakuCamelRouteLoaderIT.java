@@ -46,7 +46,7 @@ class WanakuCamelRouteLoaderIT {
                 ResourceType.ROUTES_REF, routesFile,
                 ResourceType.DEPENDENCY_REF, dependenciesFile);
 
-        camelManager = new WanakuCamelManager(downloadedResources);
+        camelManager = new WanakuCamelManager(downloadedResources, null);
     }
 
     @AfterAll

@@ -145,7 +145,13 @@ public class CamelToolMain implements Callable<Integer> {
             names = {"-d", "--dependencies"},
             description =
                     "The dependencies to include in runtime. Supports datastore:// and file:// schemes (comma-separated)")
-    private String dependenciesList;
+    private String dependenciesRef;
+
+    @CommandLine.Option(
+            names = {"--repositories"},
+            description =
+                    "Comma-separated list of additional repositories from which to download dependencies to include in runtime (i.e.: https://my-private-repo.com/) ")
+    private String repositoriesList;
 
     @CommandLine.Option(
             names = {"--data-dir"},
@@ -224,7 +230,7 @@ public class CamelToolMain implements Callable<Integer> {
         List<ResourceRefs<URI>> resources = ResourceListBuilder.newBuilder()
                 .addRoutesRef(routesRef)
                 .addRulesRef(rulesRef)
-                .addDependenciesRef(dependenciesList)
+                .addDependenciesRef(dependenciesRef)
                 .build();
 
         ResourceDownloaderCallback resourcesDownloaderCallback =
@@ -240,7 +246,7 @@ public class CamelToolMain implements Callable<Integer> {
         }
 
         final Map<ResourceType, Path> downloadedResources = resourcesDownloaderCallback.getDownloadedResources();
-        WanakuCamelManager camelManager = new WanakuCamelManager(downloadedResources);
+        WanakuCamelManager camelManager = new WanakuCamelManager(downloadedResources, repositoriesList);
 
         McpSpec mcpSpec = createMcpSpec(httpClient, downloadedResources);
 
