@@ -19,6 +19,7 @@ ENV REGISTRATION_URL="" \
     CLIENT_SECRET="" \
     DEPENDENCIES="" \
     INIT_FROM="" \
+    REPOSITORIES="" \
     DATA_DIR="/data"
 
 # Create and declare volume for routes data
@@ -43,4 +44,5 @@ ENTRYPOINT ["sh", "-c", "java -jar /app/app.jar \
     ${CLIENT_SECRET:+--client-secret $CLIENT_SECRET} \
     ${DEPENDENCIES:+--dependencies $DEPENDENCIES} \
     ${INIT_FROM:+--init-from $INIT_FROM} \
+    ${REPOSITORIES:+--repositories $REPOSITORIES} \
     ${DATA_DIR:+--data-dir $DATA_DIR}"]

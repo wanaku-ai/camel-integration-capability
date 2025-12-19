@@ -135,10 +135,11 @@ spec:
 
 #### Optional Configuration
 
-| Parameter   | Description                                 | Example                                      |
-|-------------|---------------------------------------------|----------------------------------------------|
-| `INIT_FROM` | Git repository URL to clone during startup  | `git@github.com:org/repo.git`                |
-| `DATA_DIR`  | Directory where downloaded files are saved  | `/data`                                      |
+| Parameter      | Description                                | Example                       |
+|----------------|--------------------------------------------|-------------------------------|
+| `INIT_FROM`    | Git repository URL to clone during startup | `git@github.com:org/repo.git` |
+| `DATA_DIR`     | Directory where downloaded files are saved | `/data`                       |
+| `REPOSITORIES` | Additional Maven repositories to use       | `http://repo.com`             |
 
 > [NOTE]
 > See the running documentation below for details on each of these.
