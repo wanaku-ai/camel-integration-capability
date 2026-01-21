@@ -196,7 +196,7 @@ public class CamelToolMain implements Callable<Integer> {
 
     private ServiceTarget newServiceTargetTarget() {
         String address = DiscoveryHelper.resolveRegistrationAddress(registrationAnnounceAddress);
-        return ServiceTarget.newEmptyTarget(name, address, grpcPort, ServiceType.MULTI_CAPABILITY);
+        return ServiceTarget.newEmptyTarget(name, address, grpcPort, ServiceType.MULTI_CAPABILITY.asValue());
     }
 
     public ServicesHttpClient createClient(ServiceConfig serviceConfig) {
