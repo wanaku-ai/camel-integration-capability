@@ -121,7 +121,6 @@ public class WanakuRoutesLoader {
             downloader.setRepositories(repositoriesList);
         }
 
-
         downloader.start();
         return downloader;
     }
