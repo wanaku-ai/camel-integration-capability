@@ -13,7 +13,7 @@
 
         <camel.version>4.14.4</camel.version>
         <slf4j.version>2.0.17</slf4j.version>
-        <log4j.version>2.24.3</log4j.version>
+        <log4j.version>2.25.3</log4j.version>
         <picocli.version>4.7.7</picocli.version>
         <wanaku.version>0.1.0-SNAPSHOT</wanaku.version>
         <jackson-databind.version>2.20.1</jackson-databind.version>
