@@ -11,7 +11,7 @@
         <maven.compiler.target>21</maven.compiler.target>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
 
-        <camel.version>4.14.2</camel.version>
+        <camel.version>4.14.4</camel.version>
         <slf4j.version>2.0.17</slf4j.version>
         <log4j.version>2.24.3</log4j.version>
         <picocli.version>4.7.7</picocli.version>
