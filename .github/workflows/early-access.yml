@@ -27,10 +27,6 @@ jobs:
       - name: Checkout and build dependencies
         run: |
           cd ..
-          git clone https://github.com/wanaku-ai/wanaku.git
-          cd wanaku
-          mvn -DskipTests -DskipTests -B install --file pom.xml
-          cd ..
           git clone https://github.com/wanaku-ai/wanaku-capabilities-java-sdk.git
           cd wanaku-capabilities-java-sdk
           mvn -DskipTests -DskipTests -B install --file pom.xml
