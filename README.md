@@ -2,7 +2,7 @@
 
 ![License](https://img.shields.io/badge/license-Apache%202.0-blue.svg)
 ![Java](https://img.shields.io/badge/java-21%2B-orange.svg)
-![Camel](https://img.shields.io/badge/Apache%20Camel-4.14.2-red.svg)
+![Camel](https://img.shields.io/badge/Apache%20Camel-4.14.4-red.svg)
 
 A capability service for the [Wanaku MCP Router](https://wanaku.ai) that enables AI agents to interact with backend systems through dynamically executed [Apache Camel](https://camel.apache.org) routes.
 
@@ -13,10 +13,27 @@ The Camel Integration Capability bridges AI agents with enterprise integration p
 It exposes Apache Camel routes as MCP (Model Context Protocol) tools and resources, allowing AI agents to perform complex backend operations through standardized gRPC interfaces.
 
 **Key Use Cases:**
-- Enable AI agents to query employee databases, CRMs, or inventory systems
+- Enable AI agents to query databases, CRMs, or inventory systems
 - Orchestrate multi-step business workflows through natural language
 - Integrate AI capabilities with existing enterprise service buses
 - Provide controlled, rule-based access to backend APIs for AI agents
+
+## Project Structure
+
+```
+camel-integration-capability/
+├── camel-integration-capability-common/           # Shared utilities, models, gRPC services
+└── camel-integration-capability-runtimes/
+    ├── camel-integration-capability-plugin/       # SPI plugin for existing Camel apps
+    └── camel-integration-capability-main/         # Standalone CLI application
+```
+
+## Deployment Options
+
+| Option                             | Use Case                       | Configuration         |
+|------------------------------------|--------------------------------|-----------------------|
+| **[Standalone](docs/usage.md)**    | Dedicated service deployment   | CLI arguments         |
+| **[Plugin](docs/plugin-usage.md)** | Embed into existing Camel apps | Environment variables |
 
 ## Architecture Overview
 
@@ -34,23 +51,6 @@ graph TB
     I -.->|Rules & Dependencies| C
 ```
 
-The capability service:
-1. Registers with the Wanaku MCP Router using OAuth2/OIDC
-2. Loads Camel routes from YAML definitions (local files or DataStore)
-3. Exposes routes as gRPC endpoints to the Wanaku MCP Router
-4. Enforces access control rules defined in configuration
-5. Executes routes dynamically with runtime dependency resolution
-
-## Features
-
-- **Dynamic Route Execution**: Load and execute Camel routes defined in YAML at runtime
-- **MCP Integration**: Expose routes as tools and resources via Model Context Protocol using Wanaku MCP Router
-- **Service Discovery**: Automatic registration with Wanaku MCP Router
-- **Authentication**: OAuth2/OIDC support for service-to-router communication
-- **Access Control**: Rule-based exposure of routes with configurable restrictions
-- **Dependency Management**: Runtime download and loading of required Camel components
-- **Multiple Deployment Options**: Run locally, in Docker, or on Kubernetes/OpenShift
-- **Git Integration**: Initialize routes and configurations from Git repositories
 
 ## Quick Start
 
@@ -95,19 +95,37 @@ The capability service:
    > All MCP parameters are mapped to Camel headers with the `Wanaku.` prefix (e.g., `employeeId` → `Wanaku.employeeId`). 
    > For explicit control over parameter names, see the [Usage Guide](docs/usage.md#parameter-to-header-mapping).
 
-4. **Run the capability**:
-   ```bash
-   java -jar target/camel-integration-capability-0.0.9-SNAPSHOT-jar-with-dependencies.jar \
-     --registration-url http://localhost:8080 \
-     --registration-announce-address localhost \
-     --routes-ref file:///path/to/my-routes.camel.yaml \
-     --rules-ref file:///path/to/my-rules.yaml \
-     --token-endpoint http://localhost:8543/realms/wanaku/ \
-     --client-id wanaku-service \
-     --client-secret your-secret-here
-   ```
+### Option 1: Standalone Application
 
-5. **Verify registration**: Check Wanaku MCP Router logs to confirm successful registration.
+Run as a dedicated service with CLI configuration:
+
+```bash
+java -jar camel-integration-capability-runtimes/camel-integration-capability-main/target/camel-integration-capability-main-*-jar-with-dependencies.jar \
+  --registration-url http://localhost:8080 \
+  --registration-announce-address localhost \
+  --routes-ref file:///path/to/routes.camel.yaml \
+  --rules-ref file:///path/to/rules.yaml \
+  --client-id wanaku-service \
+  --client-secret your-secret
+```
+
+### Option 2: Plugin Mode
+
+Embed into an existing Camel application using SPI. Add the shaded jar to your classpath and configure via environment variables:
+
+```bash
+export REGISTRATION_URL=http://localhost:8080
+export REGISTRATION_ANNOUNCE_ADDRESS=localhost
+export GRPC_PORT=9190
+export SERVICE_NAME=my-camel-app
+export ROUTES_RULES=file:///path/to/rules.yaml
+export CLIENT_ID=wanaku-service
+export CLIENT_SECRET=your-secret
+
+java -cp camel-integration-capability-plugin-*-shaded.jar:your-app.jar your.MainClass
+```
+
+The plugin is automatically discovered via `META-INF/services/org.apache.camel.spi.ContextServicePlugin`.
 
 > [!TIP]
 > Design your Camel routes visually using the [Kaoto Integration Designer](http://kaoto.io) for Apache Camel.
@@ -117,68 +135,38 @@ The capability service:
 
 ## Documentation
 
-- **[Usage Guide](docs/usage.md)** - Comprehensive guide to running and configuring the service
-- **[Architecture](docs/architecture.md)** - System architecture and design decisions
+- **[Usage Guide](docs/usage.md)** - Standalone application configuration
+- **[Plugin Guide](docs/plugin-usage.md)** - Embedding in Camel applications
 - **[Building](docs/building.md)** - Build instructions and development setup
-- **[Contributing](CONTRIBUTING.md)** - Guidelines for contributing to the project
-- **[Security](SECURITY.md)** - Vulnerability reporting and security best practices
-
-## Examples
-
-See the included example files:
-- `employee-backend.camel.yaml` - Sample Camel routes for employee data operations
-- `employee-backend-rules.yaml` - Access control rules for route exposure
-
-## Configuration
-
-The service supports multiple URI schemes for loading resources:
-
-| Scheme | Description | Example |
-|--------|-------------|---------|
-| `datastore://` | Fetch from Wanaku DataStore service | `datastore://routes.camel.yaml` |
-| `file://` | Load from local filesystem (absolute path) | `file:///opt/routes/routes.camel.yaml` |
-
-For complete parameter reference, see the [Usage Guide](docs/usage.md#required-parameters).
+- **[Contributing](CONTRIBUTING.md)** - Guidelines for contributing
+- **[Security](SECURITY.md)** - Vulnerability reporting
 
 ## Deployment
 
-The recommended way to run this capability is on OpenShift/Kubernetes.
-
-### Local Development
-
-Local usage is recommended for development or debugging purposes.
-
-```bash
-java -jar target/camel-integration-capability-*.jar [options]
-```
-
 ### Docker
 
-The Docker/Container deployment can be used to customize the capability service.
-
 ```bash
-docker build -t camel-capability .
-docker run -p 9190:9190 camel-capability [options]
+mvn clean package -DskipTests
+docker build -t camel-integration-capability .
+docker run -p 9190:9190 camel-integration-capability [options]
 ```
 
 ### Kubernetes/OpenShift
 
-Deploy using the Wanaku operator. 
-
-See [Usage Guide - Deploying the Service](docs/usage.md#deploying-the-service) for complete examples.
+Deploy using the Wanaku operator. See [Usage Guide](docs/usage.md#deploying-the-service) for examples.
 
 ## Support
 
 - **Issues**: [GitHub Issues](https://github.com/wanaku-ai/camel-integration-capability/issues)
-- **Discussions**: [Wanaku Community](https://wanaku.ai)
+- **Community**: [Wanaku](https://wanaku.ai)
 - **Email**: contact@wanaku.ai
 
 ## License
 
-This project is licensed under the Apache License 2.0 - see the [LICENSE](LICENSE) file for details.
+Apache License 2.0 - see [LICENSE](LICENSE) for details.
 
 ## Related Projects
 
 - [Wanaku MCP Router](https://wanaku.ai) - The MCP router this capability integrates with
 - [Apache Camel](https://camel.apache.org) - The integration framework powering route execution
-- [Kaoto Integration Designer](http://kaoto.io) - Visual designer for Camel routes
+- [Kaoto](http://kaoto.io) - Visual designer for Camel routes

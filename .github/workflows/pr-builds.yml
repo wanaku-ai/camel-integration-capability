@@ -46,4 +46,4 @@ jobs:
         mvn -DskipTests -B install --file pom.xml
         cd ${{ github.workspace }}
     - name: Build with Maven
-      run: mvn -B package --file pom.xml
+      run: mvn -B install --file pom.xml
