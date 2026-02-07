@@ -15,6 +15,13 @@ This service implements a Wanaku capability that can:
 > [TIP]
 > Design your Camel routes with ease using the [Kaoto Integration Designer](http://kaoto.io) for Apache Camel.
 
+## Deployment Options
+
+This capability can be deployed in two ways:
+
+1. **Standalone Application** (this document) - Run as a separate service with CLI configuration
+2. **[Plugin Mode](plugin-usage.md)** - Embed into an existing Apache Camel application using SPI
+
 ## Requirements
 
 - Java 21 or higher

@@ -4,8 +4,8 @@ FROM registry.access.redhat.com/ubi9/openjdk-21-runtime:latest
 # Set working directory
 WORKDIR /app
 
-# Copy the pre-built JAR from local target directory
-COPY target/camel-integration-capability-*-jar-with-dependencies.jar /app/app.jar
+# Copy the pre-built JAR from main module target directory
+COPY camel-integration-capability-runtimes/camel-integration-capability-main/target/camel-integration-capability-main-*-jar-with-dependencies.jar /app/app.jar
 
 # Environment variables for runtime configuration
 ENV REGISTRATION_URL="" \
