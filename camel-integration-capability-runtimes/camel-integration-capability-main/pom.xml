@@ -31,11 +31,6 @@
             <artifactId>capabilities-runtime-camel-common</artifactId>
             <version>${wanaku.version}</version>
         </dependency>
-        <dependency>
-            <groupId>ai.wanaku.sdk</groupId>
-            <artifactId>capabilities-runtime-camel-plugin</artifactId>
-            <version>${wanaku.version}</version>
-        </dependency>
 
         <!-- CLI -->
         <dependency>
