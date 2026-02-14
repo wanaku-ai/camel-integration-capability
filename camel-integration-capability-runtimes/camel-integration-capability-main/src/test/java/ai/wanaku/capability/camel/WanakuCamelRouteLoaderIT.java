@@ -17,11 +17,6 @@
 
 package ai.wanaku.capability.camel;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertNotNull;
-import static org.junit.jupiter.api.Assertions.assertTrue;
-
-import ai.wanaku.capabilities.sdk.runtime.camel.downloader.ResourceType;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Map;
@@ -29,9 +24,14 @@ import java.util.regex.Pattern;
 import org.apache.camel.CamelContext;
 import org.apache.camel.ProducerTemplate;
 import org.apache.camel.ServiceStatus;
+import ai.wanaku.capabilities.sdk.runtime.camel.downloader.ResourceType;
+
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class WanakuCamelRouteLoaderIT {
 

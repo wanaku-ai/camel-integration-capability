@@ -1,13 +1,13 @@
 package ai.wanaku.capability.camel;
 
-import ai.wanaku.capabilities.sdk.runtime.camel.downloader.ResourceType;
-import ai.wanaku.capabilities.sdk.runtime.camel.util.WanakuRoutesLoader;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Map;
 import org.apache.camel.CamelContext;
 import org.apache.camel.impl.DefaultCamelContext;
+import ai.wanaku.capabilities.sdk.runtime.camel.downloader.ResourceType;
+import ai.wanaku.capabilities.sdk.runtime.camel.util.WanakuRoutesLoader;
 
 public class WanakuCamelManager {
     private final CamelContext context;
