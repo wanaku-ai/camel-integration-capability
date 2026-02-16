@@ -135,6 +135,10 @@ The plugin is automatically discovered via `META-INF/services/org.apache.camel.s
 
 ## Documentation
 
+For stable release documentation, visit the **[Wanaku Documentation](https://wanaku.ai/docs/)** website.
+
+The guides below cover development and unreleased features. They may describe behavior that differs from the latest stable release.
+
 - **[Usage Guide](docs/usage.md)** - Standalone application configuration
 - **[Plugin Guide](docs/plugin-usage.md)** - Embedding in Camel applications
 - **[Building](docs/building.md)** - Build instructions and development setup
