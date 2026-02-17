@@ -30,6 +30,7 @@ import ai.wanaku.capabilities.sdk.runtime.camel.downloader.ResourceDownloaderCal
 import ai.wanaku.capabilities.sdk.runtime.camel.downloader.ResourceListBuilder;
 import ai.wanaku.capabilities.sdk.runtime.camel.downloader.ResourceRefs;
 import ai.wanaku.capabilities.sdk.runtime.camel.downloader.ResourceType;
+import ai.wanaku.capabilities.sdk.runtime.camel.grpc.CamelHealthProbe;
 import ai.wanaku.capabilities.sdk.runtime.camel.grpc.CamelResource;
 import ai.wanaku.capabilities.sdk.runtime.camel.grpc.CamelTool;
 import ai.wanaku.capabilities.sdk.runtime.camel.grpc.ProvisionBase;
@@ -171,7 +172,7 @@ public class CamelToolMain implements Callable<Integer> {
         System.exit(exitCode);
     }
 
-    public RegistrationManager newRegistrationManager(
+    public ZeroDepRegistrationManager newRegistrationManager(
             ServiceTarget serviceTarget,
             ResourceDownloaderCallback resourcesDownloaderCallback,
             ServiceConfig serviceConfig) {
@@ -237,7 +238,7 @@ public class CamelToolMain implements Callable<Integer> {
                 new ResourceDownloaderCallback(downloaderFactory, resources);
 
         final ServiceTarget toolInvokerTarget = newServiceTargetTarget();
-        RegistrationManager registrationManager =
+        ZeroDepRegistrationManager registrationManager =
                 newRegistrationManager(toolInvokerTarget, resourcesDownloaderCallback, serviceConfig);
 
         if (!resourcesDownloaderCallback.waitForDownloads()) {
@@ -258,6 +259,7 @@ public class CamelToolMain implements Callable<Integer> {
                     .addService(new CamelTool(camelManager.getCamelContext(), mcpSpec))
                     .addService(new CamelResource(camelManager.getCamelContext(), mcpSpec))
                     .addService(new ProvisionBase(name))
+                    .addService(new CamelHealthProbe(camelManager.getCamelContext(), registrationManager.getTarget()))
                     .build();
 
             server.start();
