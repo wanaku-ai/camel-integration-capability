@@ -41,13 +41,18 @@ set them so that this capability service can talk to Wanaku and register itself.
 
 - `--registration-url`: URL of the Wanaku discovery service
 - `--registration-announce-address`: Address to announce for service discovery
-- `--routes-ref`: Reference to the Apache Camel routes YAML file. Supports `datastore://` and `file://` schemes
-- `--token-endpoint`: OAuth2/OIDC token endpoint base URL
 - `--client-id`: OAuth2 client ID for authentication
 - `--client-secret`: OAuth2 client secret for authentication
 
+One of the following is required to provide routes:
+
+- `--service-catalog`: Name of the service catalog to load routes, rules, and dependencies from (recommended). Requires `--service-catalog-system`
+- `--routes-ref`: Reference to the Apache Camel routes YAML file. Supports `datastore://` and `file://` schemes
+
 ### Optional Parameters
 
+- `--service-catalog-system`: The system name within the service catalog (required when using `--service-catalog`)
+- `--token-endpoint`: OAuth2/OIDC token endpoint base URL
 - `--rules-ref`: Reference to the YAML file with route exposure rules. Supports `datastore://` and `file://` schemes
 - `--dependencies`: Comma-separated list of dependencies. Supports `datastore://` and `file://` schemes
 - `--init-from`: Git repository URL to clone during initialization (SSH or HTTPS format)
@@ -59,6 +64,10 @@ set them so that this capability service can talk to Wanaku and register itself.
 - `--period`: Period between registration attempts in seconds (default: 5)
 - `--data-dir`: Directory where downloaded files will be saved (default: `/tmp` for CLI, `/data` for Docker)
 
+> [NOTE]
+> `--service-catalog` is mutually exclusive with `--routes-ref`, `--rules-ref`, and `--dependencies`.
+> When using a service catalog, all three resources are extracted from the catalog automatically.
+
 ### URI Schemes
 
 The service supports multiple URI schemes for resource references:
@@ -66,9 +75,30 @@ The service supports multiple URI schemes for resource references:
 - **datastore://**: Fetches files from the Wanaku DataStore service.
 - **file://**: References local files (absolute paths required)
 
-### Basic Example (Local)
+### Basic Example Using a Service Catalog (Recommended)
 
-For local development with a Wanaku stack:
+Service catalogs are the recommended way to provide routes to the capability. A service catalog bundles routes,
+rules, and dependencies into a single versioned artifact stored in Wanaku. This simplifies configuration and
+makes it easy to update all resources at once.
+
+```bash
+java -jar target/camel-integration-capability-main-0.1.0-jar-with-dependencies.jar \
+  --registration-url http://localhost:8080 \
+  --registration-announce-address localhost \
+  --grpc-port 9190 \
+  --name employee-system \
+  --service-catalog employee-system-v2 \
+  --service-catalog-system employee-system \
+  --client-id wanaku-service \
+  --client-secret aBqsU3EzUPCHumf9sTK5sanxXkB0yFtv
+```
+
+With service catalogs, `--routes-ref`, `--rules-ref`, and `--dependencies` are not needed — the catalog
+contains all required resources for the given system.
+
+### Basic Example Using Individual References
+
+For cases where routes, rules, and dependencies are managed separately (e.g., during development):
 
 ```bash
 java -jar target/camel-integration-capability-main-0.1.0-jar-with-dependencies.jar \
@@ -95,6 +125,8 @@ org.apache.camel:camel-http:4.14.2,org.apache.camel:camel-jackson:4.14.2
 
 The service can be deployed to Kubernetes or OpenShift using the Wanaku's operator. 
 
+##### Using a Service Catalog (Recommended)
+
 ```yaml
 apiVersion: "wanaku.ai/v1alpha1"
 kind: Wanaku
@@ -103,7 +135,6 @@ metadata:
 spec:
   auth:
     authServer: http://address-of-the-keycloak-instance
-    # Address of the proxy (could be the same as the auth server - default) or "auto" (for using Wanaku as the proxy via OIDC proxy)
     authProxy: "auto"
   router:
     image: quay.io/wanaku/wanaku-router-backend:latest
@@ -116,40 +147,59 @@ spec:
     - name: employee-system
       type: camel-integration-capability
       image: quay.io/wanaku/camel-integration-capability:latest
-      # When using a camel integration capability, must always set the routes and rules references
       env:
-        # Reference to the Camel routes YAML file (supports datastore:// and file:// schemes)
+        - name: SERVICE_CATALOG
+          value: "employee-system-v2"
+        - name: SERVICE_CATALOG_SYSTEM
+          value: "employee-system"
+```
+
+##### Using Individual References
+
+```yaml
+apiVersion: "wanaku.ai/v1alpha1"
+kind: Wanaku
+metadata:
+  name: wanaku-dev
+spec:
+  auth:
+    authServer: http://address-of-the-keycloak-instance
+    authProxy: "auto"
+  router:
+    image: quay.io/wanaku/wanaku-router-backend:latest
+    imagePullPolicy: Always
+  secrets:
+    oidcCredentialsSecret: <credentials-go-here>
+  capabilities:
+    - name: wanaku-http
+      image: quay.io/wanaku/wanaku-tool-service-http:latest
+    - name: employee-system
+      type: camel-integration-capability
+      image: quay.io/wanaku/camel-integration-capability:latest
+      env:
         - name: ROUTES_REF
           value: "datastore://employee-backend.camel.yaml"
-        # Reference to the route exposure rules YAML (supports datastore:// and file:// schemes)
         - name: RULES_REF
           value: "datastore://employee-backend-rules.yaml"
-        # Reference to dependencies file (supports datastore:// and file:// schemes)
         - name: DEPENDENCIES
           value: "datastore://employee-backend-dependencies.txt"
 ```
 
-#### Required Configuration
+#### Configuration Reference
 
-| Parameter    | Description                                                | Example                        |
-|--------------|------------------------------------------------------------|--------------------------------|
-| `ROUTES_REF` | Reference to the Camel routes YAML file                    | `datastore://route.camel.yaml` |
-| `RULES_REF`  | Reference to the route exposure rules YAML                 | `datastore://route-rules.yaml` |
-| `DEPENDENCIES` | Reference to a text file containing a list of dependencies | `datastore://dependencies.txt` |
-
-> [NOTE]
-> See the running documentation below for details on each of these.
-
-#### Optional Configuration
-
-| Parameter      | Description                                | Example                       |
-|----------------|--------------------------------------------|-------------------------------|
-| `INIT_FROM`    | Git repository URL to clone during startup | `git@github.com:org/repo.git` |
-| `DATA_DIR`     | Directory where downloaded files are saved | `/data`                       |
-| `REPOSITORIES` | Additional Maven repositories to use       | `http://repo.com`             |
+| Parameter                | Description                                                | Example                        |
+|--------------------------|------------------------------------------------------------|--------------------------------|
+| `SERVICE_CATALOG`        | Name of the service catalog (recommended)                  | `employee-system-v2`           |
+| `SERVICE_CATALOG_SYSTEM` | System name within the catalog (required with above)       | `employee-system`              |
+| `ROUTES_REF`             | Reference to the Camel routes YAML file                    | `datastore://route.camel.yaml` |
+| `RULES_REF`              | Reference to the route exposure rules YAML                 | `datastore://route-rules.yaml` |
+| `DEPENDENCIES`           | Reference to a text file containing a list of dependencies | `datastore://dependencies.txt` |
+| `INIT_FROM`              | Git repository URL to clone during startup                 | `git@github.com:org/repo.git`  |
+| `DATA_DIR`               | Directory where downloaded files are saved                 | `/data`                        |
+| `REPOSITORIES`           | Additional Maven repositories to use                       | `http://repo.com`              |
 
 > [NOTE]
-> See the running documentation below for details on each of these.
+> `SERVICE_CATALOG` is mutually exclusive with `ROUTES_REF`, `RULES_REF`, and `DEPENDENCIES`.
 
 ### Troubleshooting
 
@@ -445,17 +495,50 @@ tools or MCP resources. To do so, the capability needs to have access to the fil
 
 Route files can be provided to the capability using one of the following methods:
 
-1. **From Wanaku's Data Store**: This uses Wanaku's Data Store to download files automatically after registration.
-2. **Built-in Git initialization**: Use `--init-from` to clone a repository during startup
-3. **Init container**: Use a separate container to clone files before the main container starts (see example below)
-4. **Volume mounts**: Mount ConfigMaps or persistent volumes containing route files
+1. **From a Wanaku Service Catalog** (recommended): Bundles routes, rules, and dependencies into a single versioned artifact
+2. **From Wanaku's Data Store**: Uses Wanaku's Data Store to download individual files after registration
+3. **Built-in Git initialization**: Use `--init-from` to clone a repository during startup
+4. **Init container**: Use a separate container to clone files before the main container starts (see example below)
+5. **Volume mounts**: Mount ConfigMaps or persistent volumes containing route files
+
+### Using a Service Catalog
+
+This is the recommended way to obtain route files. A service catalog is a versioned ZIP archive stored in Wanaku
+that bundles all resources (routes, rules, and optionally dependencies) for one or more systems. Using a catalog
+simplifies deployment because a single `--service-catalog` parameter replaces `--routes-ref`, `--rules-ref`, and
+`--dependencies`.
+
+The catalog ZIP must contain an `index.properties` file mapping system names to their resources:
+
+```properties
+catalog.name=employee-system-v2
+catalog.services=employee-system
+catalog.routes.employee-system=employee-system/routes.camel.yaml
+catalog.rules.employee-system=employee-system/rules.wanaku-rules.yaml
+catalog.dependencies.employee-system=employee-system/dependencies.txt
+```
+
+When running manually:
+
+```bash
+java -jar target/camel-integration-capability-main-0.1.0-jar-with-dependencies.jar \
+  --registration-url http://localhost:8080 \
+  --registration-announce-address localhost \
+  --grpc-port 9190 \
+  --name employee-system \
+  --service-catalog employee-system-v2 \
+  --service-catalog-system employee-system \
+  --client-id wanaku-service \
+  --client-secret aBqsU3EzUPCHumf9sTK5sanxXkB0yFtv
+```
+
+The capability will download the catalog after registration, extract the files for the specified system,
+and start serving the routes automatically. Failed downloads are retried with exponential backoff.
 
 ### Using Wanaku's Data Store
 
-This is the recommended way to obtain the route files. In this mode, the capability downloads files
-directly from Wanaku after its registration is complete.
-
-When running manually, the command looks like this:
+In this mode, the capability downloads individual files directly from Wanaku after registration.
+This is useful during development or when you need fine-grained control over each resource.
 
 ```bash
 java -jar target/camel-integration-capability-main-0.1.0-jar-with-dependencies.jar \

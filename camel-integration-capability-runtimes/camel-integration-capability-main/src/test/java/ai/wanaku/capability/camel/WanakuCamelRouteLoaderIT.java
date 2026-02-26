@@ -29,9 +29,9 @@ import ai.wanaku.capabilities.sdk.runtime.camel.downloader.ResourceType;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
-import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class WanakuCamelRouteLoaderIT {
@@ -171,9 +171,7 @@ class WanakuCamelRouteLoaderIT {
                 ResourceType.DEPENDENCY_REF, dependenciesFile);
 
         WanakuCamelManager lenientCamelManager = new WanakuCamelManager(
-                downloadedResources,
-                null,
-                WanakuCamelManager.RouteLoadingFailurePolicy.LOG_AND_CONTINUE);
+                downloadedResources, null, WanakuCamelManager.RouteLoadingFailurePolicy.LOG_AND_CONTINUE);
 
         try {
             CamelContext context = lenientCamelManager.getCamelContext();

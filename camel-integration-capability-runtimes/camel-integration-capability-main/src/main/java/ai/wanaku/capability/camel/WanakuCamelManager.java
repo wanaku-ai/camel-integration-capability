@@ -3,8 +3,10 @@ package ai.wanaku.capability.camel;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Optional;
 import org.apache.camel.CamelContext;
 import org.apache.camel.impl.DefaultCamelContext;
 import org.slf4j.Logger;
@@ -35,8 +37,8 @@ public class WanakuCamelManager {
             String repositoriesList,
             RouteLoadingFailurePolicy routeLoadingFailurePolicy) {
         this.repositoriesList = repositoriesList;
-        this.routeLoadingFailurePolicy = Objects.requireNonNull(routeLoadingFailurePolicy,
-                "RouteLoadingFailurePolicy must not be null");
+        this.routeLoadingFailurePolicy =
+                Objects.requireNonNull(routeLoadingFailurePolicy, "RouteLoadingFailurePolicy must not be null");
         context = new DefaultCamelContext();
 
         this.routesPath = downloadedResources.get(ResourceType.ROUTES_REF).toString();
@@ -44,7 +46,11 @@ public class WanakuCamelManager {
             String dependenciesPath =
                     downloadedResources.get(ResourceType.DEPENDENCY_REF).toString();
             try {
-                this.dependenciesList = Files.readString(Path.of(dependenciesPath));
+                final List<String> depLines = Files.readAllLines(Path.of(dependenciesPath));
+                final Optional<String> firstDepLine =
+                        depLines.stream().filter(l -> !l.startsWith("#")).findFirst();
+                this.dependenciesList = firstDepLine.orElse(null);
+
             } catch (IOException e) {
                 throw new RuntimeException(e);
             }

@@ -47,8 +47,8 @@ graph TB
     E -->|Database| G[Data Sources]
     E -->|Message Queue| H[Messaging Systems]
 
-    I[DataStore Service] -.->|Route Definitions| C
-    I -.->|Rules & Dependencies| C
+    I[Service Catalog] -.->|Routes, Rules & Dependencies| C
+    J[DataStore Service] -.->|Individual Resources| C
 ```
 
 
@@ -97,7 +97,21 @@ graph TB
 
 ### Option 1: Standalone Application
 
-Run as a dedicated service with CLI configuration:
+Run as a dedicated service with CLI configuration. The recommended approach is to use a **service catalog**, which
+bundles routes, rules, and dependencies into a single versioned artifact:
+
+```bash
+java -jar camel-integration-capability-runtimes/camel-integration-capability-main/target/camel-integration-capability-main-*-jar-with-dependencies.jar \
+  --registration-url http://localhost:8080 \
+  --registration-announce-address localhost \
+  --name employee-system \
+  --service-catalog employee-system-v2 \
+  --service-catalog-system employee-system \
+  --client-id wanaku-service \
+  --client-secret your-secret
+```
+
+You can also reference individual files instead of a catalog (useful during development):
 
 ```bash
 java -jar camel-integration-capability-runtimes/camel-integration-capability-main/target/camel-integration-capability-main-*-jar-with-dependencies.jar \
