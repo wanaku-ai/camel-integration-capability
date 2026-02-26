@@ -13,6 +13,8 @@ import io.grpc.Grpc;
 import io.grpc.InsecureServerCredentials;
 import io.grpc.Server;
 import io.grpc.ServerBuilder;
+import ai.wanaku.capabilities.sdk.api.types.DataStore;
+import ai.wanaku.capabilities.sdk.api.types.WanakuResponse;
 import ai.wanaku.capabilities.sdk.api.types.providers.ServiceTarget;
 import ai.wanaku.capabilities.sdk.api.types.providers.ServiceType;
 import ai.wanaku.capabilities.sdk.common.ServicesHelper;
@@ -29,6 +31,7 @@ import ai.wanaku.capabilities.sdk.runtime.camel.downloader.ResourceDownloaderCal
 import ai.wanaku.capabilities.sdk.runtime.camel.downloader.ResourceListBuilder;
 import ai.wanaku.capabilities.sdk.runtime.camel.downloader.ResourceRefs;
 import ai.wanaku.capabilities.sdk.runtime.camel.downloader.ResourceType;
+import ai.wanaku.capabilities.sdk.runtime.camel.downloader.ServiceCatalogExtractor;
 import ai.wanaku.capabilities.sdk.runtime.camel.grpc.CamelHealthProbe;
 import ai.wanaku.capabilities.sdk.runtime.camel.grpc.CamelResource;
 import ai.wanaku.capabilities.sdk.runtime.camel.grpc.CamelTool;
@@ -107,8 +110,7 @@ public class CamelToolMain implements Callable<Integer> {
     @CommandLine.Option(
             names = {"--routes-ref"},
             description =
-                    "The reference path to the Apache Camel routes YAML file. Supports datastore:// and file:// schemes (e.g., datastore://routes.camel.yaml or file:///path/to/routes.yaml)",
-            required = true)
+                    "The reference path to the Apache Camel routes YAML file. Supports datastore:// and file:// schemes (e.g., datastore://routes.camel.yaml or file:///path/to/routes.yaml)")
     private String routesRef;
 
     @CommandLine.Option(
@@ -165,6 +167,17 @@ public class CamelToolMain implements Callable<Integer> {
                     "Git repository URL to clone during initialization. Cloned files can be referenced using file:// (e.g., git@github.com:wanaku-ai/wanaku-recipes.git)")
     private String initFrom;
 
+    @CommandLine.Option(
+            names = {"--service-catalog"},
+            description =
+                    "The name of the service catalog to use. Mutually exclusive with --routes-ref, --rules-ref, and --dependencies. Requires --service-catalog-system.")
+    private String serviceCatalog;
+
+    @CommandLine.Option(
+            names = {"--service-catalog-system"},
+            description = "The system name within the service catalog to use (e.g., employee-check)")
+    private String serviceCatalogSystem;
+
     public static void main(String[] args) {
         int exitCode = new CommandLine(new CamelToolMain()).execute(args);
 
@@ -207,6 +220,8 @@ public class CamelToolMain implements Callable<Integer> {
     public Integer call() throws Exception {
         LOG.info("Camel Integration Capability {} is starting", VersionHelper.VERSION);
 
+        validateOptions();
+
         // Create the data directory first (needed by initializers)
         Path dataDirPath = Paths.get(dataDir);
         Files.createDirectories(dataDirPath);
@@ -225,33 +240,47 @@ public class CamelToolMain implements Callable<Integer> {
                 .build();
 
         ServicesHttpClient httpClient = createClient(serviceConfig);
-        DownloaderFactory downloaderFactory = new DownloaderFactory(httpClient, dataDirPath);
 
-        List<ResourceRefs<URI>> resources = ResourceListBuilder.newBuilder()
-                .addRoutesRef(routesRef)
-                .addRulesRef(rulesRef)
-                .addDependenciesRef(dependenciesRef)
-                .build();
+        final Map<ResourceType, Path> downloadedResources;
+        final ZeroDepRegistrationManager registrationManager;
 
-        ResourceDownloaderCallback resourcesDownloaderCallback =
-                new ResourceDownloaderCallback(downloaderFactory, resources);
+        if (serviceCatalog != null) {
+            downloadedResources = downloadFromServiceCatalog(httpClient, dataDirPath);
 
-        final ServiceTarget toolInvokerTarget = newServiceTargetTarget();
-        ZeroDepRegistrationManager registrationManager =
-                newRegistrationManager(toolInvokerTarget, resourcesDownloaderCallback, serviceConfig);
+            // Register with discovery (no resource downloads needed, already extracted)
+            ResourceDownloaderCallback emptyCallback =
+                    new ResourceDownloaderCallback(new DownloaderFactory(httpClient, dataDirPath), List.of());
+            final ServiceTarget toolInvokerTarget = newServiceTargetTarget();
+            registrationManager = newRegistrationManager(toolInvokerTarget, emptyCallback, serviceConfig);
+            emptyCallback.waitForDownloads();
+        } else {
+            DownloaderFactory downloaderFactory = new DownloaderFactory(httpClient, dataDirPath);
 
-        if (!resourcesDownloaderCallback.waitForDownloads()) {
-            LOG.error("Failed to download required resources (check the logs)");
-            return 1;
+            List<ResourceRefs<URI>> resources = ResourceListBuilder.newBuilder()
+                    .addRoutesRef(routesRef)
+                    .addRulesRef(rulesRef)
+                    .addDependenciesRef(dependenciesRef)
+                    .build();
+
+            ResourceDownloaderCallback resourcesDownloaderCallback =
+                    new ResourceDownloaderCallback(downloaderFactory, resources);
+
+            final ServiceTarget toolInvokerTarget = newServiceTargetTarget();
+            registrationManager = newRegistrationManager(toolInvokerTarget, resourcesDownloaderCallback, serviceConfig);
+
+            if (!resourcesDownloaderCallback.waitForDownloads()) {
+                LOG.error("Failed to download required resources (check the logs)");
+                return 1;
+            }
+
+            downloadedResources = resourcesDownloaderCallback.getDownloadedResources();
         }
 
-        final Map<ResourceType, Path> downloadedResources = resourcesDownloaderCallback.getDownloadedResources();
         WanakuCamelManager camelManager = new WanakuCamelManager(downloadedResources, repositoriesList);
 
         McpSpec mcpSpec = createMcpSpec(httpClient, downloadedResources);
 
         try {
-
             final ServerBuilder<?> serverBuilder =
                     Grpc.newServerBuilderForPort(grpcPort, InsecureServerCredentials.create());
             final Server server = serverBuilder
@@ -268,6 +297,46 @@ public class CamelToolMain implements Callable<Integer> {
         }
 
         return 0;
+    }
+
+    private void validateOptions() {
+        boolean hasServiceCatalog = serviceCatalog != null && !serviceCatalog.isBlank();
+        boolean hasIndividualRefs = routesRef != null || rulesRef != null || dependenciesRef != null;
+
+        if (hasServiceCatalog && hasIndividualRefs) {
+            throw new CommandLine.ParameterException(
+                    new CommandLine(this),
+                    "--service-catalog is mutually exclusive with --routes-ref, --rules-ref, and --dependencies");
+        }
+
+        if (hasServiceCatalog && (serviceCatalogSystem == null || serviceCatalogSystem.isBlank())) {
+            throw new CommandLine.ParameterException(
+                    new CommandLine(this), "--service-catalog-system is required when --service-catalog is used");
+        }
+
+        if (!hasServiceCatalog && (routesRef == null || routesRef.isBlank())) {
+            throw new CommandLine.ParameterException(
+                    new CommandLine(this), "Either --routes-ref or --service-catalog must be provided");
+        }
+    }
+
+    private Map<ResourceType, Path> downloadFromServiceCatalog(ServicesHttpClient httpClient, Path dataDirPath) {
+        LOG.info("Downloading service catalog '{}' for system '{}'", serviceCatalog, serviceCatalogSystem);
+
+        WanakuResponse<DataStore> response = httpClient.getServiceCatalog(serviceCatalog);
+        if (response == null || response.data() == null) {
+            throw new RuntimeException("Service catalog '" + serviceCatalog + "' not found");
+        }
+
+        DataStore catalog = response.data();
+        if (catalog.getData() == null || catalog.getData().isBlank()) {
+            throw new RuntimeException("Service catalog '" + serviceCatalog + "' contains no data");
+        }
+
+        Map<ResourceType, Path> extracted =
+                ServiceCatalogExtractor.extract(catalog.getData(), serviceCatalogSystem, dataDirPath);
+        LOG.info("Extracted {} resource(s) from service catalog", extracted.size());
+        return extracted;
     }
 
     public McpSpec createMcpSpec(ServicesHttpClient servicesClient, Map<ResourceType, Path> downloadedResources) {
