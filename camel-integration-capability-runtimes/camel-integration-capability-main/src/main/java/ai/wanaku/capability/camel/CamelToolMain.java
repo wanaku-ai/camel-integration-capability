@@ -13,6 +13,7 @@ import io.grpc.Grpc;
 import io.grpc.InsecureServerCredentials;
 import io.grpc.Server;
 import io.grpc.ServerBuilder;
+import ai.wanaku.capabilities.sdk.api.discovery.DiscoveryCallback;
 import ai.wanaku.capabilities.sdk.api.types.providers.ServiceTarget;
 import ai.wanaku.capabilities.sdk.api.types.providers.ServiceType;
 import ai.wanaku.capabilities.sdk.common.ServicesHelper;
@@ -24,13 +25,14 @@ import ai.wanaku.capabilities.sdk.discovery.ZeroDepRegistrationManager;
 import ai.wanaku.capabilities.sdk.discovery.config.DefaultRegistrationConfig;
 import ai.wanaku.capabilities.sdk.discovery.deserializer.JacksonDeserializer;
 import ai.wanaku.capabilities.sdk.discovery.util.DiscoveryHelper;
+import ai.wanaku.capabilities.sdk.runtime.camel.downloader.DownloaderConfiguration;
 import ai.wanaku.capabilities.sdk.runtime.camel.downloader.DownloaderFactory;
 import ai.wanaku.capabilities.sdk.runtime.camel.downloader.ExponentialBackoffRetryPolicy;
 import ai.wanaku.capabilities.sdk.runtime.camel.downloader.ResourceDownloaderCallback;
-import ai.wanaku.capabilities.sdk.runtime.camel.downloader.ResourceDownloaderConfiguration;
 import ai.wanaku.capabilities.sdk.runtime.camel.downloader.ResourceListBuilder;
 import ai.wanaku.capabilities.sdk.runtime.camel.downloader.ResourceRefs;
 import ai.wanaku.capabilities.sdk.runtime.camel.downloader.ResourceType;
+import ai.wanaku.capabilities.sdk.runtime.camel.downloader.ServiceCatalogDownloaderCallback;
 import ai.wanaku.capabilities.sdk.runtime.camel.grpc.CamelHealthProbe;
 import ai.wanaku.capabilities.sdk.runtime.camel.grpc.CamelResource;
 import ai.wanaku.capabilities.sdk.runtime.camel.grpc.CamelTool;
@@ -109,8 +111,7 @@ public class CamelToolMain implements Callable<Integer> {
     @CommandLine.Option(
             names = {"--routes-ref"},
             description =
-                    "The reference path to the Apache Camel routes YAML file. Supports datastore:// and file:// schemes (e.g., datastore://routes.camel.yaml or file:///path/to/routes.yaml)",
-            required = true)
+                    "The reference path to the Apache Camel routes YAML file. Supports datastore:// and file:// schemes (e.g., datastore://routes.camel.yaml or file:///path/to/routes.yaml)")
     private String routesRef;
 
     @CommandLine.Option(
@@ -167,6 +168,17 @@ public class CamelToolMain implements Callable<Integer> {
     private String initFrom;
 
     @CommandLine.Option(
+            names = {"--service-catalog"},
+            description =
+                    "The name of the service catalog to use. Mutually exclusive with --routes-ref, --rules-ref, and --dependencies. Requires --service-catalog-system.")
+    private String serviceCatalog;
+
+    @CommandLine.Option(
+            names = {"--service-catalog-system"},
+            description = "The system name within the service catalog to use (e.g., employee-check)")
+    private String serviceCatalogSystem;
+
+    @CommandLine.Option(
             names = {"--fail-fast"},
             description = "Fail fast if route loading fails. If false, log and continue.",
             defaultValue = "false")
@@ -179,9 +191,7 @@ public class CamelToolMain implements Callable<Integer> {
     }
 
     public ZeroDepRegistrationManager newRegistrationManager(
-            ServiceTarget serviceTarget,
-            ResourceDownloaderCallback resourcesDownloaderCallback,
-            ServiceConfig serviceConfig) {
+            ServiceTarget serviceTarget, DiscoveryCallback discoveryCallback, ServiceConfig serviceConfig) {
         DiscoveryServiceHttpClient discoveryServiceHttpClient = new DiscoveryServiceHttpClient(serviceConfig);
 
         final DefaultRegistrationConfig registrationConfig = DefaultRegistrationConfig.Builder.newBuilder()
@@ -195,7 +205,7 @@ public class CamelToolMain implements Callable<Integer> {
         ZeroDepRegistrationManager registrationManager = new ZeroDepRegistrationManager(
                 discoveryServiceHttpClient, serviceTarget, registrationConfig, new JacksonDeserializer());
 
-        registrationManager.addCallBack(resourcesDownloaderCallback);
+        registrationManager.addCallBack(discoveryCallback);
         registrationManager.start();
 
         return registrationManager;
@@ -213,6 +223,8 @@ public class CamelToolMain implements Callable<Integer> {
     @Override
     public Integer call() throws Exception {
         LOG.info("Camel Integration Capability {} is starting", VersionHelper.VERSION);
+
+        validateOptions();
 
         // Create the data directory first (needed by initializers)
         Path dataDirPath = Paths.get(dataDir);
@@ -232,33 +244,52 @@ public class CamelToolMain implements Callable<Integer> {
                 .build();
 
         ServicesHttpClient httpClient = createClient(serviceConfig);
+
         DownloaderFactory downloaderFactory = new DownloaderFactory(httpClient, dataDirPath);
 
-        List<ResourceRefs<URI>> resources = ResourceListBuilder.newBuilder()
-                .addRoutesRef(routesRef)
-                .addRulesRef(rulesRef)
-                .addDependenciesRef(dependenciesRef)
-                .build();
-
-        ResourceDownloaderConfiguration downloaderConfig = ResourceDownloaderConfiguration.newBuilder()
+        DownloaderConfiguration downloaderConfig = DownloaderConfiguration.newBuilder()
                 .retryPolicy(ExponentialBackoffRetryPolicy.newBuilder()
                         .maxRetries(retries)
                         .build())
                 .build();
 
-        ResourceDownloaderCallback resourcesDownloaderCallback =
-                new ResourceDownloaderCallback(downloaderFactory, resources, downloaderConfig);
+        final Map<ResourceType, Path> downloadedResources;
+        final ZeroDepRegistrationManager registrationManager;
 
-        final ServiceTarget toolInvokerTarget = newServiceTargetTarget();
-        ZeroDepRegistrationManager registrationManager =
-                newRegistrationManager(toolInvokerTarget, resourcesDownloaderCallback, serviceConfig);
+        if (serviceCatalog != null) {
+            ServiceCatalogDownloaderCallback catalogCallback = new ServiceCatalogDownloaderCallback(
+                    downloaderFactory, serviceCatalog, serviceCatalogSystem, downloaderConfig);
 
-        if (!resourcesDownloaderCallback.waitForDownloads()) {
-            LOG.error("Failed to download required resources (check the logs)");
-            return 1;
+            final ServiceTarget toolInvokerTarget = newServiceTargetTarget();
+            registrationManager = newRegistrationManager(toolInvokerTarget, catalogCallback, serviceConfig);
+
+            if (!catalogCallback.waitForDownloads()) {
+                LOG.error("Failed to download service catalog resources (check the logs)");
+                return 1;
+            }
+
+            downloadedResources = catalogCallback.getDownloadedResources();
+        } else {
+            List<ResourceRefs<URI>> resources = ResourceListBuilder.newBuilder()
+                    .addRoutesRef(routesRef)
+                    .addRulesRef(rulesRef)
+                    .addDependenciesRef(dependenciesRef)
+                    .build();
+
+            ResourceDownloaderCallback resourcesDownloaderCallback =
+                    new ResourceDownloaderCallback(downloaderFactory, resources, downloaderConfig);
+
+            final ServiceTarget toolInvokerTarget = newServiceTargetTarget();
+            registrationManager = newRegistrationManager(toolInvokerTarget, resourcesDownloaderCallback, serviceConfig);
+
+            if (!resourcesDownloaderCallback.waitForDownloads()) {
+                LOG.error("Failed to download required resources (check the logs)");
+                return 1;
+            }
+
+            downloadedResources = resourcesDownloaderCallback.getDownloadedResources();
         }
 
-        final Map<ResourceType, Path> downloadedResources = resourcesDownloaderCallback.getDownloadedResources();
         WanakuCamelManager.RouteLoadingFailurePolicy policy = failFast
                 ? WanakuCamelManager.RouteLoadingFailurePolicy.FAIL_FAST
                 : WanakuCamelManager.RouteLoadingFailurePolicy.LOG_AND_CONTINUE;
@@ -267,7 +298,6 @@ public class CamelToolMain implements Callable<Integer> {
         McpSpec mcpSpec = createMcpSpec(httpClient, downloadedResources);
 
         try {
-
             final ServerBuilder<?> serverBuilder =
                     Grpc.newServerBuilderForPort(grpcPort, InsecureServerCredentials.create());
             final Server server = serverBuilder
@@ -284,6 +314,27 @@ public class CamelToolMain implements Callable<Integer> {
         }
 
         return 0;
+    }
+
+    private void validateOptions() {
+        boolean hasServiceCatalog = serviceCatalog != null && !serviceCatalog.isBlank();
+        boolean hasIndividualRefs = routesRef != null || rulesRef != null || dependenciesRef != null;
+
+        if (hasServiceCatalog && hasIndividualRefs) {
+            throw new CommandLine.ParameterException(
+                    new CommandLine(this),
+                    "--service-catalog is mutually exclusive with --routes-ref, --rules-ref, and --dependencies");
+        }
+
+        if (hasServiceCatalog && (serviceCatalogSystem == null || serviceCatalogSystem.isBlank())) {
+            throw new CommandLine.ParameterException(
+                    new CommandLine(this), "--service-catalog-system is required when --service-catalog is used");
+        }
+
+        if (!hasServiceCatalog && (routesRef == null || routesRef.isBlank())) {
+            throw new CommandLine.ParameterException(
+                    new CommandLine(this), "Either --routes-ref or --service-catalog must be provided");
+        }
     }
 
     public McpSpec createMcpSpec(ServicesHttpClient servicesClient, Map<ResourceType, Path> downloadedResources) {
