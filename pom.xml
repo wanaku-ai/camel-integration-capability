@@ -26,7 +26,7 @@
         <slf4j.version>2.0.17</slf4j.version>
         <log4j.version>2.25.4</log4j.version>
         <picocli.version>4.7.7</picocli.version>
-        <wanaku.version>0.1.0-SNAPSHOT</wanaku.version>
+        <wanaku-capabilities-sdk.version>0.1.0</wanaku-capabilities-sdk.version>
         <jackson-databind.version>2.21.2</jackson-databind.version>
         <junit-jupiter.version>5.14.3</junit-jupiter.version>
         <jgit.version>7.5.0.202512021534-r</jgit.version>
@@ -80,7 +80,7 @@
             <dependency>
                 <groupId>ai.wanaku.sdk</groupId>
                 <artifactId>capabilities-bom</artifactId>
-                <version>${wanaku.version}</version>
+                <version>${wanaku-capabilities-sdk.version}</version>
                 <type>pom</type>
                 <scope>import</scope>
             </dependency>
@@ -96,32 +96,32 @@
             <dependency>
                 <groupId>ai.wanaku.sdk</groupId>
                 <artifactId>capabilities-common</artifactId>
-                <version>${wanaku.version}</version>
+                <version>${wanaku-capabilities-sdk.version}</version>
             </dependency>
             <dependency>
                 <groupId>ai.wanaku.sdk</groupId>
                 <artifactId>capabilities-discovery</artifactId>
-                <version>${wanaku.version}</version>
+                <version>${wanaku-capabilities-sdk.version}</version>
             </dependency>
             <dependency>
                 <groupId>ai.wanaku.sdk</groupId>
                 <artifactId>capabilities-data-files</artifactId>
-                <version>${wanaku.version}</version>
+                <version>${wanaku-capabilities-sdk.version}</version>
             </dependency>
             <dependency>
                 <groupId>ai.wanaku.sdk</groupId>
                 <artifactId>capabilities-exchange</artifactId>
-                <version>${wanaku.version}</version>
+                <version>${wanaku-capabilities-sdk.version}</version>
             </dependency>
             <dependency>
                 <groupId>ai.wanaku.sdk</groupId>
                 <artifactId>capabilities-runtime</artifactId>
-                <version>${wanaku.version}</version>
+                <version>${wanaku-capabilities-sdk.version}</version>
             </dependency>
             <dependency>
                 <groupId>ai.wanaku.sdk</groupId>
                 <artifactId>capabilities-services-client</artifactId>
-                <version>${wanaku.version}</version>
+                <version>${wanaku-capabilities-sdk.version}</version>
             </dependency>
 
             <!-- Logging -->
