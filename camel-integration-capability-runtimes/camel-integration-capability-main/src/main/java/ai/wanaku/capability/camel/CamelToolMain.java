@@ -166,6 +166,12 @@ public class CamelToolMain implements Callable<Integer> {
                     "Git repository URL to clone during initialization. Cloned files can be referenced using file:// (e.g., git@github.com:wanaku-ai/wanaku-recipes.git)")
     private String initFrom;
 
+    @CommandLine.Option(
+            names = {"--fail-fast"},
+            description = "Fail fast if route loading fails. If false, log and continue.",
+            defaultValue = "false")
+    private boolean failFast;
+
     public static void main(String[] args) {
         int exitCode = new CommandLine(new CamelToolMain()).execute(args);
 
@@ -253,7 +259,10 @@ public class CamelToolMain implements Callable<Integer> {
         }
 
         final Map<ResourceType, Path> downloadedResources = resourcesDownloaderCallback.getDownloadedResources();
-        WanakuCamelManager camelManager = new WanakuCamelManager(downloadedResources, repositoriesList);
+        WanakuCamelManager.RouteLoadingFailurePolicy policy = failFast
+                ? WanakuCamelManager.RouteLoadingFailurePolicy.FAIL_FAST
+                : WanakuCamelManager.RouteLoadingFailurePolicy.LOG_AND_CONTINUE;
+        WanakuCamelManager camelManager = new WanakuCamelManager(downloadedResources, repositoriesList, policy);
 
         McpSpec mcpSpec = createMcpSpec(httpClient, downloadedResources);
 
