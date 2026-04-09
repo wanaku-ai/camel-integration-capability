@@ -29,6 +29,7 @@ import ai.wanaku.capabilities.sdk.runtime.camel.downloader.ResourceType;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -139,5 +140,48 @@ class WanakuCamelRouteLoaderIT {
         assertTrue(
                 expectedPattern.matcher(result).matches(),
                 "Result should match pattern [a-z]{5}\\d{3}, but was: " + result);
+    }
+
+    @Test
+    void emptyRouteDefinitionsFailFast() {
+        Path routesFile = Paths.get("src", "test", "resources", "empty-routes.camel.yaml");
+        Path dependenciesFile = Paths.get("src", "test", "resources", "test-routes-dependencies.txt");
+
+        Map<ResourceType, Path> downloadedResources = Map.of(
+                ResourceType.ROUTES_REF, routesFile,
+                ResourceType.DEPENDENCY_REF, dependenciesFile);
+
+        IllegalStateException exception = assertThrows(
+                IllegalStateException.class,
+                () -> new WanakuCamelManager(downloadedResources, null),
+                "An empty route file should fail fast");
+
+        assertTrue(
+                exception.getMessage().contains("No Camel routes were loaded"),
+                "Exception should explain that no routes were loaded");
+    }
+
+    @Test
+    void emptyRouteDefinitionsCanContinueInLenientMode() {
+        Path routesFile = Paths.get("src", "test", "resources", "empty-routes.camel.yaml");
+        Path dependenciesFile = Paths.get("src", "test", "resources", "test-routes-dependencies.txt");
+
+        Map<ResourceType, Path> downloadedResources = Map.of(
+                ResourceType.ROUTES_REF, routesFile,
+                ResourceType.DEPENDENCY_REF, dependenciesFile);
+
+        WanakuCamelManager lenientCamelManager = new WanakuCamelManager(
+                downloadedResources,
+                null,
+                WanakuCamelManager.RouteLoadingFailurePolicy.LOG_AND_CONTINUE);
+
+        try {
+            CamelContext context = lenientCamelManager.getCamelContext();
+            assertNotNull(context, "CamelContext should still be created in lenient mode");
+            assertTrue(context.isStarted(), "CamelContext should start in lenient mode");
+            assertEquals(0, context.getRoutes().size(), "No routes should be loaded from an empty file");
+        } finally {
+            lenientCamelManager.getCamelContext().stop();
+        }
     }
 }
