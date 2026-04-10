@@ -10,7 +10,7 @@ Add the plugin dependency to your project:
 <dependency>
     <groupId>ai.wanaku</groupId>
     <artifactId>camel-integration-capability-plugin</artifactId>
-    <version>0.1.0-SNAPSHOT</version>
+    <version>0.1.0</version>
 </dependency>
 ```
 

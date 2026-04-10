@@ -35,6 +35,9 @@ build/
 ### VS Code ###
 .vscode/
 
+### Maven Shade ###
+dependency-reduced-pom.xml
+
 ### Mac OS ###
 .DS_Store
 out
