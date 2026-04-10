@@ -2,7 +2,7 @@
 
 ![License](https://img.shields.io/badge/license-Apache%202.0-blue.svg)
 ![Java](https://img.shields.io/badge/java-21%2B-orange.svg)
-![Camel](https://img.shields.io/badge/Apache%20Camel-4.14.4-red.svg)
+![Camel](https://img.shields.io/badge/Apache%20Camel-4.18.1-red.svg)
 
 A capability service for the [Wanaku MCP Router](https://wanaku.ai) that enables AI agents to interact with backend systems through dynamically executed [Apache Camel](https://camel.apache.org) routes.
 

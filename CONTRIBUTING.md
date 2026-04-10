@@ -35,7 +35,7 @@ We expect all contributors to be respectful and professional. Create a welcoming
 
 4. **Run the application locally**:
    ```bash
-   java -jar target/camel-integration-capability-0.0.9-SNAPSHOT-jar-with-dependencies.jar \
+   java -jar camel-integration-capability-runtimes/camel-integration-capability-main/target/camel-integration-capability-main-0.1.0-jar-with-dependencies.jar \
      --registration-url http://localhost:8080 \
      --registration-announce-address localhost \
      --routes-ref file:///path/to/example-routes.camel.yaml \

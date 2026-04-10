@@ -37,8 +37,8 @@ Security updates are provided for the following versions:
 
 | Version | Supported          |
 | ------- | ------------------ |
-| 0.0.9-SNAPSHOT | :white_check_mark: (development) |
-| < 0.0.9 | :x: |
+| 0.1.0   | :white_check_mark: |
+| < 0.1.0 | :x: |
 
 > [!IMPORTANT]
 > Only the latest release receives security updates. Please upgrade to the latest version to ensure you have all security patches.
@@ -70,14 +70,14 @@ Security updates are provided for the following versions:
 - **Implement rate limiting**: Protect backend systems from abuse
 - **Use route-level access control**: Define exposure rules to restrict sensitive operations
 
-#### 5. Logging and Monitoring
+#### 4. Logging and Monitoring
 
 - **Don't log sensitive data**: Never log passwords, tokens, API keys, or PII
 - **Monitor for anomalies**: Set up alerts for unusual patterns (high error rates, unexpected access)
 - **Audit trail**: Log all tool invocations for security auditing
 - **Secure log storage**: Protect logs from unauthorized access
 
-#### 6. Dependency Security
+#### 5. Dependency Security
 
 - **Keep dependencies updated**: Regularly update Apache Camel, Wanaku SDK, and other libraries
 

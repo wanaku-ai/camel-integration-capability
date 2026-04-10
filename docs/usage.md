@@ -71,7 +71,7 @@ The service supports multiple URI schemes for resource references:
 For local development with a Wanaku stack:
 
 ```bash
-java -jar target/camel-integration-capability-1.0-SNAPSHOT.jar \
+java -jar target/camel-integration-capability-main-0.1.0-jar-with-dependencies.jar \
   --registration-url http://localhost:8080 \
   --registration-announce-address localhost \
   --grpc-port 9190 \
@@ -458,7 +458,7 @@ directly from Wanaku after its registration is complete.
 When running manually, the command looks like this:
 
 ```bash
-java -jar target/camel-integration-capability-1.0-SNAPSHOT.jar \
+java -jar target/camel-integration-capability-main-0.1.0-jar-with-dependencies.jar \
   --registration-url http://localhost:8080 \
   --registration-announce-address localhost \
   --grpc-port 9190 \
@@ -477,7 +477,7 @@ java -jar target/camel-integration-capability-1.0-SNAPSHOT.jar \
 To clone a Git repository containing routes and reference files directly:
 
 ```bash
-java -jar target/camel-integration-capability-1.0-SNAPSHOT.jar \
+java -jar target/camel-integration-capability-main-0.1.0-jar-with-dependencies.jar \
   --registration-url http://localhost:8080 \
   --registration-announce-address localhost \
   --grpc-port 9190 \
