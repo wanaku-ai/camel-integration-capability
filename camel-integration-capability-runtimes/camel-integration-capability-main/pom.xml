@@ -23,7 +23,7 @@
         <dependency>
             <groupId>ai.wanaku</groupId>
             <artifactId>camel-integration-capability-common</artifactId>
-            <version>${wanaku-capabilities-sdk.version}</version>
+            <version>${project.version}</version>
         </dependency>
 
         <dependency>
