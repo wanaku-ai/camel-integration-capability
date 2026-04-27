@@ -26,7 +26,7 @@
         <slf4j.version>2.0.17</slf4j.version>
         <log4j.version>2.25.4</log4j.version>
         <picocli.version>4.7.7</picocli.version>
-        <wanaku-capabilities-sdk.version>0.1.0</wanaku-capabilities-sdk.version>
+        <wanaku-capabilities-sdk.version>0.1.1-SNAPSHOT</wanaku-capabilities-sdk.version>
         <jackson-databind.version>2.21.2</jackson-databind.version>
         <junit-jupiter.version>5.14.3</junit-jupiter.version>
         <jgit.version>7.6.0.202603022253-r</jgit.version>
