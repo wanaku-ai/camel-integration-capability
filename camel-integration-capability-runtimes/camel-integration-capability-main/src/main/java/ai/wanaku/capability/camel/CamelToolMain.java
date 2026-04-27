@@ -133,8 +133,7 @@ public class CamelToolMain implements Callable<Integer> {
 
     @CommandLine.Option(
             names = {"--client-secret"},
-            description = "The client secret authentication",
-            required = true)
+            description = "The client secret authentication")
     private String clientSecret;
 
     @CommandLine.Option(
