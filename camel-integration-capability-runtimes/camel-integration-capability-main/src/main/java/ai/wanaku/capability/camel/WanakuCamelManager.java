@@ -12,6 +12,7 @@ import org.apache.camel.impl.DefaultCamelContext;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import ai.wanaku.capabilities.sdk.runtime.camel.downloader.ResourceType;
+import ai.wanaku.capabilities.sdk.runtime.camel.exceptions.RouteLoadingException;
 import ai.wanaku.capabilities.sdk.runtime.camel.util.WanakuRoutesLoader;
 
 public class WanakuCamelManager {
@@ -65,16 +66,17 @@ public class WanakuCamelManager {
         WanakuRoutesLoader routesLoader = new WanakuRoutesLoader(dependenciesList, repositoriesList);
 
         String routeFileUrl = Path.of(routesPath).toUri().toString();
-        int routesBeforeLoad = context.getRoutes().size();
-        routesLoader.loadRoute(context, routeFileUrl);
-        int loadedRoutes = context.getRoutes().size() - routesBeforeLoad;
-        if (loadedRoutes <= 0) {
-            String message = "No Camel routes were loaded from " + routeFileUrl;
-            if (routeLoadingFailurePolicy == RouteLoadingFailurePolicy.FAIL_FAST) {
-                throw new IllegalStateException(message);
-            }
 
-            LOG.warn("{} Continuing because route loading policy is LOG_AND_CONTINUE.", message);
+        try {
+            routesLoader.loadRoute(context, routeFileUrl);
+        } catch (RouteLoadingException e) {
+            if (routeLoadingFailurePolicy == RouteLoadingFailurePolicy.FAIL_FAST) {
+                throw e;
+            } else {
+                LOG.warn(
+                        "Failed to load routes, but continuing because route loading policy is LOG_AND_CONTINUE: {}",
+                        e.getMessage());
+            }
         }
         context.start();
     }

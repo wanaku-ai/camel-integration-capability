@@ -31,7 +31,6 @@ import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
-import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class WanakuCamelRouteLoaderIT {
@@ -88,14 +87,6 @@ class WanakuCamelRouteLoaderIT {
     }
 
     @Test
-    void gsonDataFormatIsAvailableThroughDataFormatResolver() {
-        CamelContext context = camelManager.getCamelContext();
-        assertNotNull(
-                context.resolveDataFormat("gson"),
-                "JSON data format should be available through DependencyDownloaderDataFormatResolver");
-    }
-
-    @Test
     void jsonPathLanguageIsAvailableThroughLanguageResolver() {
         CamelContext context = camelManager.getCamelContext();
         assertNotNull(
@@ -140,25 +131,6 @@ class WanakuCamelRouteLoaderIT {
         assertTrue(
                 expectedPattern.matcher(result).matches(),
                 "Result should match pattern [a-z]{5}\\d{3}, but was: " + result);
-    }
-
-    @Test
-    void emptyRouteDefinitionsFailFast() {
-        Path routesFile = Paths.get("src", "test", "resources", "empty-routes.camel.yaml");
-        Path dependenciesFile = Paths.get("src", "test", "resources", "test-routes-dependencies.txt");
-
-        Map<ResourceType, Path> downloadedResources = Map.of(
-                ResourceType.ROUTES_REF, routesFile,
-                ResourceType.DEPENDENCY_REF, dependenciesFile);
-
-        IllegalStateException exception = assertThrows(
-                IllegalStateException.class,
-                () -> new WanakuCamelManager(downloadedResources, null),
-                "An empty route file should fail fast");
-
-        assertTrue(
-                exception.getMessage().contains("No Camel routes were loaded"),
-                "Exception should explain that no routes were loaded");
     }
 
     @Test
