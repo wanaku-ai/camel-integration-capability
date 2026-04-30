@@ -14,6 +14,8 @@ ENV REGISTRATION_URL="" \
     SERVICE_NAME="" \
     ROUTES_PATH="" \
     ROUTES_RULES="" \
+    SERVICE_CATALOG="" \
+    SERVICE_CATALOG_SYSTEM="" \
     TOKEN_ENDPOINT="" \
     CLIENT_ID="" \
     CLIENT_SECRET="" \
@@ -39,6 +41,8 @@ ENTRYPOINT ["sh", "-c", "java -jar /app/app.jar \
     ${SERVICE_NAME:+--name $SERVICE_NAME} \
     ${ROUTES_PATH:+--routes-ref $ROUTES_PATH} \
     ${ROUTES_RULES:+--rules-ref $ROUTES_RULES} \
+    ${SERVICE_CATALOG:+--service-catalog $SERVICE_CATALOG} \
+    ${SERVICE_CATALOG_SYSTEM:+--service-catalog-system $SERVICE_CATALOG_SYSTEM} \
     ${TOKEN_ENDPOINT:+--token-endpoint $TOKEN_ENDPOINT} \
     ${CLIENT_ID:+--client-id $CLIENT_ID} \
     ${CLIENT_SECRET:+--client-secret $CLIENT_SECRET} \
