@@ -47,6 +47,7 @@ import ai.wanaku.capabilities.sdk.runtime.camel.spec.rules.tools.WanakuToolTrans
 import ai.wanaku.capabilities.sdk.runtime.camel.util.McpRulesManager;
 import ai.wanaku.capabilities.sdk.security.TokenEndpoint;
 import ai.wanaku.capabilities.sdk.services.ServicesHttpClient;
+import ai.wanaku.capability.camel.health.CamelHealthServer;
 import ai.wanaku.capability.camel.util.VersionHelper;
 import picocli.CommandLine;
 
@@ -184,6 +185,12 @@ public class CamelToolMain implements Callable<Integer> {
             defaultValue = "false")
     private boolean failFast;
 
+    @CommandLine.Option(
+            names = {"--health-port"},
+            description = "The port for the HTTP health check endpoint (0 to disable)",
+            defaultValue = "8080")
+    private int healthPort;
+
     public static void main(String[] args) {
         int exitCode = new CommandLine(new CamelToolMain()).execute(args);
 
@@ -297,7 +304,13 @@ public class CamelToolMain implements Callable<Integer> {
 
         McpSpec mcpSpec = createMcpSpec(httpClient, downloadedResources);
 
+        CamelHealthServer healthServer = null;
         try {
+            if (healthPort > 0) {
+                healthServer = new CamelHealthServer(camelManager.getCamelContext(), healthPort);
+                healthServer.start();
+            }
+
             final ServerBuilder<?> serverBuilder =
                     Grpc.newServerBuilderForPort(grpcPort, InsecureServerCredentials.create());
             final Server server = serverBuilder
@@ -310,6 +323,9 @@ public class CamelToolMain implements Callable<Integer> {
             server.start();
             server.awaitTermination();
         } finally {
+            if (healthServer != null) {
+                healthServer.stop();
+            }
             registrationManager.deregister();
         }
 
