@@ -5,17 +5,23 @@ import java.io.OutputStream;
 import java.net.InetSocketAddress;
 import java.nio.charset.StandardCharsets;
 import java.util.Collection;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
 import org.apache.camel.CamelContext;
 import org.apache.camel.ServiceStatus;
 import org.apache.camel.health.HealthCheck;
 import org.apache.camel.health.HealthCheckHelper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.SerializationFeature;
 import com.sun.net.httpserver.HttpExchange;
 import com.sun.net.httpserver.HttpServer;
 
 public class CamelHealthServer {
     private static final Logger LOG = LoggerFactory.getLogger(CamelHealthServer.class);
+    private static final ObjectMapper MAPPER = new ObjectMapper().enable(SerializationFeature.INDENT_OUTPUT);
 
     private final CamelContext camelContext;
     private final int port;
@@ -73,53 +79,22 @@ public class CamelHealthServer {
         }
     }
 
-    static String toJson(Collection<HealthCheck.Result> results, boolean isUp) {
-        StringBuilder sb = new StringBuilder();
-        sb.append("{\n");
-        sb.append("    \"status\": \"").append(isUp ? "UP" : "DOWN").append("\",\n");
-        sb.append("    \"checks\": [");
+    static String toJson(Collection<HealthCheck.Result> results, boolean isUp) throws IOException {
+        List<Map<String, String>> checks = results.stream()
+                .map(result -> {
+                    Map<String, String> check = new LinkedHashMap<>();
+                    check.put("name", result.getCheck().getId());
+                    check.put("status", result.getState().name());
+                    result.getMessage().ifPresent(msg -> check.put("message", msg));
+                    result.getError().ifPresent(err -> check.put("error", err.getMessage()));
+                    return check;
+                })
+                .toList();
 
-        boolean first = true;
-        for (HealthCheck.Result result : results) {
-            if (!first) {
-                sb.append(",");
-            }
-            first = false;
-            sb.append("\n        {\n");
-            sb.append("            \"name\": \"")
-                    .append(escapeJson(result.getCheck().getId()))
-                    .append("\",\n");
-            sb.append("            \"status\": \"").append(result.getState()).append("\"");
+        Map<String, Object> response = new LinkedHashMap<>();
+        response.put("status", isUp ? "UP" : "DOWN");
+        response.put("checks", checks);
 
-            if (result.getMessage().isPresent()) {
-                sb.append(",\n            \"message\": \"")
-                        .append(escapeJson(result.getMessage().get()))
-                        .append("\"");
-            }
-            if (result.getError().isPresent()) {
-                sb.append(",\n            \"error\": \"")
-                        .append(escapeJson(result.getError().get().getMessage()))
-                        .append("\"");
-            }
-
-            sb.append("\n        }");
-        }
-
-        if (!results.isEmpty()) {
-            sb.append("\n    ");
-        }
-        sb.append("]\n}");
-        return sb.toString();
-    }
-
-    private static String escapeJson(String value) {
-        if (value == null) {
-            return "";
-        }
-        return value.replace("\\", "\\\\")
-                .replace("\"", "\\\"")
-                .replace("\n", "\\n")
-                .replace("\r", "\\r")
-                .replace("\t", "\\t");
+        return MAPPER.writeValueAsString(response);
     }
 }
