@@ -14,6 +14,7 @@ import io.grpc.InsecureServerCredentials;
 import io.grpc.Server;
 import io.grpc.ServerBuilder;
 import ai.wanaku.capabilities.sdk.api.discovery.DiscoveryCallback;
+import ai.wanaku.capabilities.sdk.api.discovery.RegistrationManager;
 import ai.wanaku.capabilities.sdk.api.types.providers.ServiceTarget;
 import ai.wanaku.capabilities.sdk.api.types.providers.ServiceType;
 import ai.wanaku.capabilities.sdk.common.ServicesHelper;
@@ -33,7 +34,6 @@ import ai.wanaku.capabilities.sdk.runtime.camel.downloader.ResourceListBuilder;
 import ai.wanaku.capabilities.sdk.runtime.camel.downloader.ResourceRefs;
 import ai.wanaku.capabilities.sdk.runtime.camel.downloader.ResourceType;
 import ai.wanaku.capabilities.sdk.runtime.camel.downloader.ServiceCatalogDownloaderCallback;
-import ai.wanaku.capabilities.sdk.runtime.camel.grpc.CamelHealthProbe;
 import ai.wanaku.capabilities.sdk.runtime.camel.grpc.CamelResource;
 import ai.wanaku.capabilities.sdk.runtime.camel.grpc.CamelTool;
 import ai.wanaku.capabilities.sdk.runtime.camel.grpc.ProvisionBase;
@@ -254,14 +254,12 @@ public class CamelToolMain implements Callable<Integer> {
                 .build();
 
         final Map<ResourceType, Path> downloadedResources;
-        final ZeroDepRegistrationManager registrationManager;
 
         if (serviceCatalog != null) {
             ServiceCatalogDownloaderCallback catalogCallback = new ServiceCatalogDownloaderCallback(
                     downloaderFactory, serviceCatalog, serviceCatalogSystem, downloaderConfig);
 
-            final ServiceTarget toolInvokerTarget = newServiceTargetTarget();
-            registrationManager = newRegistrationManager(toolInvokerTarget, catalogCallback, serviceConfig);
+            catalogCallback.onRegistration(null, null);
 
             if (!catalogCallback.waitForDownloads()) {
                 LOG.error("Failed to download service catalog resources (check the logs)");
@@ -279,8 +277,7 @@ public class CamelToolMain implements Callable<Integer> {
             ResourceDownloaderCallback resourcesDownloaderCallback =
                     new ResourceDownloaderCallback(downloaderFactory, resources, downloaderConfig);
 
-            final ServiceTarget toolInvokerTarget = newServiceTargetTarget();
-            registrationManager = newRegistrationManager(toolInvokerTarget, resourcesDownloaderCallback, serviceConfig);
+            resourcesDownloaderCallback.onRegistration(null, null);
 
             if (!resourcesDownloaderCallback.waitForDownloads()) {
                 LOG.error("Failed to download required resources (check the logs)");
@@ -297,17 +294,36 @@ public class CamelToolMain implements Callable<Integer> {
 
         McpSpec mcpSpec = createMcpSpec(httpClient, downloadedResources);
 
-        try {
-            final ServerBuilder<?> serverBuilder =
-                    Grpc.newServerBuilderForPort(grpcPort, InsecureServerCredentials.create());
-            final Server server = serverBuilder
-                    .addService(new CamelTool(camelManager.getCamelContext(), mcpSpec))
-                    .addService(new CamelResource(camelManager.getCamelContext(), mcpSpec))
-                    .addService(new ProvisionBase(name))
-                    .addService(new CamelHealthProbe(camelManager.getCamelContext(), registrationManager.getTarget()))
-                    .build();
+        DeferredHealthProbe healthProbe = new DeferredHealthProbe(camelManager.getCamelContext());
 
-            server.start();
+        final ServerBuilder<?> serverBuilder =
+                Grpc.newServerBuilderForPort(grpcPort, InsecureServerCredentials.create());
+        final Server server = serverBuilder
+                .addService(new CamelTool(camelManager.getCamelContext(), mcpSpec))
+                .addService(new CamelResource(camelManager.getCamelContext(), mcpSpec))
+                .addService(new ProvisionBase(name))
+                .addService(healthProbe)
+                .build();
+
+        server.start();
+
+        final ServiceTarget toolInvokerTarget = newServiceTargetTarget();
+        DiscoveryCallback registrationCallback = new DiscoveryCallback() {
+            @Override
+            public void onRegistration(RegistrationManager manager, ServiceTarget target) {
+                healthProbe.setTarget(target);
+            }
+
+            @Override
+            public void onPing(RegistrationManager manager, ServiceTarget target, int status) {}
+
+            @Override
+            public void onDeregistration(RegistrationManager manager, ServiceTarget target, int status) {}
+        };
+        final ZeroDepRegistrationManager registrationManager =
+                newRegistrationManager(toolInvokerTarget, registrationCallback, serviceConfig);
+
+        try {
             server.awaitTermination();
         } finally {
             registrationManager.deregister();
