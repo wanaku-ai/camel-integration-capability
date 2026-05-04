@@ -34,9 +34,9 @@ public class CamelHealthServer {
 
     public void start() throws IOException {
         server = HttpServer.create(new InetSocketAddress(port), 0);
-        server.createContext("/q/health", this::handleAll);
-        server.createContext("/q/health/live", this::handleLiveness);
-        server.createContext("/q/health/ready", this::handleReadiness);
+        server.createContext("/health", this::handleAll);
+        server.createContext("/health/live", this::handleLiveness);
+        server.createContext("/health/ready", this::handleReadiness);
         server.start();
         LOG.info("Camel Health endpoint started on port {}", port);
     }
