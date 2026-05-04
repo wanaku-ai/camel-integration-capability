@@ -19,6 +19,7 @@ ENV REGISTRATION_URL="" \
     TOKEN_ENDPOINT="" \
     CLIENT_ID="" \
     CLIENT_SECRET="" \
+    HEALTH_PORT="8081" \
     DEPENDENCIES="" \
     INIT_FROM="" \
     REPOSITORIES="" \
@@ -27,8 +28,9 @@ ENV REGISTRATION_URL="" \
 # Create and declare volume for routes data
 VOLUME /data
 
-# Expose the gRPC port
+# Expose the gRPC and health check ports
 EXPOSE ${GRPC_PORT}
+EXPOSE ${HEALTH_PORT}
 
 # Run the application with environment variables.
 # This part uses shell parameter expansion to conditionally add command-line arguments to the Java application.
@@ -49,4 +51,5 @@ ENTRYPOINT ["sh", "-c", "java -jar /app/app.jar \
     ${DEPENDENCIES:+--dependencies $DEPENDENCIES} \
     ${INIT_FROM:+--init-from $INIT_FROM} \
     ${REPOSITORIES:+--repositories $REPOSITORIES} \
-    ${DATA_DIR:+--data-dir $DATA_DIR}"]
+    ${DATA_DIR:+--data-dir $DATA_DIR} \
+    ${HEALTH_PORT:+--health-port $HEALTH_PORT}"]

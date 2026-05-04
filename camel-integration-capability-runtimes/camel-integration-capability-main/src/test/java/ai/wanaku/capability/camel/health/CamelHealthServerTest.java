@@ -58,21 +58,21 @@ class CamelHealthServerTest {
 
     @Test
     void testHealthEndpointReturnsUp() throws Exception {
-        Map<String, Object> result = fetchHealthJson("/health");
+        Map<String, Object> result = fetchHealthJson("/q/health");
         assertEquals(200, result.get("_statusCode"));
         assertEquals("UP", result.get("status"));
     }
 
     @Test
     void testLivenessEndpoint() throws Exception {
-        Map<String, Object> result = fetchHealthJson("/health/live");
+        Map<String, Object> result = fetchHealthJson("/q/health/live");
         assertEquals(200, result.get("_statusCode"));
         assertEquals("UP", result.get("status"));
     }
 
     @Test
     void testReadinessEndpoint() throws Exception {
-        Map<String, Object> result = fetchHealthJson("/health/ready");
+        Map<String, Object> result = fetchHealthJson("/q/health/ready");
         assertEquals(200, result.get("_statusCode"));
         assertEquals("UP", result.get("status"));
     }
@@ -81,14 +81,14 @@ class CamelHealthServerTest {
     void testHealthEndpointReturnsDownWhenStopped() throws Exception {
         camelContext.stop();
 
-        Map<String, Object> result = fetchHealthJson("/health");
+        Map<String, Object> result = fetchHealthJson("/q/health");
         assertEquals(503, result.get("_statusCode"));
         assertEquals("DOWN", result.get("status"));
     }
 
     @Test
     void testResponseContentType() throws Exception {
-        Map<String, Object> result = fetchHealthJson("/health");
+        Map<String, Object> result = fetchHealthJson("/q/health");
         assertEquals("application/json", result.get("_contentType"));
     }
 }

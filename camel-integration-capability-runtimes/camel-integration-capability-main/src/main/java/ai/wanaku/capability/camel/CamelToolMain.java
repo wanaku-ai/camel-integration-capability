@@ -188,7 +188,7 @@ public class CamelToolMain implements Callable<Integer> {
     @CommandLine.Option(
             names = {"--health-port"},
             description = "The port for the HTTP health check endpoint (0 to disable)",
-            defaultValue = "8080")
+            defaultValue = "8081")
     private int healthPort;
 
     public static void main(String[] args) {
