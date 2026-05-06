@@ -7,6 +7,8 @@ import java.nio.file.Paths;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.Callable;
+import java.util.concurrent.CompletableFuture;
+import org.apache.camel.CamelContext;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import io.grpc.Grpc;
@@ -52,6 +54,8 @@ import picocli.CommandLine;
 
 public class CamelToolMain implements Callable<Integer> {
     private static final Logger LOG = LoggerFactory.getLogger(CamelToolMain.class);
+
+    record RegistrationResult(Map<ResourceType, Path> downloadedResources, ServiceTarget serviceTarget) {}
 
     @CommandLine.Option(
             names = {"-h", "--help"},
@@ -208,6 +212,8 @@ public class CamelToolMain implements Callable<Integer> {
         registrationManager.addCallBack(discoveryCallback);
         registrationManager.start();
 
+        Runtime.getRuntime().addShutdownHook(new Thread(registrationManager::deregister));
+
         return registrationManager;
     }
 
@@ -243,6 +249,64 @@ public class CamelToolMain implements Callable<Integer> {
                 .secret(clientSecret)
                 .build();
 
+        final ServiceTarget serviceTarget = newServiceTargetTarget();
+        final McpSpec mcpSpec = new McpSpec();
+        final CompletableFuture<CamelContext> contextFuture = new CompletableFuture<>();
+
+        final ServerBuilder<?> serverBuilder =
+                Grpc.newServerBuilderForPort(grpcPort, InsecureServerCredentials.create());
+        final Server server = serverBuilder
+                .addService(new CamelTool(contextFuture, mcpSpec))
+                .addService(new CamelResource(contextFuture, mcpSpec))
+                .addService(new ProvisionBase(name))
+                .addService(new CamelHealthProbe(contextFuture, serviceTarget))
+                .build();
+
+        server.start();
+
+        final WanakuCamelManager.RouteLoadingFailurePolicy policy = failFast
+                ? WanakuCamelManager.RouteLoadingFailurePolicy.FAIL_FAST
+                : WanakuCamelManager.RouteLoadingFailurePolicy.LOG_AND_CONTINUE;
+
+        Thread registrationThread = new Thread(
+                () -> {
+                    try {
+                        RegistrationResult result =
+                                downloadExternalResources(serviceConfig, dataDirPath, serviceTarget);
+                        if (result == null) {
+                            contextFuture.completeExceptionally(
+                                    new RuntimeException("Failed to download external resources"));
+                            return;
+                        }
+
+                        McpSpec loaded = createMcpSpec(serviceConfig, result.downloadedResources());
+                        mcpSpec.setMcp(loaded.getMcp());
+
+                        WanakuCamelManager camelManager =
+                                new WanakuCamelManager(result.downloadedResources(), repositoriesList, policy);
+                        contextFuture.complete(camelManager.getCamelContext());
+                    } catch (Exception e) {
+                        contextFuture.completeExceptionally(e);
+                    }
+                },
+                "registration");
+
+        registrationThread.start();
+
+        contextFuture.whenComplete((ctx, ex) -> {
+            if (ex != null) {
+                LOG.error("Registration failed, shutting down", ex);
+                server.shutdown();
+            }
+        });
+
+        server.awaitTermination();
+
+        return 0;
+    }
+
+    private RegistrationResult downloadExternalResources(
+            ServiceConfig serviceConfig, Path dataDirPath, ServiceTarget serviceTarget) {
         ServicesHttpClient httpClient = createClient(serviceConfig);
 
         DownloaderFactory downloaderFactory = new DownloaderFactory(httpClient, dataDirPath);
@@ -254,18 +318,16 @@ public class CamelToolMain implements Callable<Integer> {
                 .build();
 
         final Map<ResourceType, Path> downloadedResources;
-        final ZeroDepRegistrationManager registrationManager;
 
         if (serviceCatalog != null) {
             ServiceCatalogDownloaderCallback catalogCallback = new ServiceCatalogDownloaderCallback(
                     downloaderFactory, serviceCatalog, serviceCatalogSystem, downloaderConfig);
 
-            final ServiceTarget toolInvokerTarget = newServiceTargetTarget();
-            registrationManager = newRegistrationManager(toolInvokerTarget, catalogCallback, serviceConfig);
+            newRegistrationManager(serviceTarget, catalogCallback, serviceConfig);
 
             if (!catalogCallback.waitForDownloads()) {
                 LOG.error("Failed to download service catalog resources (check the logs)");
-                return 1;
+                return null;
             }
 
             downloadedResources = catalogCallback.getDownloadedResources();
@@ -279,41 +341,16 @@ public class CamelToolMain implements Callable<Integer> {
             ResourceDownloaderCallback resourcesDownloaderCallback =
                     new ResourceDownloaderCallback(downloaderFactory, resources, downloaderConfig);
 
-            final ServiceTarget toolInvokerTarget = newServiceTargetTarget();
-            registrationManager = newRegistrationManager(toolInvokerTarget, resourcesDownloaderCallback, serviceConfig);
+            newRegistrationManager(serviceTarget, resourcesDownloaderCallback, serviceConfig);
 
             if (!resourcesDownloaderCallback.waitForDownloads()) {
                 LOG.error("Failed to download required resources (check the logs)");
-                return 1;
+                return null;
             }
 
             downloadedResources = resourcesDownloaderCallback.getDownloadedResources();
         }
-
-        WanakuCamelManager.RouteLoadingFailurePolicy policy = failFast
-                ? WanakuCamelManager.RouteLoadingFailurePolicy.FAIL_FAST
-                : WanakuCamelManager.RouteLoadingFailurePolicy.LOG_AND_CONTINUE;
-        WanakuCamelManager camelManager = new WanakuCamelManager(downloadedResources, repositoriesList, policy);
-
-        McpSpec mcpSpec = createMcpSpec(httpClient, downloadedResources);
-
-        try {
-            final ServerBuilder<?> serverBuilder =
-                    Grpc.newServerBuilderForPort(grpcPort, InsecureServerCredentials.create());
-            final Server server = serverBuilder
-                    .addService(new CamelTool(camelManager.getCamelContext(), mcpSpec))
-                    .addService(new CamelResource(camelManager.getCamelContext(), mcpSpec))
-                    .addService(new ProvisionBase(name))
-                    .addService(new CamelHealthProbe(camelManager.getCamelContext(), registrationManager.getTarget()))
-                    .build();
-
-            server.start();
-            server.awaitTermination();
-        } finally {
-            registrationManager.deregister();
-        }
-
-        return 0;
+        return new RegistrationResult(downloadedResources, serviceTarget);
     }
 
     private void validateOptions() {
@@ -337,14 +374,16 @@ public class CamelToolMain implements Callable<Integer> {
         }
     }
 
-    public McpSpec createMcpSpec(ServicesHttpClient servicesClient, Map<ResourceType, Path> downloadedResources) {
+    public McpSpec createMcpSpec(ServiceConfig serviceConfig, Map<ResourceType, Path> downloadedResources) {
+        ServicesHttpClient httpClient = createClient(serviceConfig);
+
         String rulesRef =
                 downloadedResources.get(ResourceType.RULES_REF).toAbsolutePath().toString();
         McpRulesManager mcpRulesManager = new McpRulesManager(name, rulesRef);
         final WanakuToolTransformer toolTransformer =
-                new WanakuToolTransformer(name, new WanakuToolRuleProcessor(servicesClient));
+                new WanakuToolTransformer(name, new WanakuToolRuleProcessor(httpClient));
         final WanakuResourceTransformer resourceTransformer =
-                new WanakuResourceTransformer(name, new WanakuResourceRuleProcessor(servicesClient));
+                new WanakuResourceTransformer(name, new WanakuResourceRuleProcessor(httpClient));
 
         return mcpRulesManager.loadMcpSpecAndRegister(toolTransformer, resourceTransformer);
     }
