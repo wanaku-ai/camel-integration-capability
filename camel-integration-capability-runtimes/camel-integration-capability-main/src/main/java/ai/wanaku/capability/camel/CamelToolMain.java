@@ -273,31 +273,38 @@ public class CamelToolMain implements Callable<Integer> {
 
         CompletableFuture.supplyAsync(
                         () -> downloadExternalResources(serviceConfig, dataDirPath, serviceTarget), executor)
-                .thenApply(result -> {
-                    if (result == null) {
-                        throw new RuntimeException("Failed to download external resources");
-                    }
-
-                    McpSpec mcpSpec = createMcpSpec(serviceConfig, result.downloadedResources());
-                    WanakuCamelManager camelManager =
-                            new WanakuCamelManager(result.downloadedResources(), repositoriesList, policy);
-
-                    return new WanakuRegistrationInfo(camelManager.getCamelContext(), mcpSpec);
-                })
-                .whenComplete((info, ex) -> {
-                    if (ex != null) {
-                        LOG.error("Registration failed, shutting down", ex);
-                        registrationInfoFuture.completeExceptionally(ex);
-                        server.shutdown();
-                    } else {
-                        registrationInfoFuture.complete(info);
-                    }
-                    executor.shutdown();
-                });
+                .thenApply(result -> newWanakuRegistrationInfo(result, serviceConfig, policy))
+                .whenComplete((info, ex) -> tearDown(info, ex, registrationInfoFuture, server, executor));
 
         server.awaitTermination();
 
         return 0;
+    }
+
+    private static void tearDown(
+            WanakuRegistrationInfo info, Throwable ex, CompletableFuture<WanakuRegistrationInfo> registrationInfoFuture,
+            Server server, ExecutorService executor) {
+        if (ex != null) {
+            LOG.error("Registration failed, shutting down", ex);
+            registrationInfoFuture.completeExceptionally(ex);
+            server.shutdown();
+        } else {
+            registrationInfoFuture.complete(info);
+        }
+        executor.shutdown();
+    }
+
+    private WanakuRegistrationInfo newWanakuRegistrationInfo(
+            RegistrationResult result, ServiceConfig serviceConfig, WanakuCamelManager.RouteLoadingFailurePolicy policy) {
+        if (result == null) {
+            throw new RuntimeException("Failed to download external resources");
+        }
+
+        McpSpec mcpSpec = createMcpSpec(serviceConfig, result.downloadedResources());
+        WanakuCamelManager camelManager =
+                new WanakuCamelManager(result.downloadedResources(), repositoriesList, policy);
+
+        return new WanakuRegistrationInfo(camelManager.getCamelContext(), mcpSpec);
     }
 
     private RegistrationResult downloadExternalResources(
