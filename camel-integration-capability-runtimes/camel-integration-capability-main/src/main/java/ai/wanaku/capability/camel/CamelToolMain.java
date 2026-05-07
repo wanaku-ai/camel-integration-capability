@@ -260,7 +260,7 @@ public class CamelToolMain implements Callable<Integer> {
                 .addService(new CamelTool(registrationInfoFuture))
                 .addService(new CamelResource(registrationInfoFuture))
                 .addService(new ProvisionBase(name))
-                .addService(new CamelHealthProbe(registrationInfoFuture, serviceTarget))
+                .addService(new CamelHealthProbe(registrationInfoFuture))
                 .build();
 
         server.start();
@@ -282,8 +282,11 @@ public class CamelToolMain implements Callable<Integer> {
     }
 
     private static void tearDown(
-            WanakuRegistrationInfo info, Throwable ex, CompletableFuture<WanakuRegistrationInfo> registrationInfoFuture,
-            Server server, ExecutorService executor) {
+            WanakuRegistrationInfo info,
+            Throwable ex,
+            CompletableFuture<WanakuRegistrationInfo> registrationInfoFuture,
+            Server server,
+            ExecutorService executor) {
         if (ex != null) {
             LOG.error("Registration failed, shutting down", ex);
             registrationInfoFuture.completeExceptionally(ex);
@@ -295,7 +298,9 @@ public class CamelToolMain implements Callable<Integer> {
     }
 
     private WanakuRegistrationInfo newWanakuRegistrationInfo(
-            RegistrationResult result, ServiceConfig serviceConfig, WanakuCamelManager.RouteLoadingFailurePolicy policy) {
+            RegistrationResult result,
+            ServiceConfig serviceConfig,
+            WanakuCamelManager.RouteLoadingFailurePolicy policy) {
         if (result == null) {
             throw new RuntimeException("Failed to download external resources");
         }
@@ -304,7 +309,7 @@ public class CamelToolMain implements Callable<Integer> {
         WanakuCamelManager camelManager =
                 new WanakuCamelManager(result.downloadedResources(), repositoriesList, policy);
 
-        return new WanakuRegistrationInfo(camelManager.getCamelContext(), mcpSpec);
+        return new WanakuRegistrationInfo(camelManager.getCamelContext(), mcpSpec, result.serviceTarget());
     }
 
     private RegistrationResult downloadExternalResources(
