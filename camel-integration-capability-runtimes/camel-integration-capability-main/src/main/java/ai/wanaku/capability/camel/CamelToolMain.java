@@ -8,7 +8,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.Callable;
 import java.util.concurrent.CompletableFuture;
-import org.apache.camel.CamelContext;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import io.grpc.Grpc;
@@ -39,6 +40,7 @@ import ai.wanaku.capabilities.sdk.runtime.camel.grpc.CamelHealthProbe;
 import ai.wanaku.capabilities.sdk.runtime.camel.grpc.CamelResource;
 import ai.wanaku.capabilities.sdk.runtime.camel.grpc.CamelTool;
 import ai.wanaku.capabilities.sdk.runtime.camel.grpc.ProvisionBase;
+import ai.wanaku.capabilities.sdk.runtime.camel.grpc.WanakuRegistrationInfo;
 import ai.wanaku.capabilities.sdk.runtime.camel.init.Initializer;
 import ai.wanaku.capabilities.sdk.runtime.camel.init.InitializerFactory;
 import ai.wanaku.capabilities.sdk.runtime.camel.model.McpSpec;
@@ -250,16 +252,15 @@ public class CamelToolMain implements Callable<Integer> {
                 .build();
 
         final ServiceTarget serviceTarget = newServiceTargetTarget();
-        final McpSpec mcpSpec = new McpSpec();
-        final CompletableFuture<CamelContext> contextFuture = new CompletableFuture<>();
+        final CompletableFuture<WanakuRegistrationInfo> registrationInfoFuture = new CompletableFuture<>();
 
         final ServerBuilder<?> serverBuilder =
                 Grpc.newServerBuilderForPort(grpcPort, InsecureServerCredentials.create());
         final Server server = serverBuilder
-                .addService(new CamelTool(contextFuture, mcpSpec))
-                .addService(new CamelResource(contextFuture, mcpSpec))
+                .addService(new CamelTool(registrationInfoFuture))
+                .addService(new CamelResource(registrationInfoFuture))
                 .addService(new ProvisionBase(name))
-                .addService(new CamelHealthProbe(contextFuture, serviceTarget))
+                .addService(new CamelHealthProbe(registrationInfoFuture, serviceTarget))
                 .build();
 
         server.start();
@@ -268,37 +269,31 @@ public class CamelToolMain implements Callable<Integer> {
                 ? WanakuCamelManager.RouteLoadingFailurePolicy.FAIL_FAST
                 : WanakuCamelManager.RouteLoadingFailurePolicy.LOG_AND_CONTINUE;
 
-        Thread registrationThread = new Thread(
-                () -> {
-                    try {
-                        RegistrationResult result =
-                                downloadExternalResources(serviceConfig, dataDirPath, serviceTarget);
-                        if (result == null) {
-                            contextFuture.completeExceptionally(
-                                    new RuntimeException("Failed to download external resources"));
-                            return;
-                        }
+        ExecutorService executor = Executors.newSingleThreadExecutor(r -> new Thread(r, "registration"));
 
-                        McpSpec loaded = createMcpSpec(serviceConfig, result.downloadedResources());
-                        mcpSpec.setMcp(loaded.getMcp());
-
-                        WanakuCamelManager camelManager =
-                                new WanakuCamelManager(result.downloadedResources(), repositoriesList, policy);
-                        contextFuture.complete(camelManager.getCamelContext());
-                    } catch (Exception e) {
-                        contextFuture.completeExceptionally(e);
+        CompletableFuture.supplyAsync(
+                        () -> downloadExternalResources(serviceConfig, dataDirPath, serviceTarget), executor)
+                .thenApply(result -> {
+                    if (result == null) {
+                        throw new RuntimeException("Failed to download external resources");
                     }
-                },
-                "registration");
 
-        registrationThread.start();
+                    McpSpec mcpSpec = createMcpSpec(serviceConfig, result.downloadedResources());
+                    WanakuCamelManager camelManager =
+                            new WanakuCamelManager(result.downloadedResources(), repositoriesList, policy);
 
-        contextFuture.whenComplete((ctx, ex) -> {
-            if (ex != null) {
-                LOG.error("Registration failed, shutting down", ex);
-                server.shutdown();
-            }
-        });
+                    return new WanakuRegistrationInfo(camelManager.getCamelContext(), mcpSpec);
+                })
+                .whenComplete((info, ex) -> {
+                    if (ex != null) {
+                        LOG.error("Registration failed, shutting down", ex);
+                        registrationInfoFuture.completeExceptionally(ex);
+                        server.shutdown();
+                    } else {
+                        registrationInfoFuture.complete(info);
+                    }
+                    executor.shutdown();
+                });
 
         server.awaitTermination();
 
