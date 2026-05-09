@@ -32,6 +32,12 @@
             <version>${wanaku-capabilities-sdk.version}</version>
         </dependency>
 
+        <dependency>
+            <groupId>ai.wanaku.sdk</groupId>
+            <artifactId>capabilities-maven-downloader</artifactId>
+            <version>${wanaku-capabilities-sdk.version}</version>
+        </dependency>
+
         <!-- CLI -->
         <dependency>
             <groupId>org.apache.camel</groupId>
