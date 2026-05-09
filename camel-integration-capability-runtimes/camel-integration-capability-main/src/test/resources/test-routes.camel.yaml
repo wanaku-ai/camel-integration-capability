@@ -3,7 +3,7 @@
     from:
       uri: direct:test-component
       steps:
-        - to: https://api.example.com/test
+        - to: seda:anotherComponent
 
 - route:
     id: test-dataformat-resolver

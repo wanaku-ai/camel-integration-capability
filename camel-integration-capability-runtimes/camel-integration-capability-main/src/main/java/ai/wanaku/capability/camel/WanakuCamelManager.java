@@ -3,14 +3,17 @@ package ai.wanaku.capability.camel;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
-import java.util.Optional;
+import java.util.stream.Collectors;
 import org.apache.camel.CamelContext;
 import org.apache.camel.impl.DefaultCamelContext;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import ai.wanaku.capabilities.sdk.maven.GAV;
+import ai.wanaku.capabilities.sdk.maven.WanakuMavenDownloader;
 import ai.wanaku.capabilities.sdk.runtime.camel.downloader.ResourceType;
 import ai.wanaku.capabilities.sdk.runtime.camel.exceptions.RouteLoadingException;
 import ai.wanaku.capabilities.sdk.runtime.camel.util.WanakuRoutesLoader;
@@ -25,9 +28,8 @@ public class WanakuCamelManager {
 
     private final CamelContext context;
     private final String routesPath;
-    private final String dependenciesList;
-    private final String repositoriesList;
     private final RouteLoadingFailurePolicy routeLoadingFailurePolicy;
+    private List<GAV> gavs = new ArrayList<>();
 
     public WanakuCamelManager(Map<ResourceType, Path> downloadedResources, String repositoriesList) {
         this(downloadedResources, repositoriesList, RouteLoadingFailurePolicy.FAIL_FAST);
@@ -37,10 +39,8 @@ public class WanakuCamelManager {
             Map<ResourceType, Path> downloadedResources,
             String repositoriesList,
             RouteLoadingFailurePolicy routeLoadingFailurePolicy) {
-        this.repositoriesList = repositoriesList;
         this.routeLoadingFailurePolicy =
                 Objects.requireNonNull(routeLoadingFailurePolicy, "RouteLoadingFailurePolicy must not be null");
-        context = new DefaultCamelContext();
 
         this.routesPath = downloadedResources.get(ResourceType.ROUTES_REF).toString();
         if (downloadedResources.containsKey(ResourceType.DEPENDENCY_REF)) {
@@ -48,21 +48,26 @@ public class WanakuCamelManager {
                     downloadedResources.get(ResourceType.DEPENDENCY_REF).toString();
             try {
                 final List<String> depLines = Files.readAllLines(Path.of(dependenciesPath));
-                this.dependenciesList =
-                        depLines.stream().filter(l -> !l.startsWith("#")).collect(Collectors.joining(","));
+                this.gavs = depLines.stream()
+                        .filter(l -> !l.startsWith("#"))
+                        .map(GAV::parse)
+                        .collect(Collectors.toList());
 
             } catch (IOException e) {
                 throw new RuntimeException(e);
             }
-        } else {
-            this.dependenciesList = null;
         }
 
+        WanakuMavenDownloader mavenDownloader = new WanakuMavenDownloader(WanakuCamelManager.class.getClassLoader());
+        mavenDownloader.download(gavs);
+
+        context = new DefaultCamelContext();
+        context.setApplicationContextClassLoader(mavenDownloader.getClassLoader());
         loadRoutes();
     }
 
     private void loadRoutes() {
-        WanakuRoutesLoader routesLoader = new WanakuRoutesLoader(dependenciesList, repositoriesList);
+        WanakuRoutesLoader routesLoader = new WanakuRoutesLoader();
 
         String routeFileUrl = Path.of(routesPath).toUri().toString();
 
@@ -77,6 +82,7 @@ public class WanakuCamelManager {
                         e.getMessage());
             }
         }
+
         context.start();
     }
 
