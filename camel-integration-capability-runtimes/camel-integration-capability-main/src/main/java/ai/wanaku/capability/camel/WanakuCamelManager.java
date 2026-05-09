@@ -48,9 +48,8 @@ public class WanakuCamelManager {
                     downloadedResources.get(ResourceType.DEPENDENCY_REF).toString();
             try {
                 final List<String> depLines = Files.readAllLines(Path.of(dependenciesPath));
-                final Optional<String> firstDepLine =
-                        depLines.stream().filter(l -> !l.startsWith("#")).findFirst();
-                this.dependenciesList = firstDepLine.orElse(null);
+                this.dependenciesList =
+                        depLines.stream().filter(l -> !l.startsWith("#")).collect(Collectors.joining(","));
 
             } catch (IOException e) {
                 throw new RuntimeException(e);
