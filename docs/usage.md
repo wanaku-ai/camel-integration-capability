@@ -52,7 +52,7 @@ One of the following is required to provide routes:
 ### Optional Parameters
 
 - `--service-catalog-system`: The system name within the service catalog (required when using `--service-catalog`)
-- `--token-endpoint`: OAuth2/OIDC token endpoint base URL
+- `--token-endpoint`: OAuth2/OIDC token endpoint base URL. When pointing to a Keycloak instance, include the realm path (e.g., `http://keycloak:8543/realms/my-realm/`). The realm name is fully configurable — there is no default.
 - `--rules-ref`: Reference to the YAML file with route exposure rules. Supports `datastore://` and `file://` schemes
 - `--dependencies`: Comma-separated list of dependencies. Supports `datastore://` and `file://` schemes
 - `--init-from`: Git repository URL to clone during initialization (SSH or HTTPS format)
@@ -108,7 +108,7 @@ java -jar target/camel-integration-capability-main-0.1.0-jar-with-dependencies.j
   --name camel-core \
   --routes-ref datastore://promote-employee.camel.yaml \
   --rules-ref datastore://promote-employee-rules.yaml \
-  --token-endpoint http://localhost:8543/realms/wanaku/ \
+  --token-endpoint http://localhost:8543/realms/my-realm/ \
   --client-id wanaku-service \
   --client-secret aBqsU3EzUPCHumf9sTK5sanxXkB0yFtv \
   --dependencies datastore://promote-employee-dependencies.txt \
@@ -549,7 +549,7 @@ java -jar target/camel-integration-capability-main-0.1.0-jar-with-dependencies.j
   --routes-ref datastore://promote-employee.camel.yaml \
   --rules-ref datastore://promote-employee-rules.yaml \
   --dependencies datastore://promote-employee-dependencies.txt \
-  --token-endpoint http://localhost:8543/realms/wanaku/ \
+  --token-endpoint http://localhost:8543/realms/my-realm/ \
   --client-id wanaku-service \
   --client-secret aBqsU3EzUPCHumf9sTK5sanxXkB0yFtv \
   --data-dir /tmp
@@ -569,7 +569,7 @@ java -jar target/camel-integration-capability-main-0.1.0-jar-with-dependencies.j
   --routes-ref file:///tmp/cloned-repo/routes/promote-employee.camel.yaml \
   --rules-ref file:///tmp/cloned-repo/rules/promote-employee-rules.yaml \
   --dependencies file:///tmp/cloned-repo/dependencies/promote-employee-dependencies.txt \
-  --token-endpoint http://localhost:8543/realms/wanaku/ \
+  --token-endpoint http://localhost:8543/realms/my-realm/ \
   --client-id wanaku-service \
   --client-secret aBqsU3EzUPCHumf9sTK5sanxXkB0yFtv \
   --data-dir /tmp
