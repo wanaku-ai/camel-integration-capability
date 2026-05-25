@@ -38,8 +38,7 @@ Security updates are provided for the following versions:
 | Version | Supported          |
 | ------- | ------------------ |
 | 0.1.1   | :white_check_mark: |
-| 0.1.0   | :white_check_mark: |
-| < 0.1.0 | :x: |
+| < 0.1.1 | :x: |
 
 > [!IMPORTANT]
 > Only the latest release receives security updates. Please upgrade to the latest version to ensure you have all security patches.
