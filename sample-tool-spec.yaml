@@ -16,7 +16,7 @@ tools:
   - confirm-employee-promotion:
       route:
         uri: "direct:confirm-promotion"
-      description: "Confirm the promotion of an an employee"
+      description: "Confirm the promotion of an employee"
       properties:
         - name: employee
           type: string

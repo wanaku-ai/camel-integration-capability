@@ -82,7 +82,7 @@ rules, and dependencies into a single versioned artifact stored in Wanaku. This 
 makes it easy to update all resources at once.
 
 ```bash
-java -jar target/camel-integration-capability-main-0.1.0-jar-with-dependencies.jar \
+java -jar target/camel-integration-capability-main-0.1.1-jar-with-dependencies.jar \
   --registration-url http://localhost:8080 \
   --registration-announce-address localhost \
   --grpc-port 9190 \
@@ -101,7 +101,7 @@ contains all required resources for the given system.
 For cases where routes, rules, and dependencies are managed separately (e.g., during development):
 
 ```bash
-java -jar target/camel-integration-capability-main-0.1.0-jar-with-dependencies.jar \
+java -jar target/camel-integration-capability-main-0.1.1-jar-with-dependencies.jar \
   --registration-url http://localhost:8080 \
   --registration-announce-address localhost \
   --grpc-port 9190 \
@@ -283,7 +283,7 @@ mcp:
     - confirm-employee-promotion:
         route:
           id: "route-3104"
-        description: "Confirm the promotion of an an employee"
+        description: "Confirm the promotion of an employee"
         namespace: hr-operations
         properties:
           - name: employee
@@ -521,7 +521,7 @@ catalog.dependencies.employee-system=employee-system/dependencies.txt
 When running manually:
 
 ```bash
-java -jar target/camel-integration-capability-main-0.1.0-jar-with-dependencies.jar \
+java -jar target/camel-integration-capability-main-0.1.1-jar-with-dependencies.jar \
   --registration-url http://localhost:8080 \
   --registration-announce-address localhost \
   --grpc-port 9190 \
@@ -541,7 +541,7 @@ In this mode, the capability downloads individual files directly from Wanaku aft
 This is useful during development or when you need fine-grained control over each resource.
 
 ```bash
-java -jar target/camel-integration-capability-main-0.1.0-jar-with-dependencies.jar \
+java -jar target/camel-integration-capability-main-0.1.1-jar-with-dependencies.jar \
   --registration-url http://localhost:8080 \
   --registration-announce-address localhost \
   --grpc-port 9190 \
@@ -560,7 +560,7 @@ java -jar target/camel-integration-capability-main-0.1.0-jar-with-dependencies.j
 To clone a Git repository containing routes and reference files directly:
 
 ```bash
-java -jar target/camel-integration-capability-main-0.1.0-jar-with-dependencies.jar \
+java -jar target/camel-integration-capability-main-0.1.1-jar-with-dependencies.jar \
   --registration-url http://localhost:8080 \
   --registration-announce-address localhost \
   --grpc-port 9190 \
