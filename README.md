@@ -156,7 +156,6 @@ The guides below cover development and unreleased features. They may describe be
 - **[Usage Guide](docs/usage.md)** - Standalone application configuration
 - **[Plugin Guide](docs/plugin-usage.md)** - Embedding in Camel applications
 - **[Building](docs/building.md)** - Build instructions and development setup
-- **[Changelog](CHANGELOG.md)** - Version history and release notes
 - **[Migration Guide](docs/migration-guide.md)** - Upgrading between versions
 - **[Examples](examples/)** - Working example routes and configurations
 - **[Contributing](CONTRIBUTING.md)** - Guidelines for contributing
