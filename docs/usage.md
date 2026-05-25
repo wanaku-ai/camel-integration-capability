@@ -15,6 +15,9 @@ This service implements a Wanaku capability that can:
 > [TIP]
 > Design your Camel routes with ease using the [Kaoto Integration Designer](http://kaoto.io) for Apache Camel.
 
+> [NOTE]
+> Upgrading from a previous version? See the [Migration Guide](migration-guide.md) for breaking changes and upgrade steps.
+
 ## Deployment Options
 
 This capability can be deployed in two ways:
