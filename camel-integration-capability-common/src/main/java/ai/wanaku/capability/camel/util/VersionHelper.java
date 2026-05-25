@@ -30,7 +30,9 @@ public final class VersionHelper {
      */
     private static String initVersion() {
         try (InputStream stream = VersionHelper.class.getResourceAsStream("/cic-version.txt")) {
-            assert stream != null;
+            if (stream == null) {
+                throw new IllegalStateException("cic-version.txt not found on classpath");
+            }
             byte[] bytes = stream.readAllBytes();
             return new String(bytes);
         } catch (IOException e) {

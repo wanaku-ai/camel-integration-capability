@@ -4,7 +4,7 @@ Auto-generated from all feature plans. Last updated: 2026-02-07
 
 ## Active Technologies
 
-- Java 21 + Apache Camel 4.14.4, Wanaku SDK 0.1.0-SNAPSHOT, picocli 4.7.7, gRPC (001-multi-module-split)
+- Java 21 + Apache Camel 4.18.2, Wanaku SDK 0.1.1, picocli 4.7.7, gRPC (001-multi-module-split)
 
 ## Project Structure
 
@@ -23,7 +23,7 @@ Java 21: Follow standard conventions
 
 ## Recent Changes
 
-- 001-multi-module-split: Added Java 21 + Apache Camel 4.14.4, Wanaku SDK 0.1.0-SNAPSHOT, picocli 4.7.7, gRPC
+- 001-multi-module-split: Added Java 21 + Apache Camel 4.18.2, Wanaku SDK 0.1.1, picocli 4.7.7, gRPC
 
 <!-- MANUAL ADDITIONS START -->
 <!-- MANUAL ADDITIONS END -->
