@@ -26,4 +26,11 @@ Java 21: Follow standard conventions
 - 001-multi-module-split: Added Java 21 + Apache Camel 4.18.2, Wanaku SDK 0.1.1, picocli 4.7.7, gRPC
 
 <!-- MANUAL ADDITIONS START -->
+
+## Documentation
+
+- The primary user-facing documentation is `docs/usage.md` — this is the file published to the documentation website.
+- When adding new documentation files, always link them from `docs/usage.md` (in the "Related Guides" section), not just from `README.md`.
+- Changelogs are handled automatically by jreleaser — do not create or maintain a manual CHANGELOG.md.
+
 <!-- MANUAL ADDITIONS END -->

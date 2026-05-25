@@ -25,6 +25,13 @@ This capability can be deployed in two ways:
 1. **Standalone Application** (this document) - Run as a separate service with CLI configuration
 2. **[Plugin Mode](plugin-usage.md)** - Embed into an existing Apache Camel application using SPI
 
+## Related Guides
+
+- **[CLI Reference](cli-reference.md)** - Complete command-line parameter reference
+- **[Service Catalog Guide](service-catalog-guide.md)** - Creating and publishing service catalogs
+- **[Rules Schema](rules-schema.md)** - Route exposure rules YAML reference
+- **[Troubleshooting](troubleshooting.md)** - Common issues and solutions
+
 ## Requirements
 
 - Java 21 or higher
@@ -263,6 +270,9 @@ Camel routes should be defined in YAML format in the file specified by `--routes
 ```
 
 ### Route Exposure Rules
+
+> [TIP]
+> For the complete rules YAML schema reference, see [Rules Schema](rules-schema.md).
 
 Routes can be exposed as MCP tools or resources by defining rules in a YAML file specified by `--rules-ref`.
 This file maps route definitions to tool specifications:
@@ -505,6 +515,9 @@ Route files can be provided to the capability using one of the following methods
 5. **Volume mounts**: Mount ConfigMaps or persistent volumes containing route files
 
 ### Using a Service Catalog
+
+> [TIP]
+> For a complete guide on creating and publishing service catalogs, see the [Service Catalog Guide](service-catalog-guide.md).
 
 This is the recommended way to obtain route files. A service catalog is a versioned ZIP archive stored in Wanaku
 that bundles all resources (routes, rules, and optionally dependencies) for one or more systems. Using a catalog
