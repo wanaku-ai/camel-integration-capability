@@ -155,8 +155,12 @@ The guides below cover development and unreleased features. They may describe be
 
 - **[Usage Guide](docs/usage.md)** - Standalone application configuration
 - **[Plugin Guide](docs/plugin-usage.md)** - Embedding in Camel applications
+- **[Service Catalog Guide](docs/service-catalog-guide.md)** - Creating and publishing service catalogs
+- **[CLI Reference](docs/cli-reference.md)** - Complete command-line parameter reference
+- **[Rules Schema](docs/rules-schema.md)** - Route exposure rules YAML reference
 - **[Authentication](docs/authentication.md)** - OAuth2/OIDC configuration
 - **[Operations](docs/operations.md)** - Production deployment and monitoring
+- **[Troubleshooting](docs/troubleshooting.md)** - Common issues and solutions
 - **[Building](docs/building.md)** - Build instructions and development setup
 - **[Migration Guide](docs/migration-guide.md)** - Upgrading between versions
 - **[Examples](examples/)** - Working example routes and configurations
