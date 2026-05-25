@@ -155,6 +155,8 @@ The guides below cover development and unreleased features. They may describe be
 
 - **[Usage Guide](docs/usage.md)** - Standalone application configuration
 - **[Plugin Guide](docs/plugin-usage.md)** - Embedding in Camel applications
+- **[Authentication](docs/authentication.md)** - OAuth2/OIDC configuration
+- **[Operations](docs/operations.md)** - Production deployment and monitoring
 - **[Building](docs/building.md)** - Build instructions and development setup
 - **[Contributing](CONTRIBUTING.md)** - Guidelines for contributing
 - **[Security](SECURITY.md)** - Vulnerability reporting
