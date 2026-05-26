@@ -41,3 +41,5 @@ dependency-reduced-pom.xml
 ### Mac OS ###
 .DS_Store
 out
+.claude/worktrees
+.claude/settings.local.json
