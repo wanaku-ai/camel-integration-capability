@@ -16,7 +16,7 @@ Since version 0.1.0, authentication is **optional**. When the Wanaku MCP Router 
 The service follows this authentication sequence at startup:
 
 1. **Initialization**: Service reads `--client-id` and `--client-secret` from CLI arguments or environment variables
-2. **Token Endpoint Resolution**: 
+2. **Token Endpoint Resolution**:
    - If `--token-endpoint` is provided, use it directly
    - Otherwise, auto-resolve from `--registration-url` (works with standard OAuth2 discovery endpoints)
 3. **Token Request**: Service requests an access token using client credentials
@@ -41,6 +41,7 @@ The service follows this authentication sequence at startup:
 ### Command-Line Examples
 
 **With authentication (Keycloak):**
+
 ```bash
 java -jar camel-integration-capability-main.jar \
   --client-id my-service \
@@ -50,6 +51,7 @@ java -jar camel-integration-capability-main.jar \
 ```
 
 **Without authentication:**
+
 ```bash
 java -jar camel-integration-capability-main.jar \
   --client-id my-service \
@@ -57,6 +59,7 @@ java -jar camel-integration-capability-main.jar \
 ```
 
 **Auto-resolve token endpoint:**
+
 ```bash
 java -jar camel-integration-capability-main.jar \
   --client-id my-service \
@@ -73,11 +76,13 @@ When using Keycloak as your OAuth2 provider, there are specific configuration re
 The `--token-endpoint` parameter must include the full realm path. The service will automatically append the OIDC protocol path.
 
 **Structure:**
-```
+
+```text
 --token-endpoint http://<keycloak-host>:<port>/realms/<realm-name>/
 ```
 
 **Examples:**
+
 ```bash
 # Production realm
 --token-endpoint http://keycloak:8543/realms/production/
@@ -90,12 +95,14 @@ The `--token-endpoint` parameter must include the full realm path. The service w
 ```
 
 The service resolves the complete token endpoint as:
-```
+
+```text
 <base-url>/protocol/openid-connect/token
 ```
 
 For example, `http://keycloak:8543/realms/my-realm/` becomes:
-```
+
+```text
 http://keycloak:8543/realms/my-realm/protocol/openid-connect/token
 ```
 
@@ -133,15 +140,18 @@ To create an OAuth2 client for the Camel Integration Capability:
 Since version 0.1.0, you can run the capability without OAuth2 authentication when the Wanaku MCP Router is configured to allow unauthenticated access.
 
 **When to disable authentication:**
+
 - Local development environments
 - Proof-of-concept deployments
 - Isolated networks where authentication is handled at the infrastructure level
 
 **How to disable:**
+
 - Omit the `--client-secret` parameter (or `CLIENT_SECRET` environment variable)
 - The `--client-id` parameter is still **required** — it serves as the service identifier in registration requests
 
 **Example:**
+
 ```bash
 java -jar camel-integration-capability-main.jar \
   --client-id employee-system \
@@ -149,6 +159,7 @@ java -jar camel-integration-capability-main.jar \
 ```
 
 **Security considerations:**
+
 - Only disable authentication in trusted environments
 - Never expose unauthenticated services to the public internet
 - Use network-level security (firewalls, VPCs) when authentication is disabled
@@ -164,6 +175,7 @@ All CLI parameters can be provided via environment variables. This is the recomm
 | `--token-endpoint` | `TOKEN_ENDPOINT` | `export TOKEN_ENDPOINT=http://keycloak:8543/realms/prod/` |
 
 **Shell example:**
+
 ```bash
 export CLIENT_ID=camel-integration-capability
 export CLIENT_SECRET=abc123def456
@@ -230,6 +242,7 @@ spec:
 ```
 
 **Security best practices:**
+
 - Never commit secrets to version control
 - Use RBAC to restrict access to the `wanaku-credentials` secret
 - Rotate credentials regularly
@@ -242,10 +255,12 @@ spec:
 **Symptom:** Service fails to start with an error about token endpoint resolution.
 
 **Causes:**
+
 1. `--token-endpoint` not provided and auto-resolution failed
 2. `--registration-url` does not support OAuth2 discovery
 
 **Solutions:**
+
 - Explicitly set `--token-endpoint` with the full realm path (for Keycloak)
 - Verify the registration URL is correct
 - Check network connectivity to the authentication server
@@ -255,12 +270,14 @@ spec:
 **Symptom:** Service fails to register or fetch resources with HTTP 401 errors.
 
 **Causes:**
+
 1. Invalid client credentials
 2. Client not properly configured in OAuth2 provider
 3. Service account roles not assigned
 4. Token expired (unlikely during startup)
 
 **Solutions:**
+
 - Verify `--client-id` matches the client ID in Keycloak/OAuth2 provider
 - Verify `--client-secret` matches the credential in the Credentials tab
 - Check that "Client authentication" is ON in Keycloak
@@ -273,12 +290,14 @@ spec:
 **Symptom:** Service cannot connect to the token endpoint.
 
 **Causes:**
+
 1. Token endpoint URL is incorrect
 2. Authentication server is not running
 3. Network connectivity issues
 4. Firewall blocking the connection
 
 **Solutions:**
+
 - Verify the token endpoint URL format (must include realm for Keycloak)
 - Check that Keycloak/OAuth2 server is running: `curl http://keycloak:8543/realms/my-realm/`
 - Test network connectivity from the capability container/pod
@@ -289,10 +308,12 @@ spec:
 **Symptom:** Token endpoint returns 404 or "Realm does not exist" error.
 
 **Causes:**
+
 1. Realm name is misspelled in `--token-endpoint`
 2. Realm does not exist in Keycloak
 
 **Solutions:**
+
 - Verify the realm name in Keycloak admin console
 - Check the URL format: `http://keycloak:8543/realms/<realm-name>/`
 - Realm names are case-sensitive
@@ -305,6 +326,7 @@ spec:
 **Cause:** The `--token-endpoint` parameter is missing the `/realms/<realm-name>/` path.
 
 **Solution:**
+
 ```bash
 # Wrong
 --token-endpoint http://keycloak:8543
@@ -353,6 +375,7 @@ The capability supports any OAuth2 provider that implements the client credentia
 - **Custom OAuth2 servers**
 
 **Requirements:**
+
 1. OAuth2 provider must support client credentials grant type
 2. Token endpoint must return a standard access token response
 3. Bearer token must be accepted by the Wanaku MCP Router
@@ -370,6 +393,7 @@ Token refresh is handled automatically by the Wanaku SDK:
 For deployments across multiple environments (dev, staging, production), use separate Keycloak realms and clients:
 
 **Development:**
+
 ```bash
 --client-id camel-capability-dev
 --client-secret dev-secret
@@ -377,6 +401,7 @@ For deployments across multiple environments (dev, staging, production), use sep
 ```
 
 **Production:**
+
 ```bash
 --client-id camel-capability-prod
 --client-secret prod-secret
@@ -384,6 +409,7 @@ For deployments across multiple environments (dev, staging, production), use sep
 ```
 
 This isolation ensures:
+
 - Separate credentials per environment
 - Different role assignments
 - Independent audit logs

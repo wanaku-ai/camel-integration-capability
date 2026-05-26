@@ -8,7 +8,7 @@ Instead, report security vulnerabilities privately to ensure they can be address
 
 ### Reporting Process
 
-1. **Email**: Send a detailed report to **contact@wanaku.ai**
+1. **Email**: Send a detailed report to **<contact@wanaku.ai>**
 2. **Subject**: Use "SECURITY: [Brief Description]" in the subject line
 3. **Content**: Include the following information:
    - Description of the vulnerability
@@ -60,7 +60,6 @@ Security updates are provided for the following versions:
 - **Use environment variables**: Pass secrets via environment variables or mounted files
 - **Use secret management systems**
 - **Encrypt at rest**: Ensure Kubernetes Secrets are encrypted at rest
-
 
 #### 3. Route Configuration Security
 
@@ -202,7 +201,7 @@ By default, gRPC communication is not be encrypted:
 
 ## Security Contacts
 
-- **General security inquiries**: contact@wanaku.ai
+- **General security inquiries**: <contact@wanaku.ai>
 
 ## Security Resources
 

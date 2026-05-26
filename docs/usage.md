@@ -3,17 +3,20 @@
 A capability service for the [Wanaku MCP Router](https://wanaku.ai) that provides [Apache Camel](https://camel.apache.org) route
 execution capabilities.
 
-This service integrates with the Wanaku ecosystem to execute Camel routes dynamically through Wanaku's gRPC bridge. 
+This service integrates with the Wanaku ecosystem to execute Camel routes dynamically through Wanaku's gRPC bridge.
 
 ## Overview
 
 This service implements a Wanaku capability that can:
+
 - Execute Apache Camel routes defined in YAML format
 - Register itself with a Wanaku discovery service
 - Support service-to-router authentication via OAuth2/OIDC
 
 > [TIP]
 > Design your Camel routes with ease using the [Kaoto Integration Designer](http://kaoto.io) for Apache Camel.
+
+<!-- -->
 
 > [NOTE]
 > Upgrading from a previous version? See the [Migration Guide](migration-guide.md) for breaking changes and upgrade steps.
@@ -41,8 +44,8 @@ This capability can be deployed in two ways:
 
 ## Running this Capability
 
-This capability service requires configuration parameters to connect to the Wanaku ecosystem. When launching it, you need to 
-set them so that this capability service can talk to Wanaku and register itself. 
+This capability service requires configuration parameters to connect to the Wanaku ecosystem. When launching it, you need to
+set them so that this capability service can talk to Wanaku and register itself.
 
 > [NOTE]
 > Although this capability is intended to be run inside Kubernetes or OpenShift, it is entirely possible to execute it locally.
@@ -133,9 +136,9 @@ org.apache.camel:camel-http:4.14.2,org.apache.camel:camel-jackson:4.14.2
 
 ## Deploying the Service
 
-The service can be deployed to Kubernetes or OpenShift using the Wanaku's operator. 
+The service can be deployed to Kubernetes or OpenShift using the Wanaku's operator.
 
-##### Using a Service Catalog (Recommended)
+### Using a Service Catalog (Recommended)
 
 ```yaml
 apiVersion: "wanaku.ai/v1alpha1"
@@ -164,7 +167,7 @@ spec:
           value: "employee-system"
 ```
 
-##### Using Individual References
+### Using Individual References
 
 ```yaml
 apiVersion: "wanaku.ai/v1alpha1"
@@ -216,12 +219,14 @@ spec:
 Common issues and solutions:
 
 **Routes not found:**
+
 ```bash
 # Verify git clone succeeded
 kubectl exec deployment/camel-integration-capability -- ls -la /data
 ```
 
 **Service not registering:**
+
 ```bash
 # Check environment variables
 kubectl exec deployment/camel-integration-capability -- env | grep -E "(REGISTRATION|TOKEN)"
@@ -231,6 +236,7 @@ kubectl logs -f deployment/camel-integration-capability -c camel-integration-cap
 ```
 
 **Connection refused errors:**
+
 ```bash
 # Verify service is running
 kubectl get svc camel-integration-capability
@@ -244,10 +250,10 @@ kubectl run test-pod --rm -it --image=busybox -- telnet camel-integration-capabi
 
 ## Designing Routes
 
-The easiest way to design the routes for this project, is to use a visual editor such as [Kaoto](http://kaoto.io) or 
-[Camel Karavan](http://camel.apache.org/karavan) to design the routes. 
+The easiest way to design the routes for this project, is to use a visual editor such as [Kaoto](http://kaoto.io) or
+[Camel Karavan](http://camel.apache.org/karavan) to design the routes.
 
-Those editors should allow you to visualize the route. For instance: 
+Those editors should allow you to visualize the route. For instance:
 
 ![Kaoto Route Example](imgs/kaoto.png)
 
@@ -330,7 +336,6 @@ the data MUST be convertable to a Java String.
 > [IMPORTANT]
 > Routes serving resources MUST have their auto-start disabled.
 
-
 #### Parameter to Header Mapping
 
 The capability automatically maps MCP tool parameters to Apache Camel headers. There are two mapping strategies:
@@ -384,7 +389,7 @@ The capability automatically creates these Camel headers:
 
 ##### Explicit Mapping (Filtered)
 
-When you define `properties` with `mapping` elements, only those explicitly mapped parameters are passed to the Camel route. 
+When you define `properties` with `mapping` elements, only those explicitly mapped parameters are passed to the Camel route.
 This provides fine-grained control over parameter names and validation.
 
 **Example tool definition with explicit mappings:**
@@ -474,37 +479,37 @@ The `mapping` element supports the following options:
    - To restrict which parameters are passed to backend systems
 3. **Never mix both**: Either define properties with mappings (explicit) OR omit properties entirely (automatic)
 
-### Handling Dependencies 
+### Handling Dependencies
 
-The capability only comes with a subset of the Apache Camel dependencies. 
-As such, when running it for the first time, the capability will automatically download the dependencies required for the 
-integration. 
+The capability only comes with a subset of the Apache Camel dependencies.
+As such, when running it for the first time, the capability will automatically download the dependencies required for the
+integration.
 
-However, external dependencies, such as those containing the beans for your integration, 
-will have to be provided externally. 
+However, external dependencies, such as those containing the beans for your integration,
+will have to be provided externally.
 You can do so by providing a list of external dependencies to download and store that list in a text file.
 The capability can automatically download and include on the classpath all these dependencies.
 
-For instance, to include the `com.mycompany:beans-app1:2.0.0` and `com.mycompany:beans-support:1.5.0` dependencies, you can create a text file 
+For instance, to include the `com.mycompany:beans-app1:2.0.0` and `com.mycompany:beans-support:1.5.0` dependencies, you can create a text file
 with the following contents:
 
-```
+```text
 com.mycompany:beans-app1:2.0.0,com.mycompany:beans-support:1.5.0
 ```
 
 Then publish it to Wanaku's Data Store (or, git, if using the git initializer) and refer to the file accordingly
 
-* `--dependencies datastore://filename.txt` if using the data store 
-* `--dependencies file:///path/to/filename.txt` if using the git initializer
+- `--dependencies datastore://filename.txt` if using the data store
+- `--dependencies file:///path/to/filename.txt` if using the git initializer
 
 > [NOTE]
-> Repositories for dependencies can be set using the `--repositories` option, which receives a comma-separate list of 
+> Repositories for dependencies can be set using the `--repositories` option, which receives a comma-separate list of
 > repository URLs.
 
 ## Running the Capability and Exposing Camel Routes
 
-After designing the routes, you will need to have the capability use them and expose them as MCP 
-tools or MCP resources. To do so, the capability needs to have access to the files. 
+After designing the routes, you will need to have the capability use them and expose them as MCP
+tools or MCP resources. To do so, the capability needs to have access to the files.
 
 Route files can be provided to the capability using one of the following methods:
 

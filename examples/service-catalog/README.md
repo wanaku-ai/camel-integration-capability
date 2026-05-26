@@ -5,12 +5,14 @@ This example demonstrates how to package routes, rules, and dependencies as a **
 ## What Is a Service Catalog?
 
 A service catalog is a versioned, self-contained archive (ZIP file) that bundles:
+
 - Camel routes
 - MCP tool/resource exposure rules
 - Maven dependencies
 - Metadata (catalog name, service names)
 
 Service catalogs provide:
+
 - **Version control**: Track catalog versions independently from the application
 - **Atomic deployment**: Deploy all related routes and rules together
 - **Simplified configuration**: Reference by name instead of individual file URLs
@@ -25,7 +27,7 @@ Service catalogs provide:
 
 ## Catalog Structure
 
-```
+```text
 employee-system-v2/
 ├── index.properties                      # Catalog metadata
 └── employee-system/                      # Service directory
@@ -54,6 +56,7 @@ catalog.dependencies.employee-system=employee-system/dependencies.txt
 ```
 
 **Key points:**
+
 - `catalog.name`: Unique identifier for this catalog version
 - `catalog.services`: List of service names (can be multiple, comma-separated)
 - For each service, specify routes, rules, and dependencies using `catalog.<type>.<service-name>=<path>`
@@ -69,6 +72,7 @@ mkdir -p my-catalog/my-service
 ### 2. Add Your Files
 
 Place routes, rules, and dependencies in the service directory:
+
 ```bash
 cp routes.camel.yaml my-catalog/my-service/
 cp rules.wanaku-rules.yaml my-catalog/my-service/
@@ -97,6 +101,7 @@ zip -r my-catalog-v1.zip *
 ### 5. Upload to DataStore or File Server
 
 Upload the ZIP file to:
+
 - Wanaku DataStore service
 - File server (accessible via HTTP/HTTPS)
 - Cloud storage (S3, GCS, Azure Blob)
@@ -117,6 +122,7 @@ java -jar camel-integration-capability-main-*-jar-with-dependencies.jar \
 ```
 
 The application will:
+
 1. Query the Wanaku DataStore for `employee-system-v2`
 2. Download and extract the catalog
 3. Load routes, rules, and dependencies for the `employee-system` service
@@ -170,6 +176,7 @@ catalog.dependencies.crm-system=crm-system/dependencies.txt
 ```
 
 Deploy a specific service:
+
 ```bash
 --service-catalog enterprise-integrations-v3 \
 --service-catalog-system inventory-system
@@ -208,7 +215,7 @@ java -jar ../../camel-integration-capability-runtimes/camel-integration-capabili
 
 ### 3. Test via AI Agent
 
-```
+```text
 AI: Get employee information for employee ID 12345
 ```
 

@@ -11,6 +11,7 @@ The example exposes three MCP tools that interact with a backend employee servic
 3. **get-employee-compensation**: Fetches current and historical pay details
 
 The routes demonstrate:
+
 - Explicit parameter mapping (MCP parameter names → Camel headers)
 - HTTP backend integration
 - Conditional logic (restricting executive data)
@@ -52,7 +53,7 @@ java -jar ../../camel-integration-capability-runtimes/camel-integration-capabili
 
 Once registered with Wanaku, AI agents can invoke the tools:
 
-```
+```text
 AI: Get employee information for employee ID 12345
 ```
 
@@ -65,6 +66,7 @@ Expected response: JSON containing employee profile data from the backend.
 Unlike the [hello-world example](../hello-world), this example uses **explicit parameter mapping** to control how MCP parameters map to Camel headers.
 
 In the rules file:
+
 ```yaml
 properties:
   - name: employeeId
@@ -79,6 +81,7 @@ properties:
 This maps the MCP parameter `employeeId` → Camel header `EMPLOYEE_ID`.
 
 The route accesses it via:
+
 ```yaml
 - toD:
     uri: http://employee-backend-service:8081/employee/${header.EMPLOYEE_ID}/information
@@ -88,7 +91,7 @@ The route accesses it via:
 
 The `employee-backend-dependencies.txt` file specifies additional Camel components to download at runtime:
 
-```
+```text
 org.apache.camel:camel-http:4.18.2
 ```
 
@@ -97,6 +100,7 @@ This allows routes to use the HTTP component without pre-packaging all possible 
 ### Multi-Step Routes
 
 The `get-employee-complete-profile` route demonstrates route orchestration:
+
 1. Calls `direct:employee-information`
 2. Stores the result in an exchange property
 3. Calls `direct:employee-reviews`
@@ -109,6 +113,7 @@ This shows how to compose complex workflows from simpler routes.
 ### Conditional Logic
 
 The `get-employee-information` route includes conditional logic:
+
 ```yaml
 - choice:
     when:

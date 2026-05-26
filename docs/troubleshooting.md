@@ -58,6 +58,7 @@ If the route file can't be found or downloaded, routes won't load.
 **For datastore:// URIs**:
 
 1. Verify the file exists in Wanaku's DataStore:
+
    ```bash
    curl -H "Authorization: Bearer $TOKEN" \
      http://wanaku-datastore:8080/api/v1/files/routes.camel.yaml
@@ -66,7 +67,8 @@ If the route file can't be found or downloaded, routes won't load.
 2. Check that OAuth2 authentication succeeded (DataStore requires a token).
 
 3. Look for download retry attempts in logs:
-   ```
+
+   ```text
    INFO  Attempting to download datastore://routes.camel.yaml (attempt 1/12)
    ERROR Failed to download routes.camel.yaml: 404 Not Found
    ```
@@ -74,6 +76,7 @@ If the route file can't be found or downloaded, routes won't load.
 **For file:// URIs**:
 
 1. Verify the path is absolute, not relative:
+
    ```bash
    # Wrong (relative path)
    --routes-ref file://routes.camel.yaml
@@ -83,6 +86,7 @@ If the route file can't be found or downloaded, routes won't load.
    ```
 
 2. Check file permissions:
+
    ```bash
    ls -la /tmp/routes.camel.yaml
    ```
@@ -90,6 +94,7 @@ If the route file can't be found or downloaded, routes won't load.
    The service must have read access. In Kubernetes, this often means the file is in a mounted ConfigMap or volume.
 
 3. In Kubernetes, exec into the pod and verify:
+
    ```bash
    kubectl exec deployment/camel-integration-capability -- ls -la /data/routes.camel.yaml
    ```
@@ -102,7 +107,7 @@ Routes that reference Camel components not in the base distribution will fail to
 
 **Example**:
 
-```
+```text
 ERROR Failed to create route: No component found with name 'http'
 ```
 
@@ -110,7 +115,7 @@ This means the route uses `camel-http` but it's not on the classpath.
 
 **Fix**: Provide a dependencies file:
 
-```
+```text
 org.apache.camel:camel-http:4.18.1
 ```
 
@@ -150,7 +155,7 @@ kubectl logs deployment/camel-integration-capability | grep "Started route"
 
 If you see:
 
-```
+```text
 INFO Started route-1 (direct://route-1)
 INFO Started route-2 (direct://route-2)
 ```
@@ -234,18 +239,20 @@ Check `--client-id` and `--client-secret` match the OAuth2 provider's configurat
 The `--token-endpoint` must point to the OAuth2/OIDC token endpoint. For Keycloak, **include the realm path**:
 
 **Wrong**:
+
 ```bash
 --token-endpoint http://keycloak:8543/
 ```
 
 **Correct**:
+
 ```bash
 --token-endpoint http://keycloak:8543/realms/my-realm/
 ```
 
 The service appends `/protocol/openid-connect/token` automatically, so the full URL becomes:
 
-```
+```text
 http://keycloak:8543/realms/my-realm/protocol/openid-connect/token
 ```
 
@@ -308,7 +315,7 @@ kubectl logs deployment/camel-integration-capability | grep -i "token\|refresh"
 
 Look for:
 
-```
+```text
 ERROR Failed to refresh OAuth2 token
 ERROR HTTP 401 Unauthorized when calling Wanaku API
 ```
@@ -334,13 +341,15 @@ kubectl rollout restart deployment/camel-integration-capability
 Dependencies must use the `groupId:artifactId:version` format:
 
 **Correct**:
-```
+
+```text
 org.apache.camel:camel-http:4.18.1
 com.mycompany:custom-beans:2.0.0
 ```
 
 **Wrong**:
-```
+
+```text
 camel-http:4.18.1              # Missing groupId
 org.apache.camel:camel-http    # Missing version
 ```
@@ -353,13 +362,13 @@ cat dependencies.txt
 
 Ensure it's comma-separated (or newline-separated):
 
-```
+```text
 org.apache.camel:camel-http:4.18.1,org.apache.camel:camel-jackson:4.18.1
 ```
 
 Or:
 
-```
+```text
 org.apache.camel:camel-http:4.18.1
 org.apache.camel:camel-jackson:4.18.1
 ```
@@ -402,7 +411,7 @@ kubectl logs deployment/camel-integration-capability | grep -i "download\|retry"
 
 You'll see:
 
-```
+```text
 INFO  Attempting to download org.apache.camel:camel-http:4.18.1 (attempt 1/12)
 WARN  Download failed, retrying in 5 seconds...
 INFO  Attempting to download org.apache.camel:camel-http:4.18.1 (attempt 2/12)
@@ -548,7 +557,7 @@ kubectl logs deployment/camel-integration-capability | grep -i "registration\|re
 
 You'll see:
 
-```
+```text
 INFO  Attempting to register with Wanaku (attempt 1/12)
 WARN  Registration failed: Connection refused
 INFO  Waiting 5 seconds before retry...
@@ -573,13 +582,13 @@ kubectl logs deployment/camel-integration-capability | grep -i "token\|oauth"
 
 Look for:
 
-```
+```text
 INFO  Acquired OAuth2 token successfully
 ```
 
 Or:
 
-```
+```text
 ERROR Failed to acquire OAuth2 token: invalid_client
 ```
 
@@ -597,13 +606,13 @@ kubectl logs deployment/camel-integration-capability | grep -i "grpc\|port\|bind
 
 Look for:
 
-```
+```text
 INFO  gRPC server started on port 9190
 ```
 
 Or:
 
-```
+```text
 ERROR Failed to bind to port 9190: Address already in use
 ```
 
@@ -648,7 +657,7 @@ kubectl exec deployment/wanaku-router -- \
 
 This should list the available gRPC services:
 
-```
+```text
 ai.wanaku.capability.grpc.CamelToolService
 ai.wanaku.capability.grpc.CamelResourceService
 ```
@@ -763,7 +772,7 @@ You can't mix `--service-catalog` with `--routes-ref`, `--rules-ref`, or `--depe
 
 **Error**:
 
-```
+```text
 --service-catalog is mutually exclusive with --routes-ref, --rules-ref, and --dependencies
 ```
 
@@ -779,7 +788,7 @@ kubectl logs deployment/camel-integration-capability | grep -i "catalog\|downloa
 
 You'll see:
 
-```
+```text
 INFO  Downloading service catalog 'employee-system-v2'
 WARN  Download failed, retrying in 5 seconds...
 INFO  Downloading service catalog 'employee-system-v2' (attempt 2/12)
@@ -889,7 +898,7 @@ spec:
 
 **Route loading**:
 
-```
+```text
 DEBUG WanakuRoutesLoader - Parsing routes from /data/routes.camel.yaml
 DEBUG WanakuRoutesLoader - Found 3 routes in YAML
 DEBUG WanakuRoutesLoader - Loading route 'get-employee-info'
@@ -898,7 +907,7 @@ DEBUG WanakuRoutesLoader - Route 'get-employee-info' started successfully
 
 **Dependency resolution**:
 
-```
+```text
 DEBUG DependencyDownloader - Downloading org.apache.camel:camel-http:4.18.1
 DEBUG DependencyDownloader - Resolved 12 transitive dependencies
 DEBUG DependencyDownloader - Downloaded camel-http-4.18.1.jar to /tmp/camel-deps/
@@ -906,7 +915,7 @@ DEBUG DependencyDownloader - Downloaded camel-http-4.18.1.jar to /tmp/camel-deps
 
 **Tool invocations**:
 
-```
+```text
 DEBUG CamelTool - Received invocation for tool 'get-employee-info'
 DEBUG CamelTool - Mapping parameter 'employeeId' to header 'Wanaku.employeeId'
 DEBUG CamelTool - Executing route 'get-employee-info'
@@ -915,7 +924,7 @@ DEBUG CamelTool - Route completed in 234ms
 
 **Registration**:
 
-```
+```text
 DEBUG ZeroDepRegistrationManager - Attempting registration (attempt 1/12)
 DEBUG ZeroDepRegistrationManager - Acquired OAuth2 token
 DEBUG ZeroDepRegistrationManager - Registration successful, service ID: camel-12345

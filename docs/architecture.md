@@ -4,9 +4,9 @@ This document describes the architecture and design decisions for the Camel Inte
 
 ## System Overview
 
-The Camel Integration Capability acts as a bridge between AI agents and enterprise integration systems. 
+The Camel Integration Capability acts as a bridge between AI agents and enterprise integration systems.
 
-It dynamically loads Apache Camel routes and exposes them as MCP (Model Context Protocol) tools and resources through Wanaku's gRPC bridge, 
+It dynamically loads Apache Camel routes and exposes them as MCP (Model Context Protocol) tools and resources through Wanaku's gRPC bridge,
 enabling AI agents to interact with backend systems in a controlled, secure manner.
 
 ### High-Level Architecture
@@ -222,12 +222,14 @@ sequenceDiagram
 **Decision**: Load Camel routes dynamically from YAML at runtime instead of compile-time route builders.
 
 **Rationale**:
+
 - Allows non-developers to create integrations
 - Routes can be updated without recompiling/redeploying
 - Supports external route storage (DataStore, Git)
 - Enables visual route design tools (Kaoto)
 
 **Trade-offs**:
+
 - Runtime errors instead of compile-time validation
 - Slightly slower startup time
 - Requires careful YAML schema validation
@@ -237,6 +239,7 @@ sequenceDiagram
 **Decision**: Use gRPC instead of REST for communication with Wanaku router.
 
 **Rationale**:
+
 - Efficient binary protocol reduces latency
 - Built-in streaming support for future enhancements
 - Strong typing via Protocol Buffers
@@ -248,6 +251,7 @@ sequenceDiagram
 **Decision**: Use OAuth2 client credentials flow for service-to-service authentication.
 
 **Rationale**:
+
 - Industry-standard authentication mechanism
 - Centralized token management
 - Support for token refresh
@@ -258,6 +262,7 @@ sequenceDiagram
 **Decision**: Support both `datastore://` and `file://` schemes for resource loading.
 
 **Rationale**:
+
 - `datastore://` enables centralized configuration management
 - `file://` supports local development and air-gapped deployments
 - Extensible design allows future schemes (e.g., `git://`, `http://`)
@@ -267,6 +272,7 @@ sequenceDiagram
 **Decision**: Implement explicit rules for exposing routes as MCP tools/resources.
 
 **Rationale**:
+
 - Security: Not all routes should be exposed to AI agents
 - Flexibility: Same route can be exposed as tool or resource
 - Access control: Restrict certain operations or data
@@ -277,12 +283,14 @@ sequenceDiagram
 **Decision**: Download Maven dependencies at runtime instead of bundling everything.
 
 **Rationale**:
+
 - Smaller container images (base image + minimal JARs)
 - Flexibility to use different Camel components per deployment
 - Reduces build time and artifact size
 - Supports dynamic component loading
 
 **Trade-offs**:
+
 - Slower first startup (dependency download)
 - Requires network access at startup
 - Potential version conflicts if not carefully managed
@@ -292,6 +300,7 @@ sequenceDiagram
 **Decision**: Support both automatic and explicit parameter-to-header mapping strategies.
 
 **Rationale**:
+
 - **Automatic mapping** (default): All MCP parameters automatically map to Camel headers with `Wanaku.` prefix
   - Simplifies development and prototyping
   - No configuration needed for basic use cases
@@ -302,12 +311,15 @@ sequenceDiagram
   - Security through parameter filtering
 
 **Implementation**:
+
 The `HeaderMapperFactory` selects the appropriate mapper:
+
 - `NoopHeaderMapper`: When tool definition is null (no headers)
 - `AutoMapper`: When properties are not defined (all parameters with `Wanaku.` prefix)
 - `FilteredMapper`: When properties with mappings are defined (explicit control)
 
 **Trade-offs**:
+
 - Automatic mapping is convenient but requires `Wanaku.` prefix in routes
 - Explicit mapping is more verbose but provides better control and documentation
 - Users must choose one strategy per tool (mixing is not supported)
@@ -556,4 +568,3 @@ Potential areas for improvement:
 6. **Async Execution**: Non-blocking route execution with callbacks
 7. **Schema Validation**: Stronger input/output schema validation
 8. **Metrics & Monitoring**: Prometheus, Grafana dashboards
-

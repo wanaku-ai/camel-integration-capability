@@ -2,14 +2,14 @@
 
 ## Prerequisites
 
-* Java 21 or higher
-* [Apache Maven](https://maven.apache.org) 3.x is required to build and package the project.
+- Java 21 or higher
+- [Apache Maven](https://maven.apache.org) 3.x is required to build and package the project.
 
 ## Project Structure
 
 This is a multi-module Maven project:
 
-```
+```text
 pom.xml                                    # Parent aggregator
 ├── camel-integration-capability-common/   # Shared library
 ├── camel-integration-capability-runtimes/
