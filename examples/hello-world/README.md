@@ -5,6 +5,7 @@ This is a minimal example demonstrating the basic functionality of the Camel Int
 ## What It Does
 
 The example exposes a single route that:
+
 1. Accepts a greeting message as input
 2. Logs it to the console
 3. Returns a formatted greeting response
@@ -40,12 +41,13 @@ java -jar ../../camel-integration-capability-runtimes/camel-integration-capabili
 
 Once registered with Wanaku, AI agents can invoke the `sends-greeting` tool:
 
-```
+```text
 AI: Send a greeting with message "World"
 ```
 
 Expected response:
-```
+
+```text
 Hello World from route-3104
 ```
 
@@ -56,6 +58,7 @@ Hello World from route-3104
 This example uses **automatic parameter mapping**. The MCP parameter `wanaku_body` is automatically mapped to the Camel message body because it follows the naming convention `wanaku_body`.
 
 The Camel route accesses it via `${body}`:
+
 ```yaml
 - log:
     message: Hello ${body}
@@ -64,6 +67,7 @@ The Camel route accesses it via `${body}`:
 ### Route Exposure
 
 The rules file defines which routes are exposed as MCP tools:
+
 ```yaml
 tools:
   - sends-greeting:

@@ -53,7 +53,7 @@ spec:
   - `initialDelaySeconds: 15` — Allow time for Camel context initialization
   - `periodSeconds: 10` — Check every 10 seconds
   - `failureThreshold: 3` — Restart after 3 consecutive failures (30 seconds)
-  
+
 - **Readiness Probe:**
   - `initialDelaySeconds: 10` — Routes should be loaded by this point
   - `periodSeconds: 5` — Check frequently for traffic routing decisions
@@ -139,6 +139,7 @@ Understanding startup phases helps tune health check timings and troubleshoot sl
 **Duration:** 30-60 seconds
 
 **Phases:**
+
 1. JVM initialization (2-5 seconds)
 2. Dependency download from Maven Central (20-40 seconds)
 3. Camel context creation (3-5 seconds)
@@ -147,6 +148,7 @@ Understanding startup phases helps tune health check timings and troubleshoot sl
 6. Service registration with Wanaku Router (1-3 seconds)
 
 **Optimization:**
+
 - Pre-populate `/data` volume with downloaded dependencies
 - Use a Maven mirror or repository manager (Nexus, Artifactory) closer to your deployment
 - Build a custom container image with dependencies pre-installed (trade-off: larger image size)
@@ -156,6 +158,7 @@ Understanding startup phases helps tune health check timings and troubleshoot sl
 **Duration:** 10-20 seconds
 
 **Phases:**
+
 1. JVM initialization (2-5 seconds)
 2. Dependency validation (1-2 seconds)
 3. Camel context creation (3-5 seconds)
@@ -164,6 +167,7 @@ Understanding startup phases helps tune health check timings and troubleshoot sl
 6. Service registration (1-3 seconds)
 
 **When this happens:**
+
 - Dependencies are already present in `/data`
 - Pod restart or rolling update with persistent volume
 - Horizontal scale-out with shared storage
@@ -171,15 +175,18 @@ Understanding startup phases helps tune health check timings and troubleshoot sl
 ### Runtime Performance
 
 **Route Execution Overhead:**
+
 - Apache Camel ProducerTemplate: sub-millisecond overhead
 - Actual route performance depends on backend system latency
 
 **gRPC Invocation Overhead:**
+
 - Serialization/deserialization: 1-3ms
 - Network latency (same cluster): 1-2ms
 - Total gRPC overhead: 1-5ms per invocation
 
 **Authentication Overhead:**
+
 - Token is cached after first retrieval
 - Per-request overhead: negligible (token included in headers)
 - Token refresh: occurs in background before expiration
@@ -191,6 +198,7 @@ The capability uses **SLF4J** with **Log4j2** as the logging backend.
 ### Configuration Files
 
 Log4j2 can be configured using either format:
+
 - `log4j2.properties` (simple key-value format)
 - `log4j2.xml` (full XML configuration)
 
@@ -215,6 +223,7 @@ java -Dlog4j2.configurationFile=/path/to/log4j2.xml \
 ### Setting Log Levels
 
 **Via log4j2.properties:**
+
 ```properties
 # Root logger
 rootLogger.level = info
@@ -236,12 +245,14 @@ logger.grpc.level = warn
 ```
 
 **Via environment variable (overrides config file):**
+
 ```bash
 export LOG_LEVEL=DEBUG
 java -jar camel-integration-capability-main.jar
 ```
 
 **Via system property:**
+
 ```bash
 java -Dlog4j2.rootLogger.level=DEBUG \
   -jar camel-integration-capability-main.jar
@@ -252,6 +263,7 @@ java -Dlog4j2.rootLogger.level=DEBUG \
 For production deployments, use JSON-formatted logs for easier parsing and analysis:
 
 **log4j2.xml example:**
+
 ```xml
 <?xml version="1.0" encoding="UTF-8"?>
 <Configuration status="WARN">
@@ -274,6 +286,7 @@ For production deployments, use JSON-formatted logs for easier parsing and analy
 ```
 
 **Kubernetes ConfigMap for Log4j2:**
+
 ```yaml
 apiVersion: v1
 kind: ConfigMap
@@ -297,6 +310,7 @@ data:
 ```
 
 Mount as a volume:
+
 ```yaml
 volumeMounts:
   - name: logging-config
@@ -358,11 +372,13 @@ For local development or stable clusters where services start quickly:
 ### Registration Failure Scenarios
 
 If registration fails after all retries, the service will:
+
 1. Log an error message with the failure reason
 2. Exit with a non-zero status code
 3. Kubernetes will restart the pod (if using a Deployment)
 
 **Common Failure Reasons:**
+
 - Wanaku MCP Router is not accessible (check networking)
 - Authentication failed (check credentials)
 - Invalid registration request (check configuration)
@@ -374,12 +390,14 @@ The capability is **stateless** and designed for horizontal scaling.
 ### Horizontal Scaling
 
 **Characteristics:**
+
 - No shared state between instances
 - Each instance registers independently with the Wanaku MCP Router
 - Load balancing is handled by the Wanaku MCP Router
 - Instances can be added or removed dynamically
 
 **Kubernetes Deployment:**
+
 ```yaml
 apiVersion: apps/v1
 kind: Deployment
@@ -434,11 +452,13 @@ spec:
 If routes are CPU or memory intensive, consider vertical scaling (increase resources per pod) instead of horizontal scaling.
 
 **When to use:**
+
 - Routes perform heavy computation
 - Large dependency graphs
 - Memory-intensive transformations
 
 **How to scale:**
+
 1. Increase CPU and memory limits in the Deployment
 2. Monitor actual usage with metrics
 3. Adjust based on observed patterns
@@ -448,6 +468,7 @@ If routes are CPU or memory intensive, consider vertical scaling (increase resou
 The Wanaku MCP Router distributes tool invocations across registered capability instances. No configuration is needed on the capability side.
 
 **Load Balancing Strategy:**
+
 - Determined by the Wanaku MCP Router
 - Typically round-robin or least-connections
 - Check Wanaku documentation for details
@@ -463,6 +484,7 @@ FROM registry.access.redhat.com/ubi9/openjdk-21:1.21
 ```
 
 **Why UBI9?**
+
 - Regularly updated with security patches
 - Minimal attack surface
 - Supported by Red Hat
@@ -471,6 +493,7 @@ FROM registry.access.redhat.com/ubi9/openjdk-21:1.21
 ### Data Directory
 
 The capability uses `/data` as the default directory for:
+
 - Downloaded Maven dependencies
 - Temporary files
 - Route cache
@@ -490,6 +513,7 @@ volumes:
 ```
 
 **PersistentVolumeClaim:**
+
 ```yaml
 apiVersion: v1
 kind: PersistentVolumeClaim
@@ -546,6 +570,7 @@ env:
 ```
 
 **Best practices:**
+
 - Create secrets via `kubectl create secret` (not in YAML)
 - Rotate credentials regularly
 - Use external secret managers (Vault, AWS Secrets Manager, etc.) for enterprise deployments
@@ -588,11 +613,13 @@ Currently, the capability does not expose Prometheus metrics or OpenTelemetry tr
 ### Current Observability
 
 **Logs:**
+
 - Structured JSON logs (via Log4j2)
 - Kubernetes log aggregation (Fluentd, Fluent Bit, etc.)
 - Centralized logging (Elasticsearch, Loki, CloudWatch)
 
 **Kubernetes Metrics:**
+
 - CPU and memory usage (via metrics-server)
 - Pod restarts and health check failures
 - Network traffic (service mesh metrics if using Istio, Linkerd, etc.)
@@ -602,6 +629,7 @@ Currently, the capability does not expose Prometheus metrics or OpenTelemetry tr
 Planned enhancements:
 
 **Prometheus Metrics:**
+
 - Route execution times
 - Error rates per route
 - gRPC request/response times
@@ -609,12 +637,14 @@ Planned enhancements:
 - Registration success/failure counts
 
 **OpenTelemetry Tracing:**
+
 - Distributed tracing across Wanaku services
 - Per-route execution spans
 - Correlation with backend system traces
 - Integration with Jaeger, Zipkin, or cloud tracing services
 
 **Health Metrics:**
+
 - Camel context status
 - Route health (up/down)
 - Dependency resolution failures
@@ -622,11 +652,13 @@ Planned enhancements:
 Until these are implemented, use the following approaches:
 
 **Application Performance Monitoring (APM):**
+
 - Attach APM agents (Datadog, New Relic, Elastic APM) to the JVM
 - Configure via `-javaagent` flag
 - Monitor JVM metrics, garbage collection, and thread pools
 
 **Custom Metrics via Routes:**
+
 - Use Camel's built-in metrics components (`camel-micrometer`, `camel-metrics`)
 - Export metrics from within routes
 - Aggregate in Prometheus or a time-series database
@@ -636,11 +668,13 @@ Until these are implemented, use the following approaches:
 ### Service Won't Start
 
 **Check logs:**
+
 ```bash
 kubectl logs -f deployment/camel-integration-capability
 ```
 
 **Common causes:**
+
 1. Missing required parameters (e.g., `--registration-url`)
 2. Authentication failure (invalid credentials)
 3. Cannot download routes or dependencies
@@ -648,6 +682,7 @@ kubectl logs -f deployment/camel-integration-capability
 5. Insufficient memory or disk space
 
 **Solutions:**
+
 - Verify all required CLI arguments are provided
 - Check authentication configuration (see [Authentication](authentication.md))
 - Verify network connectivity to DataStore and Maven Central
@@ -656,16 +691,19 @@ kubectl logs -f deployment/camel-integration-capability
 ### Registration Failures
 
 **Symptoms:**
+
 - Service starts but never registers with Wanaku Router
 - Logs show repeated registration attempts
 
 **Check:**
+
 1. Wanaku Router is running and accessible
 2. `--registration-url` is correct
 3. Authentication is configured correctly
 4. Network policies allow egress to the router
 
 **Increase retry parameters:**
+
 ```bash
 --initial-delay 30 \
 --retries 30 \
@@ -675,16 +713,19 @@ kubectl logs -f deployment/camel-integration-capability
 ### Route Execution Errors
 
 **Symptoms:**
+
 - Tool invocations return errors
 - Routes fail to execute
 
 **Check:**
+
 1. Route YAML syntax is valid
 2. Required Camel components are listed in dependencies
 3. Backend systems are accessible
 4. Credentials for backend systems are correct
 
 **Enable debug logging:**
+
 ```bash
 export LOG_LEVEL=DEBUG
 ```
@@ -692,15 +733,18 @@ export LOG_LEVEL=DEBUG
 ### High Memory Usage
 
 **Symptoms:**
+
 - Pods restarted due to OOMKilled
 - Memory usage grows over time
 
 **Causes:**
+
 1. Too many routes loaded
 2. Large dependencies (e.g., heavy XML processing libraries)
 3. Memory leak in custom routes
 
 **Solutions:**
+
 - Increase memory limits
 - Reduce number of routes per instance
 - Review route logic for memory leaks
@@ -709,15 +753,18 @@ export LOG_LEVEL=DEBUG
 ### Slow Startup
 
 **Symptoms:**
+
 - Health checks fail before service is ready
 - Startup takes longer than expected
 
 **Causes:**
+
 1. Slow dependency download (network latency to Maven Central)
 2. Many dependencies to download
 3. Large route files
 
 **Solutions:**
+
 - Use a Maven mirror closer to your deployment
 - Pre-populate `/data` volume with dependencies
 - Increase `initialDelaySeconds` in health checks
@@ -728,6 +775,7 @@ export LOG_LEVEL=DEBUG
 ### What to Back Up
 
 **Configuration:**
+
 - Route YAML files
 - Rule YAML files
 - Dependency declarations
@@ -735,11 +783,13 @@ export LOG_LEVEL=DEBUG
 - Log4j2 configuration
 
 **Secrets:**
+
 - OAuth2 client credentials
 - Backend system credentials
 - Certificates (if using mTLS)
 
 **Data Volume:**
+
 - Dependency cache in `/data` (optional — can be re-downloaded)
 
 ### Disaster Recovery
@@ -753,6 +803,7 @@ export LOG_LEVEL=DEBUG
 5. **Verification**: Check logs and health probes
 
 **Recovery Time Objective (RTO):**
+
 - Configuration restore: < 5 minutes
 - Service startup (cold): 30-60 seconds
 - Total RTO: < 10 minutes (assuming automation)
@@ -767,6 +818,7 @@ For mission-critical deployments:
 - Use PodDisruptionBudget to prevent simultaneous evictions
 
 **Pod Anti-Affinity Example:**
+
 ```yaml
 affinity:
   podAntiAffinity:
@@ -780,6 +832,7 @@ affinity:
 ```
 
 **PodDisruptionBudget:**
+
 ```yaml
 apiVersion: policy/v1
 kind: PodDisruptionBudget

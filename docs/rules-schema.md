@@ -142,6 +142,7 @@ mcp:
 **Example**:
 
 Routes YAML:
+
 ```yaml
 - route:
     id: get-employee-route
@@ -153,6 +154,7 @@ Routes YAML:
 ```
 
 Rules YAML:
+
 ```yaml
 mcp:
   tools:
@@ -165,7 +167,7 @@ mcp:
 
 The tool is registered with Wanaku but invocations will fail with:
 
-```
+```text
 Route 'wrong-route-id' not found
 ```
 
@@ -855,7 +857,7 @@ mcp:
 
 If `route.id` doesn't match any loaded route:
 
-```
+```text
 ERROR Route 'unknown-route-id' not found
 ```
 
@@ -868,7 +870,7 @@ The tool is registered with Wanaku but invocations will fail. Verify:
 
 If a required field is missing:
 
-```
+```text
 ERROR Tool 'my-tool' is missing required field 'description'
 ```
 
@@ -878,7 +880,7 @@ Fix by adding the missing field.
 
 If the rules YAML is malformed:
 
-```
+```text
 ERROR Failed to parse rules file: expected <block end>, but found '<scalar>'
 ```
 
@@ -892,7 +894,7 @@ yamllint rules.yaml
 
 If a resource route has `autoStartup: true` (or defaults to true):
 
-```
+```text
 WARN Resource route 'my-resource-route' has auto-start enabled. This may cause unexpected behavior.
 ```
 
@@ -941,17 +943,20 @@ The service may log a warning but won't fail. However, the route will start cons
 Before deploying to production:
 
 1. **Validate YAML syntax**:
+
    ```bash
    yamllint rules.yaml
    ```
 
 2. **Check route IDs match**:
+
    ```bash
    grep "id:" routes.camel.yaml
    grep "id:" rules.yaml
    ```
 
 3. **Test with fail-fast enabled**:
+
    ```bash
    --fail-fast=true
    ```

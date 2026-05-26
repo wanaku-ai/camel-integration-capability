@@ -18,22 +18,26 @@ We expect all contributors to be respectful and professional. Create a welcoming
 ### Development Environment Setup
 
 1. **Clone the repository**:
+
    ```bash
    git clone https://github.com/wanaku-ai/camel-integration-capability.git
    cd camel-integration-capability
    ```
 
 2. **Build the project**:
+
    ```bash
    mvn clean install
    ```
 
 3. **Run tests**:
+
    ```bash
    mvn test
    ```
 
 4. **Run the application locally**:
+
    ```bash
    java -jar camel-integration-capability-runtimes/camel-integration-capability-main/target/camel-integration-capability-main-0.1.1-jar-with-dependencies.jar \
      --registration-url http://localhost:8080 \
@@ -49,7 +53,7 @@ We expect all contributors to be respectful and professional. Create a welcoming
 
 ## Project Structure
 
-```
+```text
 camel-integration-capability/
 ├── src/
 │   ├── main/
@@ -75,7 +79,7 @@ camel-integration-capability/
 ├── pom.xml                                 # Maven build configuration
 ├── Dockerfile                              # Container build definition
 └── README.md                               # Project overview
-```
+```text
 
 ## Development Workflow
 
@@ -86,6 +90,7 @@ git checkout -b feature/your-feature-name
 ```
 
 Use descriptive branch names:
+
 - `feature/add-http-basic-auth` - New features
 - `fix/route-loading-error` - Bug fixes
 - `docs/improve-readme` - Documentation updates
@@ -128,6 +133,7 @@ This resolves issue #<the issue number goes here>
 ```
 
 **Commit message format**:
+
 - **First line**: Brief summary (50 chars or less)
 - **Blank line**
 - **Body**: Detailed explanation of changes (wrap at 72 chars)
@@ -143,6 +149,7 @@ git push origin feature/your-feature-name
 ```
 
 Create a pull request on GitHub with:
+
 - **Clear title** describing the change
 - **Description** explaining what and why
 - **References** to related issues (e.g., "Fixes #123")
@@ -321,11 +328,12 @@ When requesting features, include:
 
 - **GitHub Issues**: Bug reports, feature requests, questions
 - **Pull Requests**: Code contributions, documentation improvements
-- **Email**: contact@wanaku.ai for general inquiries
+- **Email**: <contact@wanaku.ai> for general inquiries
 
 ## Recognition
 
 Contributors will be recognized in:
+
 - GitHub contributor list
 - Release notes for significant contributions
 - Project documentation where appropriate
@@ -336,4 +344,4 @@ By contributing, you agree that your contributions will be licensed under the Ap
 
 ---
 
-**Questions?** Open an issue or reach out to contact@wanaku.ai. We're here to help!
+**Questions?** Open an issue or reach out to <contact@wanaku.ai>. We're here to help!

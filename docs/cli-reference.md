@@ -40,6 +40,7 @@ Control how the service registers with the Wanaku MCP Router.
 ```
 
 This configuration:
+
 - Registers with the router at `http://wanaku-router:8080`
 - Tells the router to call back at `my-service.example.com:9190`
 - Identifies itself as `employee-integration`
@@ -59,7 +60,7 @@ OAuth2/OIDC credentials for authenticating with Wanaku services.
 
 If `--token-endpoint` is omitted, the service derives it from `--registration-url`:
 
-```
+```text
 --registration-url http://wanaku-router:8080
 → token endpoint: http://wanaku-router:8080/protocol/openid-connect/token
 ```
@@ -70,7 +71,7 @@ This works if Wanaku and the OAuth2 provider share the same base URL. For separa
 
 For Keycloak, the token endpoint format is:
 
-```
+```text
 http://<keycloak-host>:<port>/realms/<realm-name>/protocol/openid-connect/token
 ```
 
@@ -81,6 +82,7 @@ The service appends `/protocol/openid-connect/token`, so provide:
 ```
 
 **Wrong**:
+
 ```bash
 --token-endpoint http://keycloak:8543/
 ```
@@ -122,6 +124,7 @@ Control how the service loads routes, rules, and dependencies.
 ```
 
 The service will:
+
 1. Download `employee-system-v2.zip` from Wanaku's DataStore after registration
 2. Extract the catalog's `index.properties`
 3. Locate the `employee-system` resources within the catalog
@@ -173,18 +176,21 @@ Dependencies will be downloaded from these repositories in addition to Maven Cen
 `--service-catalog` is mutually exclusive with `--routes-ref`, `--rules-ref`, and `--dependencies`. You must choose one mode:
 
 **Catalog mode**:
+
 ```bash
 --service-catalog my-catalog \
 --service-catalog-system my-system
 ```
 
 **Individual files mode**:
+
 ```bash
 --routes-ref datastore://routes.camel.yaml \
 --rules-ref datastore://rules.yaml
 ```
 
 **Invalid (mixing modes)**:
+
 ```bash
 --service-catalog my-catalog \
 --service-catalog-system my-system \
@@ -379,25 +385,25 @@ The service validates parameters at startup. Common validation errors:
 
 **Missing required parameters**:
 
-```
+```text
 Missing required option: '--registration-url=<registrationUrl>'
 ```
 
 **Mutually exclusive parameters**:
 
-```
+```text
 --service-catalog is mutually exclusive with --routes-ref, --rules-ref, and --dependencies
 ```
 
 **Service catalog without system**:
 
-```
+```text
 --service-catalog-system is required when --service-catalog is used
 ```
 
 **Routes reference missing (individual file mode)**:
 
-```
+```text
 Either --routes-ref or --service-catalog must be provided
 ```
 

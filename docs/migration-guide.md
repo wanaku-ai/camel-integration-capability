@@ -11,6 +11,7 @@ Version 0.1.0 introduces significant architectural changes, particularly around 
 The project was split into multiple Maven modules. This affects Maven coordinates and artifact selection.
 
 **Before (0.0.9):**
+
 ```xml
 <dependency>
     <groupId>ai.wanaku</groupId>
@@ -24,6 +25,7 @@ The project was split into multiple Maven modules. This affects Maven coordinate
 Choose the appropriate module based on your use case:
 
 **Standalone CLI application:**
+
 ```xml
 <dependency>
     <groupId>ai.wanaku</groupId>
@@ -33,6 +35,7 @@ Choose the appropriate module based on your use case:
 ```
 
 **SPI plugin for existing Camel apps:**
+
 ```xml
 <dependency>
     <groupId>ai.wanaku</groupId>
@@ -42,6 +45,7 @@ Choose the appropriate module based on your use case:
 ```
 
 **Shared library/common utilities:**
+
 ```xml
 <dependency>
     <groupId>ai.wanaku</groupId>
@@ -51,6 +55,7 @@ Choose the appropriate module based on your use case:
 ```
 
 The JAR file names also changed:
+
 - Main: `camel-integration-capability-main-0.1.0-jar-with-dependencies.jar`
 - Plugin: `camel-integration-capability-plugin-0.1.0-shaded.jar`
 
@@ -59,6 +64,7 @@ The JAR file names also changed:
 The Wanaku Capabilities SDK was upgraded from 0.0.x to 0.1.0. This introduces breaking changes in registration APIs.
 
 **Impact:**
+
 - Internal registration logic updated to use new SDK APIs
 - No action required for CLI users
 - Plugin users: ensure your Camel app uses compatible SDK versions
@@ -68,6 +74,7 @@ The Wanaku Capabilities SDK was upgraded from 0.0.x to 0.1.0. This introduces br
 Version 0.1.0 introduces **service catalogs** as the preferred way to package and distribute routes, rules, and dependencies.
 
 **Before (0.0.9):** Individual file references
+
 ```bash
 java -jar camel-integration-capability.jar \
   --routes-ref file:///path/to/routes.yaml \
@@ -76,6 +83,7 @@ java -jar camel-integration-capability.jar \
 ```
 
 **After (0.1.0):** Service catalog
+
 ```bash
 java -jar camel-integration-capability-main-*-jar-with-dependencies.jar \
   --service-catalog employee-system-v2 \
@@ -87,7 +95,8 @@ Individual file references (`--routes-ref`, `--rules-ref`, `--dependencies`) are
 **Creating a service catalog:**
 
 1. Create a directory structure:
-   ```
+
+   ```text
    my-catalog/
    ├── index.properties
    └── employee-system/
@@ -97,6 +106,7 @@ Individual file references (`--routes-ref`, `--rules-ref`, `--dependencies`) are
    ```
 
 2. Define `index.properties`:
+
    ```properties
    catalog.name=my-catalog-v1
    catalog.services=employee-system
@@ -106,6 +116,7 @@ Individual file references (`--routes-ref`, `--rules-ref`, `--dependencies`) are
    ```
 
 3. Package as a ZIP:
+
    ```bash
    cd my-catalog && zip -r my-catalog-v1.zip *
    ```
@@ -119,6 +130,7 @@ See the [examples/service-catalog](../examples/service-catalog) directory for a 
 The `--client-secret` parameter is now **optional**. Authentication can be disabled in the Wanaku MCP Router.
 
 **Before (0.0.9):** Always required
+
 ```bash
 java -jar camel-integration-capability.jar \
   --client-id wanaku-service \
@@ -126,6 +138,7 @@ java -jar camel-integration-capability.jar \
 ```
 
 **After (0.1.0):** Optional
+
 ```bash
 # With authentication
 java -jar camel-integration-capability-main-*-jar-with-dependencies.jar \
@@ -142,11 +155,13 @@ java -jar camel-integration-capability-main-*-jar-with-dependencies.jar \
 Version 0.1.0 adds gRPC health check support. The gRPC server now starts **before** registration to ensure health probes succeed.
 
 **Impact:**
+
 - Kubernetes/OpenShift deployments can now use gRPC health probes
 - No configuration changes required
 - Health endpoint: gRPC Health Checking Protocol on the gRPC port
 
 **Example Kubernetes health probe:**
+
 ```yaml
 livenessProbe:
   grpc:
@@ -160,6 +175,7 @@ livenessProbe:
 Version 0.1.0 introduces configurable route loading error handling.
 
 **Behavior:**
+
 - **Fail-fast (default):** Application exits if any route fails to load
 - **Log-and-continue:** Logs errors but continues with remaining routes
 
@@ -173,11 +189,13 @@ Set via environment variable or system property (exact mechanism depends on depl
 The Docker image entry point was updated to use the new JAR name:
 
 **Before (0.0.9):**
+
 ```dockerfile
 ENTRYPOINT ["java", "-jar", "camel-integration-capability.jar"]
 ```
 
 **After (0.1.0):**
+
 ```dockerfile
 ENTRYPOINT ["java", "-jar", "camel-integration-capability-main.jar"]
 ```

@@ -8,11 +8,12 @@ A capability service for the [Wanaku MCP Router](https://wanaku.ai) that enables
 
 ## What is This?
 
-The Camel Integration Capability bridges AI agents with enterprise integration patterns. 
+The Camel Integration Capability bridges AI agents with enterprise integration patterns.
 
 It exposes Apache Camel routes as MCP (Model Context Protocol) tools and resources, allowing AI agents to perform complex backend operations through standardized gRPC interfaces.
 
 **Key Use Cases:**
+
 - Enable AI agents to query databases, CRMs, or inventory systems
 - Orchestrate multi-step business workflows through natural language
 - Integrate AI capabilities with existing enterprise service buses
@@ -20,7 +21,7 @@ It exposes Apache Camel routes as MCP (Model Context Protocol) tools and resourc
 
 ## Project Structure
 
-```
+```text
 camel-integration-capability/
 ├── camel-integration-capability-common/           # Shared utilities, models, gRPC services
 └── camel-integration-capability-runtimes/
@@ -51,7 +52,6 @@ graph TB
     J[DataStore Service] -.->|Individual Resources| C
 ```
 
-
 ## Quick Start
 
 ### Prerequisites
@@ -64,6 +64,7 @@ graph TB
 ### 5-Minute Setup
 
 1. **Download the latest release** or build from source:
+
    ```bash
    git clone https://github.com/wanaku-ai/camel-integration-capability.git
    cd camel-integration-capability
@@ -71,6 +72,7 @@ graph TB
    ```
 
 2. **Prepare your Camel routes** (example `my-routes.camel.yaml`):
+
    ```yaml
    - route:
        id: get-employee-info
@@ -81,6 +83,7 @@ graph TB
    ```
 
 3. **Prepare route exposure rules** (example `my-rules.yaml`):
+
    ```yaml
    mcp:
      tools:
@@ -91,8 +94,8 @@ graph TB
    ```
 
    > [!NOTE]
-   > This example uses automatic parameter mapping. 
-   > All MCP parameters are mapped to Camel headers with the `Wanaku.` prefix (e.g., `employeeId` → `Wanaku.employeeId`). 
+   > This example uses automatic parameter mapping.
+   > All MCP parameters are mapped to Camel headers with the `Wanaku.` prefix (e.g., `employeeId` → `Wanaku.employeeId`).
    > For explicit control over parameter names, see the [Usage Guide](docs/usage.md#parameter-to-header-mapping).
 
 ### Option 1: Standalone Application
@@ -144,6 +147,8 @@ The plugin is automatically discovered via `META-INF/services/org.apache.camel.s
 > [!TIP]
 > Design your Camel routes visually using the [Kaoto Integration Designer](http://kaoto.io) for Apache Camel.
 
+<!-- -->
+
 > [!NOTE]
 > For detailed configuration options and deployment scenarios, see the [Usage Guide](docs/usage.md).
 
@@ -185,7 +190,7 @@ Deploy using the Wanaku operator. See [Usage Guide](docs/usage.md#deploying-the-
 
 - **Issues**: [GitHub Issues](https://github.com/wanaku-ai/camel-integration-capability/issues)
 - **Community**: [Wanaku](https://wanaku.ai)
-- **Email**: contact@wanaku.ai
+- **Email**: <contact@wanaku.ai>
 
 ## License
 

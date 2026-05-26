@@ -23,6 +23,7 @@ Service catalogs solve real operational headaches:
 **Simplified Configuration**: Compare these two deployment commands:
 
 **Without catalog** (three moving parts):
+
 ```bash
 --routes-ref datastore://routes.camel.yaml \
 --rules-ref datastore://rules.yaml \
@@ -30,6 +31,7 @@ Service catalogs solve real operational headaches:
 ```
 
 **With catalog** (one reference):
+
 ```bash
 --service-catalog employee-system-v2 \
 --service-catalog-system employee-system
@@ -43,7 +45,7 @@ A service catalog ZIP must contain an `index.properties` file at the root. This 
 
 ### Example Catalog Layout
 
-```
+```text
 employee-system-v2.zip
 ├── index.properties
 └── employee-system/
@@ -54,7 +56,7 @@ employee-system-v2.zip
 
 You can include multiple systems in one catalog:
 
-```
+```text
 hr-systems-v3.zip
 ├── index.properties
 ├── employee-system/
@@ -175,7 +177,7 @@ unzip -l employee-system-v2.zip
 
 Expected output:
 
-```
+```text
 Archive:  employee-system-v2.zip
   Length      Date    Time    Name
 ---------  ---------- -----   ----
@@ -372,12 +374,14 @@ Catalogs are the path from "it works on my machine" to "it works the same way ev
 **Check**:
 
 1. Verify the catalog exists in Wanaku's DataStore:
+
    ```bash
    curl -H "Authorization: Bearer $TOKEN" \
      http://wanaku-datastore:8080/api/v1/catalogs/employee-system-v2
    ```
 
 2. Verify the `catalog.name` in `index.properties` matches `--service-catalog`:
+
    ```bash
    unzip -p employee-system-v2.zip index.properties | grep catalog.name
    ```
@@ -388,6 +392,7 @@ Catalogs are the path from "it works on my machine" to "it works the same way ev
    - Verify `--client-id` and `--client-secret` are correct
 
 4. Check network connectivity:
+
    ```bash
    kubectl exec deployment/camel-integration-capability -- \
      curl -v http://wanaku-datastore:8080/health
@@ -402,11 +407,13 @@ Catalogs are the path from "it works on my machine" to "it works the same way ev
 **Fix**:
 
 1. List the available systems:
+
    ```bash
    unzip -p hr-systems-v3.zip index.properties | grep catalog.services
    ```
 
 2. Use the exact system name (case-sensitive):
+
    ```bash
    --service-catalog-system payroll-system
    ```
@@ -420,11 +427,13 @@ Catalogs are the path from "it works on my machine" to "it works the same way ev
 **Debug**:
 
 1. List the ZIP contents:
+
    ```bash
    unzip -l employee-system-v2.zip
    ```
 
 2. Compare to `index.properties`:
+
    ```bash
    unzip -p employee-system-v2.zip index.properties
    ```
@@ -449,6 +458,7 @@ unzip -p employee-system-v2.zip index.properties
 ```
 
 Check that:
+
 - `catalog.name` is present
 - `catalog.services` lists all systems
 - Each system has `catalog.routes.<system>` and `catalog.rules.<system>`
@@ -459,7 +469,7 @@ Large organizations often manage multiple related systems. Multi-system catalogs
 
 ### Example: HR Systems Catalog
 
-```
+```text
 hr-systems-v3.zip
 ├── index.properties
 ├── employee-system/
