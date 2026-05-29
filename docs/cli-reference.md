@@ -260,7 +260,7 @@ java -jar camel-integration-capability-main-*-jar-with-dependencies.jar --help
 ### Minimal Configuration (Service Catalog)
 
 ```bash
-java -jar camel-integration-capability-main-0.1.0-jar-with-dependencies.jar \
+java -jar camel-integration-capability-main-0.1.1-jar-with-dependencies.jar \
   --registration-url http://wanaku-router:8080 \
   --registration-announce-address my-service.example.com \
   --service-catalog employee-system-v2 \
@@ -272,7 +272,7 @@ java -jar camel-integration-capability-main-0.1.0-jar-with-dependencies.jar \
 ### Individual File References with Dependencies
 
 ```bash
-java -jar camel-integration-capability-main-0.1.0-jar-with-dependencies.jar \
+java -jar camel-integration-capability-main-0.1.1-jar-with-dependencies.jar \
   --registration-url http://wanaku-router:8080 \
   --registration-announce-address my-service.example.com \
   --routes-ref datastore://employee.camel.yaml \
@@ -287,7 +287,7 @@ java -jar camel-integration-capability-main-0.1.0-jar-with-dependencies.jar \
 ### Local Development (No Authentication)
 
 ```bash
-java -jar camel-integration-capability-main-0.1.0-jar-with-dependencies.jar \
+java -jar camel-integration-capability-main-0.1.1-jar-with-dependencies.jar \
   --registration-url http://localhost:8080 \
   --registration-announce-address localhost \
   --routes-ref file:///workspace/routes.camel.yaml \
@@ -298,7 +298,7 @@ java -jar camel-integration-capability-main-0.1.0-jar-with-dependencies.jar \
 ### Git Initialization with File References
 
 ```bash
-java -jar camel-integration-capability-main-0.1.0-jar-with-dependencies.jar \
+java -jar camel-integration-capability-main-0.1.1-jar-with-dependencies.jar \
   --registration-url http://wanaku-router:8080 \
   --registration-announce-address camel-capability.prod.svc.cluster.local \
   --init-from git@github.com:my-org/camel-routes.git \
@@ -313,7 +313,7 @@ java -jar camel-integration-capability-main-0.1.0-jar-with-dependencies.jar \
 ### Custom gRPC Port with Fail-Fast
 
 ```bash
-java -jar camel-integration-capability-main-0.1.0-jar-with-dependencies.jar \
+java -jar camel-integration-capability-main-0.1.1-jar-with-dependencies.jar \
   --registration-url http://wanaku-router:8080 \
   --registration-announce-address my-service.example.com \
   --grpc-port 9191 \
@@ -327,7 +327,7 @@ java -jar camel-integration-capability-main-0.1.0-jar-with-dependencies.jar \
 ### Extended Retry Configuration
 
 ```bash
-java -jar camel-integration-capability-main-0.1.0-jar-with-dependencies.jar \
+java -jar camel-integration-capability-main-0.1.1-jar-with-dependencies.jar \
   --registration-url http://wanaku-router:8080 \
   --registration-announce-address my-service.example.com \
   --retries 30 \
