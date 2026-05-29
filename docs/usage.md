@@ -503,7 +503,7 @@ Then publish it to Wanaku's Data Store (or, git, if using the git initializer) a
 - `--dependencies file:///path/to/filename.txt` if using the git initializer
 
 > [NOTE]
-> Repositories for dependencies can be set using the `--repositories` option, which receives a comma-separate list of
+> Repositories for dependencies can be set using the `--repositories` option, which receives a comma-separated list of
 > repository URLs.
 
 ## Running the Capability and Exposing Camel Routes
