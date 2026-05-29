@@ -231,6 +231,73 @@ None. All features from 0.0.9 are still supported in 0.1.0, but service catalogs
 - [ ] Verify route loading behavior (fail-fast vs log-and-continue)
 - [ ] Update any custom integrations using Wanaku SDK 0.0.x to 0.1.0
 
+## Upgrading from 0.1.0 to 0.1.1
+
+Version 0.1.1 promotes service catalogs as the recommended deployment model, makes authentication fully optional, and adds configurable Keycloak realm support.
+
+### 1. Service Catalogs (Recommended)
+
+Service catalogs are now the preferred way to package routes, rules, and dependencies. Individual file references (`--routes-ref`, `--rules-ref`, `--dependencies`) are still supported but should be reserved for local development.
+
+**Before (individual file references):**
+
+```bash
+java -jar camel-integration-capability-main-*-jar-with-dependencies.jar \
+  --routes-ref file:///path/to/routes.camel.yaml \
+  --rules-ref file:///path/to/rules.yaml \
+  --dependencies file:///path/to/deps.txt
+```
+
+**After (service catalog):**
+
+```bash
+java -jar camel-integration-capability-main-*-jar-with-dependencies.jar \
+  --service-catalog employee-system-v2 \
+  --service-catalog-system employee-system
+```
+
+See the [Service Catalog Guide](service-catalog-guide.md) for creating and publishing catalogs.
+
+### 2. Optional Authentication
+
+The `--client-secret` parameter is no longer required. When the Wanaku MCP Router is configured without authentication, you can omit `--client-secret` entirely while still providing `--client-id` (used as the service identifier).
+
+```bash
+# Without authentication (if Wanaku allows unauthenticated access)
+java -jar camel-integration-capability-main-*-jar-with-dependencies.jar \
+  --client-id wanaku-service \
+  --service-catalog my-catalog-v1 \
+  --service-catalog-system my-system
+```
+
+### 3. Configurable Keycloak Realm
+
+The Keycloak realm name is fully configurable via the `--token-endpoint` parameter. There is no hardcoded default realm; use whatever realm your Keycloak instance defines.
+
+```bash
+--token-endpoint http://keycloak:8080/realms/my-realm/protocol/openid-connect/token
+```
+
+### 4. Bug Fixes
+
+- Fixed health check race condition: gRPC server now starts before registration (#82)
+- Fixed dependencies file parser ignoring lines after the first entry
+- Improved route loading error messages
+
+### 5. Dependency Updates
+
+- Wanaku Capabilities SDK: 0.1.0 → 0.1.1
+- SLF4J: 2.0.17 → 2.0.18
+- Jackson: 2.21.2 → 2.21.3
+- Spotless Maven Plugin: 3.4.0 → 3.5.1
+
+### 6. Upgrade Checklist
+
+- [ ] Migrate from individual file references to service catalogs for production deployments
+- [ ] Remove `--client-secret` if running without authentication
+- [ ] Update `--token-endpoint` to use your actual Keycloak realm name (no default realm)
+- [ ] Update Wanaku SDK dependency to 0.1.1 if using the plugin mode
+
 ## Need Help?
 
 - Review the [examples](../examples) directory for working configurations
