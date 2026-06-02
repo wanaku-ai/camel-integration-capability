@@ -68,6 +68,7 @@ public class CamelToolMain implements Callable<Integer> {
     @CommandLine.Option(
             names = {"--registration-url"},
             description = "The registration URL to use",
+            defaultValue = "http://localhost:8080",
             required = true)
     private String registrationUrl;
 
