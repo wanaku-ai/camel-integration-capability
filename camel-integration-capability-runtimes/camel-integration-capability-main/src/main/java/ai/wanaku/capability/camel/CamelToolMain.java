@@ -137,9 +137,6 @@ public class CamelToolMain implements Callable<Integer> {
         private String dependenciesRef;
     }
 
-    @CommandLine.ArgGroup(exclusive = false)
-    private RouteRefOptions routeRefOptions;
-
     static class AuthConfig {
         @CommandLine.Option(
                 names = {"--token-endpoint"},
@@ -201,8 +198,16 @@ public class CamelToolMain implements Callable<Integer> {
         private String serviceCatalogSystem;
     }
 
-    @CommandLine.ArgGroup(exclusive = false)
-    private ServiceCatalogOptions serviceCatalogOptions;
+    static class ResourceSourceOptions {
+        @CommandLine.ArgGroup(exclusive = false)
+        RouteRefOptions routeRefOptions;
+
+        @CommandLine.ArgGroup(exclusive = false)
+        ServiceCatalogOptions serviceCatalogOptions;
+    }
+
+    @CommandLine.ArgGroup(exclusive = true, multiplicity = "1")
+    private ResourceSourceOptions resourceSourceOptions;
 
     @CommandLine.Option(
             names = {"--fail-fast"},
@@ -251,8 +256,6 @@ public class CamelToolMain implements Callable<Integer> {
     @Override
     public Integer call() throws Exception {
         LOG.info("Camel Integration Capability {} is starting", VersionHelper.VERSION);
-
-        validateOptions();
 
         // Create the data directory first (needed by initializers)
         Path dataDirPath = Paths.get(dataDir);
@@ -347,11 +350,11 @@ public class CamelToolMain implements Callable<Integer> {
 
         final Map<ResourceType, Path> downloadedResources;
 
-        if (serviceCatalogOptions != null) {
+        if (resourceSourceOptions.serviceCatalogOptions != null) {
             ServiceCatalogDownloaderCallback catalogCallback = new ServiceCatalogDownloaderCallback(
                     downloaderFactory,
-                    serviceCatalogOptions.serviceCatalog,
-                    serviceCatalogOptions.serviceCatalogSystem,
+                    resourceSourceOptions.serviceCatalogOptions.serviceCatalog,
+                    resourceSourceOptions.serviceCatalogOptions.serviceCatalogSystem,
                     downloaderConfig);
 
             newRegistrationManager(serviceTarget, catalogCallback, serviceConfig);
@@ -364,9 +367,9 @@ public class CamelToolMain implements Callable<Integer> {
             downloadedResources = catalogCallback.getDownloadedResources();
         } else {
             List<ResourceRefs<URI>> resources = ResourceListBuilder.newBuilder()
-                    .addRoutesRef(routeRefOptions.routesRef)
-                    .addRulesRef(routeRefOptions.rulesRef)
-                    .addDependenciesRef(routeRefOptions.dependenciesRef)
+                    .addRoutesRef(resourceSourceOptions.routeRefOptions.routesRef)
+                    .addRulesRef(resourceSourceOptions.routeRefOptions.rulesRef)
+                    .addDependenciesRef(resourceSourceOptions.routeRefOptions.dependenciesRef)
                     .build();
 
             ResourceDownloaderCallback resourcesDownloaderCallback =
@@ -382,19 +385,6 @@ public class CamelToolMain implements Callable<Integer> {
             downloadedResources = resourcesDownloaderCallback.getDownloadedResources();
         }
         return new RegistrationResult(downloadedResources, serviceTarget);
-    }
-
-    private void validateOptions() {
-        if (routeRefOptions != null && serviceCatalogOptions != null) {
-            throw new CommandLine.ParameterException(
-                    new CommandLine(this),
-                    "--service-catalog is mutually exclusive with --routes-ref, --rules-ref, and --dependencies");
-        }
-
-        if (routeRefOptions == null && serviceCatalogOptions == null) {
-            throw new CommandLine.ParameterException(
-                    new CommandLine(this), "Either --routes-ref or --service-catalog must be provided");
-        }
     }
 
     public McpSpec createMcpSpec(ServiceConfig serviceConfig, Map<ResourceType, Path> downloadedResources) {
