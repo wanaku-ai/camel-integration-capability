@@ -54,8 +54,6 @@ set them so that this capability service can talk to Wanaku and register itself.
 
 - `--registration-url`: URL of the Wanaku discovery service
 - `--registration-announce-address`: Address to announce for service discovery
-- `--client-id`: OAuth2 client ID for authentication
-- `--client-secret`: OAuth2 client secret for authentication
 
 One of the following is required to provide routes:
 
@@ -64,6 +62,8 @@ One of the following is required to provide routes:
 
 ### Optional Parameters
 
+- `--client-id`: OAuth2 client ID for authentication. Required when `--client-secret` is provided.
+- `--client-secret`: OAuth2 client secret for authentication. When omitted, authentication is disabled.
 - `--service-catalog-system`: The system name within the service catalog (required when using `--service-catalog`)
 - `--token-endpoint`: OAuth2/OIDC token endpoint base URL. When pointing to a Keycloak instance, include the realm path (e.g., `http://keycloak:8543/realms/my-realm/`). The realm name is fully configurable — there is no default.
 - `--rules-ref`: Reference to the YAML file with route exposure rules. Supports `datastore://` and `file://` schemes
