@@ -28,7 +28,7 @@
         <picocli.version>4.7.7</picocli.version>
         <wanaku-capabilities-sdk.version>0.1.1</wanaku-capabilities-sdk.version>
         <maven-shade-plugin.version>3.6.2</maven-shade-plugin.version>
-        <jackson-databind.version>2.21.3</jackson-databind.version>
+        <jackson-databind.version>2.22.0</jackson-databind.version>
         <junit-jupiter.version>5.14.4</junit-jupiter.version>
         <jgit.version>7.6.0.202603022253-r</jgit.version>
         <spotless-maven-plugin.version>3.6.0</spotless-maven-plugin.version>
