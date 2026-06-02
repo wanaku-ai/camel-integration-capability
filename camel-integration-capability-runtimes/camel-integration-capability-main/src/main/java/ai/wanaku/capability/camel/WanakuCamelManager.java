@@ -17,6 +17,7 @@ import ai.wanaku.capabilities.sdk.maven.WanakuMavenDownloader;
 import ai.wanaku.capabilities.sdk.runtime.camel.downloader.ResourceType;
 import ai.wanaku.capabilities.sdk.runtime.camel.exceptions.RouteLoadingException;
 import ai.wanaku.capabilities.sdk.runtime.camel.util.WanakuRoutesLoader;
+import ai.wanaku.capabilities.sdk.runtime.camel.versions.RuntimeVersionHelper;
 
 public class WanakuCamelManager {
     private static final Logger LOG = LoggerFactory.getLogger(WanakuCamelManager.class);
@@ -50,7 +51,7 @@ public class WanakuCamelManager {
                 final List<String> depLines = Files.readAllLines(Path.of(dependenciesPath));
                 this.gavs = depLines.stream()
                         .filter(l -> !l.startsWith("#"))
-                        .map(GAV::parse)
+                        .map(g -> GAV.parse(g, RuntimeVersionHelper.getVersions()))
                         .collect(Collectors.toList());
 
             } catch (IOException e) {
