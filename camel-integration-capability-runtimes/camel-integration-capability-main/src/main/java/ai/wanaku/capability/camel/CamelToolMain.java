@@ -114,17 +114,31 @@ public class CamelToolMain implements Callable<Integer> {
             defaultValue = "5")
     private long period;
 
-    @CommandLine.Option(
-            names = {"--routes-ref"},
-            description =
-                    "The reference path to the Apache Camel routes YAML file. Supports datastore:// and file:// schemes (e.g., datastore://routes.camel.yaml or file:///path/to/routes.yaml)")
-    private String routesRef;
+    static class RouteRefOptions {
+        @CommandLine.Option(
+                names = {"--routes-ref"},
+                required = true,
+                description =
+                        "The reference path to the Apache Camel routes YAML file. Supports datastore:// and file:// schemes (e.g., datastore://routes.camel.yaml or file:///path/to/routes.yaml)")
+        private String routesRef;
 
-    @CommandLine.Option(
-            names = {"--rules-ref"},
-            description =
-                    "The path to the YAML file with route exposure rules. Supports datastore:// and file:// schemes (e.g., datastore://routes-expose.yaml or file:///path/to/rules.yaml)")
-    private String rulesRef;
+        @CommandLine.Option(
+                names = {"--rules-ref"},
+                required = true,
+                description =
+                        "The path to the YAML file with route exposure rules. Supports datastore:// and file:// schemes (e.g., datastore://routes-expose.yaml or file:///path/to/rules.yaml)")
+        private String rulesRef;
+
+        @CommandLine.Option(
+                names = {"-d", "--dependencies"},
+                required = true,
+                description =
+                        "The dependencies to include in runtime. Supports datastore:// and file:// schemes (comma-separated)")
+        private String dependenciesRef;
+    }
+
+    @CommandLine.ArgGroup(exclusive = false)
+    private RouteRefOptions routeRefOptions;
 
     @CommandLine.Option(
             names = {"--token-endpoint"},
@@ -156,12 +170,6 @@ public class CamelToolMain implements Callable<Integer> {
     private boolean noWait;
 
     @CommandLine.Option(
-            names = {"-d", "--dependencies"},
-            description =
-                    "The dependencies to include in runtime. Supports datastore:// and file:// schemes (comma-separated)")
-    private String dependenciesRef;
-
-    @CommandLine.Option(
             names = {"--repositories"},
             description =
                     "Comma-separated list of additional repositories from which to download dependencies to include in runtime (i.e.: https://my-private-repo.com/) ")
@@ -179,16 +187,22 @@ public class CamelToolMain implements Callable<Integer> {
                     "Git repository URL to clone during initialization. Cloned files can be referenced using file:// (e.g., git@github.com:wanaku-ai/wanaku-recipes.git)")
     private String initFrom;
 
-    @CommandLine.Option(
-            names = {"--service-catalog"},
-            description =
-                    "The name of the service catalog to use. Mutually exclusive with --routes-ref, --rules-ref, and --dependencies. Requires --service-catalog-system.")
-    private String serviceCatalog;
+    static class ServiceCatalogOptions {
+        @CommandLine.Option(
+                names = {"--service-catalog"},
+                required = true,
+                description = "The name of the service catalog to use")
+        private String serviceCatalog;
 
-    @CommandLine.Option(
-            names = {"--service-catalog-system"},
-            description = "The system name within the service catalog to use (e.g., employee-check)")
-    private String serviceCatalogSystem;
+        @CommandLine.Option(
+                names = {"--service-catalog-system"},
+                required = true,
+                description = "The system name within the service catalog to use (e.g., employee-check)")
+        private String serviceCatalogSystem;
+    }
+
+    @CommandLine.ArgGroup(exclusive = false)
+    private ServiceCatalogOptions serviceCatalogOptions;
 
     @CommandLine.Option(
             names = {"--fail-fast"},
@@ -332,9 +346,12 @@ public class CamelToolMain implements Callable<Integer> {
 
         final Map<ResourceType, Path> downloadedResources;
 
-        if (serviceCatalog != null) {
+        if (serviceCatalogOptions != null) {
             ServiceCatalogDownloaderCallback catalogCallback = new ServiceCatalogDownloaderCallback(
-                    downloaderFactory, serviceCatalog, serviceCatalogSystem, downloaderConfig);
+                    downloaderFactory,
+                    serviceCatalogOptions.serviceCatalog,
+                    serviceCatalogOptions.serviceCatalogSystem,
+                    downloaderConfig);
 
             newRegistrationManager(serviceTarget, catalogCallback, serviceConfig);
 
@@ -346,9 +363,9 @@ public class CamelToolMain implements Callable<Integer> {
             downloadedResources = catalogCallback.getDownloadedResources();
         } else {
             List<ResourceRefs<URI>> resources = ResourceListBuilder.newBuilder()
-                    .addRoutesRef(routesRef)
-                    .addRulesRef(rulesRef)
-                    .addDependenciesRef(dependenciesRef)
+                    .addRoutesRef(routeRefOptions.routesRef)
+                    .addRulesRef(routeRefOptions.rulesRef)
+                    .addDependenciesRef(routeRefOptions.dependenciesRef)
                     .build();
 
             ResourceDownloaderCallback resourcesDownloaderCallback =
@@ -367,21 +384,13 @@ public class CamelToolMain implements Callable<Integer> {
     }
 
     private void validateOptions() {
-        boolean hasServiceCatalog = serviceCatalog != null && !serviceCatalog.isBlank();
-        boolean hasIndividualRefs = routesRef != null || rulesRef != null || dependenciesRef != null;
-
-        if (hasServiceCatalog && hasIndividualRefs) {
+        if (routeRefOptions != null && serviceCatalogOptions != null) {
             throw new CommandLine.ParameterException(
                     new CommandLine(this),
                     "--service-catalog is mutually exclusive with --routes-ref, --rules-ref, and --dependencies");
         }
 
-        if (hasServiceCatalog && (serviceCatalogSystem == null || serviceCatalogSystem.isBlank())) {
-            throw new CommandLine.ParameterException(
-                    new CommandLine(this), "--service-catalog-system is required when --service-catalog is used");
-        }
-
-        if (!hasServiceCatalog && (routesRef == null || routesRef.isBlank())) {
+        if (routeRefOptions == null && serviceCatalogOptions == null) {
             throw new CommandLine.ParameterException(
                     new CommandLine(this), "Either --routes-ref or --service-catalog must be provided");
         }
