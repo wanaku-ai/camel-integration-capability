@@ -25,16 +25,11 @@ The service follows this authentication sequence at startup:
 
 ## Configuration Parameters
 
-### Required Parameters
+### Authentication Parameters
 
 | Parameter | Environment Variable | Description |
 |-----------|---------------------|-------------|
-| `--client-id` | `CLIENT_ID` | OAuth2 client ID for this capability. Required in all scenarios, even when authentication is disabled (used as service identifier) |
-
-### Optional Parameters
-
-| Parameter | Environment Variable | Description |
-|-----------|---------------------|-------------|
+| `--client-id` | `CLIENT_ID` | OAuth2 client ID. Required when `--client-secret` is provided. |
 | `--client-secret` | `CLIENT_SECRET` | OAuth2 client secret. Required only when the Wanaku MCP Router enforces authentication. Omit when authentication is disabled. |
 | `--token-endpoint` | `TOKEN_ENDPOINT` | Base URL for the OAuth2 token endpoint. If not specified, auto-resolved from `--registration-url`. For Keycloak, must include the realm path. |
 
@@ -54,7 +49,6 @@ java -jar camel-integration-capability-main.jar \
 
 ```bash
 java -jar camel-integration-capability-main.jar \
-  --client-id my-service \
   --registration-url http://wanaku-router:8080
 ```
 
@@ -147,14 +141,12 @@ Since version 0.1.0, you can run the capability without OAuth2 authentication wh
 
 **How to disable:**
 
-- Omit the `--client-secret` parameter (or `CLIENT_SECRET` environment variable)
-- The `--client-id` parameter is still **required** — it serves as the service identifier in registration requests
+- Omit both the `--client-secret` and `--client-id` parameters (or their environment variables)
 
 **Example:**
 
 ```bash
 java -jar camel-integration-capability-main.jar \
-  --client-id employee-system \
   --registration-url http://localhost:8080
 ```
 

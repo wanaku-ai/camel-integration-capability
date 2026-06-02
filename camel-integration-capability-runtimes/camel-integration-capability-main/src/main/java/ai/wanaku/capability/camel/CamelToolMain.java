@@ -132,16 +132,22 @@ public class CamelToolMain implements Callable<Integer> {
             required = false)
     private String tokenEndpoint;
 
-    @CommandLine.Option(
-            names = {"--client-id"},
-            description = "The client ID authentication",
-            required = true)
-    private String clientId;
+    static class AuthConfig {
+        @CommandLine.Option(
+                names = {"--client-id"},
+                description = "The client ID for authentication",
+                required = true)
+        String clientId;
 
-    @CommandLine.Option(
-            names = {"--client-secret"},
-            description = "The client secret authentication")
-    private String clientSecret;
+        @CommandLine.Option(
+                names = {"--client-secret"},
+                description = "The client secret for authentication",
+                required = true)
+        String clientSecret;
+    }
+
+    @CommandLine.ArgGroup(exclusive = false)
+    private AuthConfig authConfig;
 
     @CommandLine.Option(
             names = {"--no-wait"},
@@ -246,9 +252,9 @@ public class CamelToolMain implements Callable<Integer> {
         final ServiceConfig serviceConfig = DefaultServiceConfig.Builder.newBuilder()
                 .baseUrl(registrationUrl)
                 .serializer(new JacksonSerializer())
-                .clientId(clientId)
+                .clientId(authConfig != null ? authConfig.clientId : null)
                 .tokenEndpoint(TokenEndpoint.autoResolve(registrationUrl, tokenEndpoint))
-                .secret(clientSecret)
+                .secret(authConfig != null ? authConfig.clientSecret : null)
                 .build();
 
         final ServiceTarget serviceTarget = newServiceTargetTarget();
