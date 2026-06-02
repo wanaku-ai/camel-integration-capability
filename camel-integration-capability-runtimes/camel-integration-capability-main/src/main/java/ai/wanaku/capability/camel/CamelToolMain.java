@@ -140,23 +140,23 @@ public class CamelToolMain implements Callable<Integer> {
     @CommandLine.ArgGroup(exclusive = false)
     private RouteRefOptions routeRefOptions;
 
-    @CommandLine.Option(
-            names = {"--token-endpoint"},
-            description = "The base URL for the authentication",
-            required = false)
-    private String tokenEndpoint;
-
     static class AuthConfig {
         @CommandLine.Option(
+                names = {"--token-endpoint"},
+                required = true,
+                description = "The base URL for the authentication")
+        String tokenEndpoint;
+
+        @CommandLine.Option(
                 names = {"--client-id"},
-                description = "The client ID for authentication",
-                required = true)
+                required = true,
+                description = "The client ID for authentication")
         String clientId;
 
         @CommandLine.Option(
                 names = {"--client-secret"},
-                description = "The client secret for authentication",
-                required = true)
+                required = true,
+                description = "The client secret for authentication")
         String clientSecret;
     }
 
@@ -267,7 +267,8 @@ public class CamelToolMain implements Callable<Integer> {
                 .baseUrl(registrationUrl)
                 .serializer(new JacksonSerializer())
                 .clientId(authConfig != null ? authConfig.clientId : null)
-                .tokenEndpoint(TokenEndpoint.autoResolve(registrationUrl, tokenEndpoint))
+                .tokenEndpoint(TokenEndpoint.autoResolve(
+                        registrationUrl, authConfig != null ? authConfig.tokenEndpoint : null))
                 .secret(authConfig != null ? authConfig.clientSecret : null)
                 .build();
 
