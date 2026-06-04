@@ -8,6 +8,7 @@ on:
   push:
     branches:
         - main
+        - '[0-9]*.[0-9]*.x'
     tags:
       - v*
     paths-ignore:
@@ -34,10 +35,19 @@ jobs:
         java-version: '21'
         distribution: 'temurin'
         cache: maven
+    - name: Determine SDK ref
+      id: sdk-ref
+      run: |
+        BRANCH="${GITHUB_REF_NAME}"
+        if git ls-remote --heads https://github.com/wanaku-ai/wanaku-capabilities-java-sdk.git "$BRANCH" | grep -q .; then
+          echo "ref=$BRANCH" >> $GITHUB_OUTPUT
+        else
+          echo "ref=main" >> $GITHUB_OUTPUT
+        fi
     - name: Checkout and build dependencies
       run: |
         cd ..
-        git clone https://github.com/wanaku-ai/wanaku-capabilities-java-sdk.git
+        git clone -b ${{ steps.sdk-ref.outputs.ref }} https://github.com/wanaku-ai/wanaku-capabilities-java-sdk.git
         cd wanaku-capabilities-java-sdk
         mvn -DskipTests -B install --file pom.xml
         cd ${{ github.workspace }}

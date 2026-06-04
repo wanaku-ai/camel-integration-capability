@@ -7,6 +7,7 @@ on:
   pull_request:
     branches:
       - "main"
+      - '[0-9]*.[0-9]*.x'
     paths-ignore:
       - .github/**
       - docs/**
@@ -31,6 +32,16 @@ jobs:
       fail-fast: true
 
     steps:
+    - name: Determine SDK ref
+      id: sdk-ref
+      shell: bash
+      run: |
+        BRANCH="${{ github.base_ref }}"
+        if git ls-remote --heads https://github.com/wanaku-ai/wanaku-capabilities-java-sdk.git "$BRANCH" | grep -q .; then
+          echo "ref=$BRANCH" >> $GITHUB_OUTPUT
+        else
+          echo "ref=main" >> $GITHUB_OUTPUT
+        fi
     - uses: actions/checkout@v6
     - name: Set up JDK 21
       uses: actions/setup-java@v5
@@ -41,7 +52,7 @@ jobs:
     - name: Checkout and build dependencies
       run: |
         cd ..
-        git clone https://github.com/wanaku-ai/wanaku-capabilities-java-sdk.git
+        git clone -b ${{ steps.sdk-ref.outputs.ref }} https://github.com/wanaku-ai/wanaku-capabilities-java-sdk.git
         cd wanaku-capabilities-java-sdk
         mvn -DskipTests -B install --file pom.xml
         cd ${{ github.workspace }}
