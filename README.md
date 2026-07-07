@@ -1,4 +1,4 @@
-# Camel Integration Capability
+# Integration Capability for Apache Camel
 
 ![License](https://img.shields.io/badge/license-Apache%202.0-blue.svg)
 ![Java](https://img.shields.io/badge/java-21%2B-orange.svg)
@@ -8,7 +8,7 @@ A capability service for the [Wanaku MCP Router](https://wanaku.ai) that enables
 
 ## What is This?
 
-The Camel Integration Capability bridges AI agents with enterprise integration patterns.
+The Integration Capability for Apache Camel bridges AI agents with enterprise integration patterns.
 
 It exposes Apache Camel routes as MCP (Model Context Protocol) tools and resources, allowing AI agents to perform complex backend operations through standardized gRPC interfaces.
 
