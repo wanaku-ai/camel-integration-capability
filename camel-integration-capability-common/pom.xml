@@ -49,6 +49,12 @@
         <dependency>
             <groupId>org.apache.camel</groupId>
             <artifactId>camel-kamelet-main</artifactId>
+            <exclusions>
+                <exclusion>
+                    <groupId>org.apache.maven.resolver</groupId>
+                    <artifactId>maven-resolver-supplier</artifactId>
+                </exclusion>
+            </exclusions>
         </dependency>
         <dependency>
             <groupId>org.apache.camel</groupId>
