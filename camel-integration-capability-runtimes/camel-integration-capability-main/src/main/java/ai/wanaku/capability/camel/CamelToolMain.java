@@ -3,7 +3,6 @@ package ai.wanaku.capability.camel;
 import java.net.URI;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.Callable;
@@ -259,7 +258,7 @@ public class CamelToolMain implements Callable<Integer> {
         LOG.info("Camel Integration Capability {} is starting", VersionHelper.VERSION);
 
         // Create the data directory first (needed by initializers)
-        Path dataDirPath = Paths.get(dataDir);
+        Path dataDirPath = Path.of(dataDir);
         Files.createDirectories(dataDirPath);
         LOG.info("Using data directory: {}", dataDirPath.toAbsolutePath());
 
