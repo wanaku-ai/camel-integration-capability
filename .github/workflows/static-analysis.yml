@@ -15,9 +15,6 @@ on:
 permissions:
   contents: read
 
-env:
-  PROJECTS: ${{ github.workspace }}
-
 jobs:
   static-analysis:
     runs-on: ubuntu-latest
