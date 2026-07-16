@@ -18,7 +18,6 @@
 package ai.wanaku.capability.camel;
 
 import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.util.Map;
 import java.util.regex.Pattern;
 import org.apache.camel.CamelContext;
@@ -39,8 +38,8 @@ class WanakuCamelRouteLoaderIT {
 
     @BeforeAll
     static void setUp() throws Exception {
-        Path routesFile = Paths.get("src", "test", "resources", "test-routes.camel.yaml");
-        Path dependenciesFile = Paths.get("src", "test", "resources", "test-routes-dependencies.txt");
+        Path routesFile = Path.of("src", "test", "resources", "test-routes.camel.yaml");
+        Path dependenciesFile = Path.of("src", "test", "resources", "test-routes-dependencies.txt");
 
         Map<ResourceType, Path> downloadedResources = Map.of(
                 ResourceType.ROUTES_REF, routesFile,
@@ -135,8 +134,8 @@ class WanakuCamelRouteLoaderIT {
 
     @Test
     void emptyRouteDefinitionsCanContinueInLenientMode() {
-        Path routesFile = Paths.get("src", "test", "resources", "empty-routes.camel.yaml");
-        Path dependenciesFile = Paths.get("src", "test", "resources", "test-routes-dependencies.txt");
+        Path routesFile = Path.of("src", "test", "resources", "empty-routes.camel.yaml");
+        Path dependenciesFile = Path.of("src", "test", "resources", "test-routes-dependencies.txt");
 
         Map<ResourceType, Path> downloadedResources = Map.of(
                 ResourceType.ROUTES_REF, routesFile,

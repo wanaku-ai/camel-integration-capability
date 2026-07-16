@@ -3,11 +3,9 @@ package ai.wanaku.capability.camel;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
-import java.util.stream.Collectors;
 import org.apache.camel.CamelContext;
 import org.apache.camel.impl.DefaultCamelContext;
 import org.slf4j.Logger;
@@ -30,7 +28,7 @@ public class WanakuCamelManager {
     private final CamelContext context;
     private final String routesPath;
     private final RouteLoadingFailurePolicy routeLoadingFailurePolicy;
-    private List<GAV> gavs = new ArrayList<>();
+    private final List<GAV> gavs;
 
     public WanakuCamelManager(Map<ResourceType, Path> downloadedResources, String repositoriesList) {
         this(downloadedResources, repositoriesList, RouteLoadingFailurePolicy.FAIL_FAST);
@@ -45,18 +43,18 @@ public class WanakuCamelManager {
 
         this.routesPath = downloadedResources.get(ResourceType.ROUTES_REF).toString();
         if (downloadedResources.containsKey(ResourceType.DEPENDENCY_REF)) {
-            String dependenciesPath =
-                    downloadedResources.get(ResourceType.DEPENDENCY_REF).toString();
+            Path dependenciesPath = downloadedResources.get(ResourceType.DEPENDENCY_REF);
             try {
-                final List<String> depLines = Files.readAllLines(Path.of(dependenciesPath));
+                final List<String> depLines = Files.readAllLines(dependenciesPath);
                 this.gavs = depLines.stream()
                         .filter(l -> !l.startsWith("#"))
                         .map(g -> GAV.parse(g, RuntimeVersionHelper.getVersions()))
-                        .collect(Collectors.toList());
-
+                        .toList();
             } catch (IOException e) {
                 throw new RuntimeException(e);
             }
+        } else {
+            this.gavs = List.of();
         }
 
         WanakuMavenDownloader mavenDownloader = new WanakuMavenDownloader(WanakuCamelManager.class.getClassLoader());

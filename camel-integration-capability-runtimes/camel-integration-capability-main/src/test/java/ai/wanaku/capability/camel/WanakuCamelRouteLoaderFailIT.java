@@ -18,7 +18,6 @@
 package ai.wanaku.capability.camel;
 
 import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.util.Map;
 import ai.wanaku.capabilities.sdk.runtime.camel.downloader.ResourceType;
 import ai.wanaku.capabilities.sdk.runtime.camel.exceptions.RouteLoadingException;
@@ -31,8 +30,8 @@ class WanakuCamelRouteLoaderFailIT {
 
     @Test
     void throwsErrorOnFailFast() {
-        Path routesFile = Paths.get("src", "test", "resources", "test-routes-with-errors.camel.yaml");
-        Path dependenciesFile = Paths.get("src", "test", "resources", "test-routes-dependencies.txt");
+        Path routesFile = Path.of("src", "test", "resources", "test-routes-with-errors.camel.yaml");
+        Path dependenciesFile = Path.of("src", "test", "resources", "test-routes-dependencies.txt");
 
         Map<ResourceType, Path> downloadedResources = Map.of(
                 ResourceType.ROUTES_REF, routesFile,
@@ -43,8 +42,8 @@ class WanakuCamelRouteLoaderFailIT {
 
     @Test
     void doesNotThrowErrorOnFailFast() {
-        Path routesFile = Paths.get("src", "test", "resources", "test-routes-with-errors.camel.yaml");
-        Path dependenciesFile = Paths.get("src", "test", "resources", "test-routes-dependencies.txt");
+        Path routesFile = Path.of("src", "test", "resources", "test-routes-with-errors.camel.yaml");
+        Path dependenciesFile = Path.of("src", "test", "resources", "test-routes-dependencies.txt");
 
         Map<ResourceType, Path> downloadedResources = Map.of(
                 ResourceType.ROUTES_REF, routesFile,
