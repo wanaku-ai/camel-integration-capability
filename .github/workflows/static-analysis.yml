@@ -55,6 +55,9 @@ jobs:
       id: analysis
       continue-on-error: true
       run: mvn -B --no-transfer-progress verify -Pstatic-analysis -DskipTests --file pom.xml
+    - name: Install report dependencies
+      if: steps.analysis.outcome == 'failure'
+      run: python3 -m pip install defusedxml
     - name: Generate Report
       if: steps.analysis.outcome == 'failure'
       run: python3 .github/scripts/generate-static-analysis-report.py
