@@ -33,4 +33,8 @@ Java 21: Follow standard conventions
 - When adding new documentation files, always link them from `docs/usage.md` (in the "Related Guides" section), not just from `README.md`.
 - Changelogs are handled automatically by jreleaser — do not create or maintain a manual CHANGELOG.md.
 
+## Acceptance Criteria
+
+- No code quality degradation after running the static code analyzer
+
 <!-- MANUAL ADDITIONS END -->
