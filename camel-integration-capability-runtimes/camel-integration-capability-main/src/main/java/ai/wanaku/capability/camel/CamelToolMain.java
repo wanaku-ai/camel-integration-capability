@@ -3,8 +3,10 @@ package ai.wanaku.capability.camel;
 import java.net.URI;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.UUID;
 import java.util.concurrent.Callable;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutorService;
@@ -15,26 +17,22 @@ import io.grpc.Grpc;
 import io.grpc.InsecureServerCredentials;
 import io.grpc.Server;
 import io.grpc.ServerBuilder;
-import ai.wanaku.capabilities.sdk.api.discovery.DiscoveryCallback;
+import ai.wanaku.capabilities.sdk.api.types.DataStore;
+import ai.wanaku.capabilities.sdk.api.types.WanakuResponse;
 import ai.wanaku.capabilities.sdk.api.types.providers.ServiceTarget;
 import ai.wanaku.capabilities.sdk.api.types.providers.ServiceType;
-import ai.wanaku.capabilities.sdk.common.ServicesHelper;
 import ai.wanaku.capabilities.sdk.common.config.DefaultServiceConfig;
 import ai.wanaku.capabilities.sdk.common.config.ServiceConfig;
 import ai.wanaku.capabilities.sdk.common.serializer.JacksonSerializer;
-import ai.wanaku.capabilities.sdk.discovery.DiscoveryServiceHttpClient;
-import ai.wanaku.capabilities.sdk.discovery.ZeroDepRegistrationManager;
-import ai.wanaku.capabilities.sdk.discovery.config.DefaultRegistrationConfig;
-import ai.wanaku.capabilities.sdk.discovery.deserializer.JacksonDeserializer;
-import ai.wanaku.capabilities.sdk.discovery.util.DiscoveryHelper;
+import ai.wanaku.capabilities.sdk.runtime.camel.downloader.Downloader;
 import ai.wanaku.capabilities.sdk.runtime.camel.downloader.DownloaderConfiguration;
 import ai.wanaku.capabilities.sdk.runtime.camel.downloader.DownloaderFactory;
 import ai.wanaku.capabilities.sdk.runtime.camel.downloader.ExponentialBackoffRetryPolicy;
-import ai.wanaku.capabilities.sdk.runtime.camel.downloader.ResourceDownloaderCallback;
 import ai.wanaku.capabilities.sdk.runtime.camel.downloader.ResourceListBuilder;
 import ai.wanaku.capabilities.sdk.runtime.camel.downloader.ResourceRefs;
 import ai.wanaku.capabilities.sdk.runtime.camel.downloader.ResourceType;
-import ai.wanaku.capabilities.sdk.runtime.camel.downloader.ServiceCatalogDownloaderCallback;
+import ai.wanaku.capabilities.sdk.runtime.camel.downloader.RetryPolicy;
+import ai.wanaku.capabilities.sdk.runtime.camel.downloader.ServiceCatalogExtractor;
 import ai.wanaku.capabilities.sdk.runtime.camel.grpc.CamelHealthProbe;
 import ai.wanaku.capabilities.sdk.runtime.camel.grpc.CamelResource;
 import ai.wanaku.capabilities.sdk.runtime.camel.grpc.CamelTool;
@@ -43,10 +41,6 @@ import ai.wanaku.capabilities.sdk.runtime.camel.grpc.WanakuRegistrationInfo;
 import ai.wanaku.capabilities.sdk.runtime.camel.init.Initializer;
 import ai.wanaku.capabilities.sdk.runtime.camel.init.InitializerFactory;
 import ai.wanaku.capabilities.sdk.runtime.camel.model.McpSpec;
-import ai.wanaku.capabilities.sdk.runtime.camel.spec.rules.resources.WanakuResourceRuleProcessor;
-import ai.wanaku.capabilities.sdk.runtime.camel.spec.rules.resources.WanakuResourceTransformer;
-import ai.wanaku.capabilities.sdk.runtime.camel.spec.rules.tools.WanakuToolRuleProcessor;
-import ai.wanaku.capabilities.sdk.runtime.camel.spec.rules.tools.WanakuToolTransformer;
 import ai.wanaku.capabilities.sdk.runtime.camel.util.McpRulesManager;
 import ai.wanaku.capabilities.sdk.security.TokenEndpoint;
 import ai.wanaku.capabilities.sdk.services.ServicesHttpClient;
@@ -56,8 +50,6 @@ import picocli.CommandLine;
 public class CamelToolMain implements Callable<Integer> {
     private static final Logger LOG = LoggerFactory.getLogger(CamelToolMain.class);
 
-    record RegistrationResult(Map<ResourceType, Path> downloadedResources, ServiceTarget serviceTarget) {}
-
     @CommandLine.Option(
             names = {"-h", "--help"},
             usageHelp = true,
@@ -66,7 +58,7 @@ public class CamelToolMain implements Callable<Integer> {
 
     @CommandLine.Option(
             names = {"--registration-url"},
-            description = "The registration URL to use",
+            description = "The Wanaku server URL to use for downloading resources",
             defaultValue = "http://localhost:8080",
             required = true)
     private String registrationUrl;
@@ -78,13 +70,6 @@ public class CamelToolMain implements Callable<Integer> {
     private int grpcPort;
 
     @CommandLine.Option(
-            names = {"--registration-announce-address"},
-            description = "The announce address to use when registering",
-            defaultValue = "auto",
-            required = true)
-    private String registrationAnnounceAddress;
-
-    @CommandLine.Option(
             names = {"--name"},
             description = "The service name to use",
             defaultValue = "camel")
@@ -92,7 +77,7 @@ public class CamelToolMain implements Callable<Integer> {
 
     @CommandLine.Option(
             names = {"--retries"},
-            description = "The maximum number of retries for registration",
+            description = "The maximum number of retries for downloads",
             defaultValue = "12")
     private int retries;
 
@@ -101,18 +86,6 @@ public class CamelToolMain implements Callable<Integer> {
             description = "The retry wait seconds between attempts",
             defaultValue = "5")
     private int retryWaitSeconds;
-
-    @CommandLine.Option(
-            names = {"--initial-delay"},
-            description = "Initial delay for registration attempts in seconds",
-            defaultValue = "5")
-    private long initialDelay;
-
-    @CommandLine.Option(
-            names = {"--period"},
-            description = "Period between registration attempts in seconds",
-            defaultValue = "5")
-    private long period;
 
     static class RouteRefOptions {
         @CommandLine.Option(
@@ -159,12 +132,6 @@ public class CamelToolMain implements Callable<Integer> {
 
     @CommandLine.ArgGroup(exclusive = false)
     private AuthConfig authConfig;
-
-    @CommandLine.Option(
-            names = {"--no-wait"},
-            description = "Do not wait forever until the files are available",
-            defaultValue = "false")
-    private boolean noWait;
 
     @CommandLine.Option(
             names = {"--repositories"},
@@ -221,34 +188,6 @@ public class CamelToolMain implements Callable<Integer> {
         System.exit(exitCode);
     }
 
-    public ZeroDepRegistrationManager newRegistrationManager(
-            ServiceTarget serviceTarget, DiscoveryCallback discoveryCallback, ServiceConfig serviceConfig) {
-        DiscoveryServiceHttpClient discoveryServiceHttpClient = new DiscoveryServiceHttpClient(serviceConfig);
-
-        final DefaultRegistrationConfig registrationConfig = DefaultRegistrationConfig.Builder.newBuilder()
-                .initialDelay(initialDelay)
-                .period(period)
-                .dataDir(ServicesHelper.getCanonicalServiceHome(name))
-                .maxRetries(retries)
-                .waitSeconds(retryWaitSeconds)
-                .build();
-
-        ZeroDepRegistrationManager registrationManager = new ZeroDepRegistrationManager(
-                discoveryServiceHttpClient, serviceTarget, registrationConfig, new JacksonDeserializer());
-
-        registrationManager.addCallBack(discoveryCallback);
-        registrationManager.start();
-
-        Runtime.getRuntime().addShutdownHook(new Thread(registrationManager::deregister));
-
-        return registrationManager;
-    }
-
-    private ServiceTarget newServiceTargetTarget() {
-        String address = DiscoveryHelper.resolveRegistrationAddress(registrationAnnounceAddress);
-        return ServiceTarget.newEmptyTarget(name, address, grpcPort, ServiceType.MULTI_CAPABILITY.asValue());
-    }
-
     public ServicesHttpClient createClient(ServiceConfig serviceConfig) {
         return new ServicesHttpClient(serviceConfig);
     }
@@ -257,12 +196,10 @@ public class CamelToolMain implements Callable<Integer> {
     public Integer call() throws Exception {
         LOG.info("Camel Integration Capability {} is starting", VersionHelper.VERSION);
 
-        // Create the data directory first (needed by initializers)
         Path dataDirPath = Path.of(dataDir);
         Files.createDirectories(dataDirPath);
         LOG.info("Using data directory: {}", dataDirPath.toAbsolutePath());
 
-        // Resource initialization / acquisition should happen here (except, of course, for the ones from the datastore)
         Initializer initializer = InitializerFactory.createInitializer(initFrom, dataDirPath);
         initializer.initialize();
 
@@ -275,7 +212,6 @@ public class CamelToolMain implements Callable<Integer> {
                 .secret(authConfig != null ? authConfig.clientSecret : null)
                 .build();
 
-        final ServiceTarget serviceTarget = newServiceTargetTarget();
         final CompletableFuture<WanakuRegistrationInfo> registrationInfoFuture = new CompletableFuture<>();
 
         final ServerBuilder<?> serverBuilder =
@@ -293,11 +229,10 @@ public class CamelToolMain implements Callable<Integer> {
                 ? WanakuCamelManager.RouteLoadingFailurePolicy.FAIL_FAST
                 : WanakuCamelManager.RouteLoadingFailurePolicy.LOG_AND_CONTINUE;
 
-        ExecutorService executor = Executors.newSingleThreadExecutor(r -> new Thread(r, "registration"));
+        ExecutorService executor = Executors.newSingleThreadExecutor(r -> new Thread(r, "download"));
 
-        CompletableFuture.supplyAsync(
-                        () -> downloadExternalResources(serviceConfig, dataDirPath, serviceTarget), executor)
-                .thenApply(result -> newWanakuRegistrationInfo(result, serviceConfig, policy))
+        CompletableFuture.supplyAsync(() -> downloadExternalResources(serviceConfig, dataDirPath), executor)
+                .thenApply(result -> newWanakuRegistrationInfo(result, policy))
                 .whenComplete((info, ex) -> tearDown(info, ex, registrationInfoFuture, server, executor));
 
         server.awaitTermination();
@@ -312,7 +247,7 @@ public class CamelToolMain implements Callable<Integer> {
             Server server,
             ExecutorService executor) {
         if (ex != null) {
-            LOG.error("Registration failed, shutting down", ex);
+            LOG.error("Download failed, shutting down", ex);
             registrationInfoFuture.completeExceptionally(ex);
             server.shutdown();
         } else {
@@ -322,82 +257,152 @@ public class CamelToolMain implements Callable<Integer> {
     }
 
     private WanakuRegistrationInfo newWanakuRegistrationInfo(
-            RegistrationResult result,
-            ServiceConfig serviceConfig,
-            WanakuCamelManager.RouteLoadingFailurePolicy policy) {
-        if (result == null) {
+            Map<ResourceType, Path> downloadedResources, WanakuCamelManager.RouteLoadingFailurePolicy policy) {
+        if (downloadedResources == null) {
             throw new RuntimeException("Failed to download external resources");
         }
 
-        McpSpec mcpSpec = createMcpSpec(serviceConfig, result.downloadedResources());
-        WanakuCamelManager camelManager =
-                new WanakuCamelManager(result.downloadedResources(), repositoriesList, policy);
+        McpSpec mcpSpec = createMcpSpec(downloadedResources);
+        WanakuCamelManager camelManager = new WanakuCamelManager(downloadedResources, repositoriesList, policy);
 
-        return new WanakuRegistrationInfo(camelManager.getCamelContext(), mcpSpec, result.serviceTarget());
+        ServiceTarget serviceTarget =
+                ServiceTarget.newEmptyTarget(name, "localhost", grpcPort, ServiceType.MULTI_CAPABILITY.asValue());
+        serviceTarget.setId(UUID.randomUUID().toString());
+
+        return new WanakuRegistrationInfo(camelManager.getCamelContext(), mcpSpec, serviceTarget);
     }
 
-    private RegistrationResult downloadExternalResources(
-            ServiceConfig serviceConfig, Path dataDirPath, ServiceTarget serviceTarget) {
+    private Map<ResourceType, Path> downloadExternalResources(ServiceConfig serviceConfig, Path dataDirPath) {
         ServicesHttpClient httpClient = createClient(serviceConfig);
-
         DownloaderFactory downloaderFactory = new DownloaderFactory(httpClient, dataDirPath);
 
         DownloaderConfiguration downloaderConfig = DownloaderConfiguration.newBuilder()
                 .retryPolicy(ExponentialBackoffRetryPolicy.newBuilder()
                         .maxRetries(retries)
+                        .initialDelayMillis(retryWaitSeconds * 1000L)
                         .build())
                 .build();
-
-        final Map<ResourceType, Path> downloadedResources;
+        RetryPolicy retryPolicy = downloaderConfig.getRetryPolicy();
 
         if (resourceSourceOptions.serviceCatalogOptions != null) {
-            ServiceCatalogDownloaderCallback catalogCallback = new ServiceCatalogDownloaderCallback(
-                    downloaderFactory,
-                    resourceSourceOptions.serviceCatalogOptions.serviceCatalog,
-                    resourceSourceOptions.serviceCatalogOptions.serviceCatalogSystem,
-                    downloaderConfig);
-
-            newRegistrationManager(serviceTarget, catalogCallback, serviceConfig);
-
-            if (!catalogCallback.waitForDownloads()) {
-                LOG.error("Failed to download service catalog resources (check the logs)");
-                return null;
-            }
-
-            downloadedResources = catalogCallback.getDownloadedResources();
+            return downloadServiceCatalog(httpClient, dataDirPath, retryPolicy);
         } else {
-            List<ResourceRefs<URI>> resources = ResourceListBuilder.newBuilder()
-                    .addRoutesRef(resourceSourceOptions.routeRefOptions.routesRef)
-                    .addRulesRef(resourceSourceOptions.routeRefOptions.rulesRef)
-                    .addDependenciesRef(resourceSourceOptions.routeRefOptions.dependenciesRef)
-                    .build();
-
-            ResourceDownloaderCallback resourcesDownloaderCallback =
-                    new ResourceDownloaderCallback(downloaderFactory, resources, downloaderConfig);
-
-            newRegistrationManager(serviceTarget, resourcesDownloaderCallback, serviceConfig);
-
-            if (!resourcesDownloaderCallback.waitForDownloads()) {
-                LOG.error("Failed to download required resources (check the logs)");
-                return null;
-            }
-
-            downloadedResources = resourcesDownloaderCallback.getDownloadedResources();
+            return downloadResources(downloaderFactory, retryPolicy);
         }
-        return new RegistrationResult(downloadedResources, serviceTarget);
     }
 
-    public McpSpec createMcpSpec(ServiceConfig serviceConfig, Map<ResourceType, Path> downloadedResources) {
-        ServicesHttpClient httpClient = createClient(serviceConfig);
+    private Map<ResourceType, Path> downloadServiceCatalog(
+            ServicesHttpClient httpClient, Path dataDirPath, RetryPolicy retryPolicy) {
+        String catalogName = resourceSourceOptions.serviceCatalogOptions.serviceCatalog;
+        String systemName = resourceSourceOptions.serviceCatalogOptions.serviceCatalogSystem;
+        int maxAttempts = 1 + retryPolicy.maxRetries();
 
+        for (int attempt = 1; attempt <= maxAttempts; attempt++) {
+            try {
+                LOG.info(
+                        "Downloading service catalog '{}' for system '{}' (attempt {}/{})",
+                        catalogName,
+                        systemName,
+                        attempt,
+                        maxAttempts);
+
+                WanakuResponse<DataStore> response = httpClient.getServiceCatalog(catalogName);
+                if (response == null || response.data() == null) {
+                    LOG.error("Service catalog '{}' not found", catalogName);
+                    return null;
+                }
+
+                DataStore catalog = response.data();
+                if (catalog.getData() == null || catalog.getData().isBlank()) {
+                    LOG.error("Service catalog '{}' contains no data", catalogName);
+                    return null;
+                }
+
+                Map<ResourceType, Path> result =
+                        ServiceCatalogExtractor.extract(catalog.getData(), systemName, dataDirPath);
+                LOG.info("Service catalog extracted successfully ({} resource type(s) mapped)", result.size());
+                return result;
+            } catch (Exception e) {
+                if (attempt >= maxAttempts || !retryPolicy.isRetryable(e)) {
+                    LOG.error("Failed to download service catalog '{}': {}", catalogName, e.getMessage(), e);
+                    return null;
+                }
+
+                long delay = retryPolicy.getDelayMillis(attempt);
+                LOG.warn(
+                        "Download attempt {}/{} failed for service catalog '{}': {}. Retrying in {} ms",
+                        attempt,
+                        maxAttempts,
+                        catalogName,
+                        e.getMessage(),
+                        delay);
+
+                try {
+                    Thread.sleep(delay);
+                } catch (InterruptedException ie) {
+                    Thread.currentThread().interrupt();
+                    return null;
+                }
+            }
+        }
+        return null;
+    }
+
+    private Map<ResourceType, Path> downloadResources(DownloaderFactory downloaderFactory, RetryPolicy retryPolicy) {
+        List<ResourceRefs<URI>> resources = ResourceListBuilder.newBuilder()
+                .addRoutesRef(resourceSourceOptions.routeRefOptions.routesRef)
+                .addRulesRef(resourceSourceOptions.routeRefOptions.rulesRef)
+                .addDependenciesRef(resourceSourceOptions.routeRefOptions.dependenciesRef)
+                .build();
+
+        Map<ResourceType, Path> downloadedResources = new HashMap<>();
+        int maxAttempts = 1 + retryPolicy.maxRetries();
+
+        for (ResourceRefs<URI> ref : resources) {
+            boolean downloaded = false;
+            for (int attempt = 1; attempt <= maxAttempts; attempt++) {
+                try {
+                    Downloader downloader = downloaderFactory.getDownloader(ref.ref());
+                    downloader.downloadResource(ref, downloadedResources);
+                    downloaded = true;
+                    break;
+                } catch (Exception e) {
+                    if (attempt >= maxAttempts || !retryPolicy.isRetryable(e)) {
+                        LOG.error("Failed to download resource '{}': {}", ref, e.getMessage(), e);
+                        break;
+                    }
+
+                    long delay = retryPolicy.getDelayMillis(attempt);
+                    LOG.warn(
+                            "Download attempt {}/{} failed for '{}': {}. Retrying in {} ms",
+                            attempt,
+                            maxAttempts,
+                            ref,
+                            e.getMessage(),
+                            delay);
+
+                    try {
+                        Thread.sleep(delay);
+                    } catch (InterruptedException ie) {
+                        Thread.currentThread().interrupt();
+                        return null;
+                    }
+                }
+            }
+            if (!downloaded) {
+                LOG.error("Failed to download required resource: {}", ref);
+                return null;
+            }
+        }
+
+        return downloadedResources;
+    }
+
+    public McpSpec createMcpSpec(Map<ResourceType, Path> downloadedResources) {
         String rulesRef =
                 downloadedResources.get(ResourceType.RULES_REF).toAbsolutePath().toString();
         McpRulesManager mcpRulesManager = new McpRulesManager(name, rulesRef);
-        final WanakuToolTransformer toolTransformer =
-                new WanakuToolTransformer(name, new WanakuToolRuleProcessor(httpClient));
-        final WanakuResourceTransformer resourceTransformer =
-                new WanakuResourceTransformer(name, new WanakuResourceRuleProcessor(httpClient));
 
-        return mcpRulesManager.loadMcpSpecAndRegister(toolTransformer, resourceTransformer);
+        return mcpRulesManager.loadMcpSpecAndRegister((n, def) -> {}, (n, def) -> {});
     }
 }
