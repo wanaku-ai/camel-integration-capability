@@ -11,6 +11,8 @@ import org.apache.camel.CamelContext;
 import org.apache.camel.component.mcp.server.McpServerBridge;
 import org.apache.camel.component.mcp.server.McpServerConfiguration;
 import org.apache.camel.component.platform.http.main.MainHttpServer;
+import org.apache.camel.component.platform.http.main.ManagementHttpServer;
+import org.apache.camel.health.HealthCheckRegistry;
 import org.apache.camel.impl.DefaultCamelContext;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -23,6 +25,9 @@ import ai.wanaku.capabilities.sdk.runtime.camel.versions.RuntimeVersionHelper;
 
 public class WanakuCamelManager {
     private static final Logger LOG = LoggerFactory.getLogger(WanakuCamelManager.class);
+
+    // Camel's default management health path; sub-paths /live and /ready are added automatically
+    private static final String HEALTH_PATH = "/observe/health";
 
     public enum RouteLoadingFailurePolicy {
         FAIL_FAST,
@@ -39,6 +44,16 @@ public class WanakuCamelManager {
             String repositoriesList,
             String mcpTags,
             int mcpPort,
+            RouteLoadingFailurePolicy routeLoadingFailurePolicy) {
+        this(downloadedResources, repositoriesList, mcpTags, mcpPort, 0, routeLoadingFailurePolicy);
+    }
+
+    public WanakuCamelManager(
+            Map<ResourceType, Path> downloadedResources,
+            String repositoriesList,
+            String mcpTags,
+            int mcpPort,
+            int healthPort,
             RouteLoadingFailurePolicy routeLoadingFailurePolicy) {
         this.routeLoadingFailurePolicy =
                 Objects.requireNonNull(routeLoadingFailurePolicy, "RouteLoadingFailurePolicy must not be null");
@@ -72,6 +87,62 @@ public class WanakuCamelManager {
         }
 
         loadRoutes();
+        configureHealthChecks();
+
+        if (healthPort > 0) {
+            setupManagementServer(healthPort);
+        }
+    }
+
+    private void configureHealthChecks() {
+        HealthCheckRegistry healthCheckRegistry = HealthCheckRegistry.get(context);
+        if (healthCheckRegistry == null) {
+            LOG.warn("No HealthCheckRegistry available: health checks are disabled");
+            return;
+        }
+
+        healthCheckRegistry.setEnabled(true);
+        // With the "default" exposure level Camel collapses all-UP results into a single
+        // summary entry; "full" reports every check individually
+        healthCheckRegistry.setExposureLevel("full");
+
+        // A plain CamelContext does not register the standard checks on its own (camel-main
+        // does it during auto-configuration), so resolve and register them explicitly
+        registerHealthCheck(healthCheckRegistry, "context");
+        registerHealthCheck(healthCheckRegistry, "routes");
+        registerHealthCheck(healthCheckRegistry, "consumers");
+    }
+
+    private static void registerHealthCheck(HealthCheckRegistry healthCheckRegistry, String id) {
+        Object check = healthCheckRegistry.resolveById(id);
+        if (check != null) {
+            healthCheckRegistry.register(check);
+        } else {
+            LOG.warn("Unable to resolve health check '{}'", id);
+        }
+    }
+
+    /**
+     * Sets up Camel's built-in management HTTP server exposing the Camel Health Check API
+     * at {@code /observe/health} (all checks), {@code /observe/health/live} (liveness) and
+     * {@code /observe/health/ready} (readiness), for Kubernetes/container probes.
+     */
+    private void setupManagementServer(int healthPort) {
+        try {
+            ManagementHttpServer managementServer = new ManagementHttpServer();
+            managementServer.setPort(healthPort);
+            managementServer.setHealthCheckEnabled(true);
+            managementServer.setHealthPath(HEALTH_PATH);
+            context.addService(managementServer);
+            LOG.info(
+                    "HTTP health endpoints available on port {} ({}, {}/live, {}/ready)",
+                    healthPort,
+                    HEALTH_PATH,
+                    HEALTH_PATH,
+                    HEALTH_PATH);
+        } catch (Exception e) {
+            throw new RuntimeException("Failed to setup management HTTP server", e);
+        }
     }
 
     private void setupMcpServer(String mcpTags, int mcpPort) {

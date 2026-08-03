@@ -9,6 +9,7 @@ COPY camel-integration-capability-runtimes/camel-integration-capability-main/tar
 
 # Environment variables for runtime configuration
 ENV REGISTRATION_URL="" \
+    HEALTH_PORT="8081" \
     SERVICE_NAME="" \
     ROUTES_PATH="" \
     SERVICE_CATALOG="" \
@@ -23,8 +24,9 @@ ENV REGISTRATION_URL="" \
 # Create and declare volume for routes data
 VOLUME /data
 
-# Expose the MCP server port
+# Expose the MCP server port and the HTTP health check port
 EXPOSE ${MCP_PORT}
+EXPOSE ${HEALTH_PORT}
 
 # Run the application with environment variables.
 # This part uses shell parameter expansion to conditionally add command-line arguments to the Java application.
@@ -32,6 +34,7 @@ EXPOSE ${MCP_PORT}
 # with value. Otherwise, substitute it with nothing (an empty string)."
 ENTRYPOINT ["sh", "-c", "java -jar /app/app.jar \
     ${REGISTRATION_URL:+--registration-url $REGISTRATION_URL} \
+    ${HEALTH_PORT:+--health-port $HEALTH_PORT} \
     ${SERVICE_NAME:+--name $SERVICE_NAME} \
     ${ROUTES_PATH:+--routes-ref $ROUTES_PATH} \
     ${SERVICE_CATALOG:+--service-catalog $SERVICE_CATALOG} \
