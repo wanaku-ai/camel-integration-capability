@@ -12,79 +12,9 @@
     <packaging>jar</packaging>
 
     <name>Camel Integration Capability :: Common</name>
-    <description>Shared utilities, models, and core business logic for Camel integration capability</description>
+    <description>Shared utilities for Camel integration capability</description>
 
     <dependencies>
-        <!-- Wanaku SDK -->
-        <dependency>
-            <groupId>ai.wanaku.sdk</groupId>
-            <artifactId>capabilities-common</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>ai.wanaku.sdk</groupId>
-            <artifactId>capabilities-discovery</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>ai.wanaku.sdk</groupId>
-            <artifactId>capabilities-data-files</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>ai.wanaku.sdk</groupId>
-            <artifactId>capabilities-exchange</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>ai.wanaku.sdk</groupId>
-            <artifactId>capabilities-runtimes-common</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>ai.wanaku.sdk</groupId>
-            <artifactId>capabilities-services-client</artifactId>
-        </dependency>
-
-        <!-- Apache Camel -->
-        <dependency>
-            <groupId>org.apache.camel</groupId>
-            <artifactId>camel-core</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>org.apache.camel</groupId>
-            <artifactId>camel-kamelet-main</artifactId>
-            <exclusions>
-                <exclusion>
-                    <groupId>org.apache.maven.resolver</groupId>
-                    <artifactId>maven-resolver-supplier</artifactId>
-                </exclusion>
-            </exclusions>
-        </dependency>
-        <dependency>
-            <groupId>org.apache.camel</groupId>
-            <artifactId>camel-direct</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>org.apache.camel</groupId>
-            <artifactId>camel-file</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>org.apache.camel</groupId>
-            <artifactId>camel-yaml-dsl</artifactId>
-        </dependency>
-
-        <!-- Jackson -->
-        <dependency>
-            <groupId>com.fasterxml.jackson.dataformat</groupId>
-            <artifactId>jackson-dataformat-yaml</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>com.fasterxml.jackson.core</groupId>
-            <artifactId>jackson-databind</artifactId>
-        </dependency>
-
-        <!-- Git -->
-        <dependency>
-            <groupId>org.eclipse.jgit</groupId>
-            <artifactId>org.eclipse.jgit</artifactId>
-        </dependency>
-
         <!-- Testing -->
         <dependency>
             <groupId>org.junit.jupiter</groupId>

@@ -6,7 +6,11 @@ import java.nio.file.Path;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.concurrent.CountDownLatch;
 import org.apache.camel.CamelContext;
+import org.apache.camel.component.mcp.server.McpServerBridge;
+import org.apache.camel.component.mcp.server.McpServerConfiguration;
+import org.apache.camel.component.platform.http.main.MainHttpServer;
 import org.apache.camel.impl.DefaultCamelContext;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -28,25 +32,25 @@ public class WanakuCamelManager {
     private final CamelContext context;
     private final String routesPath;
     private final RouteLoadingFailurePolicy routeLoadingFailurePolicy;
-    private final List<GAV> gavs;
-
-    public WanakuCamelManager(Map<ResourceType, Path> downloadedResources, String repositoriesList) {
-        this(downloadedResources, repositoriesList, RouteLoadingFailurePolicy.FAIL_FAST);
-    }
+    private final CountDownLatch shutdownLatch = new CountDownLatch(1);
 
     public WanakuCamelManager(
             Map<ResourceType, Path> downloadedResources,
             String repositoriesList,
+            String mcpTags,
+            int mcpPort,
             RouteLoadingFailurePolicy routeLoadingFailurePolicy) {
         this.routeLoadingFailurePolicy =
                 Objects.requireNonNull(routeLoadingFailurePolicy, "RouteLoadingFailurePolicy must not be null");
 
         this.routesPath = downloadedResources.get(ResourceType.ROUTES_REF).toString();
+
+        List<GAV> gavs;
         if (downloadedResources.containsKey(ResourceType.DEPENDENCY_REF)) {
             Path dependenciesPath = downloadedResources.get(ResourceType.DEPENDENCY_REF);
             try {
                 final List<String> depLines = Files.readAllLines(dependenciesPath);
-                this.gavs = depLines.stream()
+                gavs = depLines.stream()
                         .filter(l -> !l.startsWith("#"))
                         .map(g -> GAV.parse(g, RuntimeVersionHelper.getVersions()))
                         .toList();
@@ -54,7 +58,7 @@ public class WanakuCamelManager {
                 throw new RuntimeException(e);
             }
         } else {
-            this.gavs = List.of();
+            gavs = List.of();
         }
 
         WanakuMavenDownloader mavenDownloader = new WanakuMavenDownloader(WanakuCamelManager.class.getClassLoader());
@@ -62,12 +66,32 @@ public class WanakuCamelManager {
 
         context = new DefaultCamelContext();
         context.setApplicationContextClassLoader(mavenDownloader.getClassLoader());
+
+        if (mcpPort > 0) {
+            setupMcpServer(mcpTags, mcpPort);
+        }
+
         loadRoutes();
+    }
+
+    private void setupMcpServer(String mcpTags, int mcpPort) {
+        try {
+            MainHttpServer httpServer = new MainHttpServer();
+            httpServer.setPort(mcpPort);
+            context.addService(httpServer);
+
+            McpServerConfiguration mcpConfig = new McpServerConfiguration();
+            if (mcpTags != null && !mcpTags.isEmpty()) {
+                mcpConfig.setTags(mcpTags);
+            }
+            context.addService(new McpServerBridge(mcpConfig));
+        } catch (Exception e) {
+            throw new RuntimeException("Failed to setup MCP server", e);
+        }
     }
 
     private void loadRoutes() {
         WanakuRoutesLoader routesLoader = new WanakuRoutesLoader();
-
         String routeFileUrl = Path.of(routesPath).toUri().toString();
 
         try {
@@ -83,6 +107,23 @@ public class WanakuCamelManager {
         }
 
         context.start();
+    }
+
+    public void run() throws InterruptedException {
+        Runtime.getRuntime().addShutdownHook(new Thread(() -> {
+            context.stop();
+            shutdownLatch.countDown();
+        }));
+
+        shutdownLatch.await();
+    }
+
+    public void start() {
+        // context already started in constructor via loadRoutes()
+    }
+
+    public void stop() {
+        context.stop();
     }
 
     public CamelContext getCamelContext() {

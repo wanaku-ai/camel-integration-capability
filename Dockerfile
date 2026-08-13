@@ -9,26 +9,22 @@ COPY camel-integration-capability-runtimes/camel-integration-capability-main/tar
 
 # Environment variables for runtime configuration
 ENV REGISTRATION_URL="" \
-    REGISTRATION_ANNOUNCE_ADDRESS="" \
-    GRPC_PORT="9190" \
     SERVICE_NAME="" \
     ROUTES_PATH="" \
-    ROUTES_RULES="" \
     SERVICE_CATALOG="" \
     SERVICE_CATALOG_SYSTEM="" \
-    TOKEN_ENDPOINT="" \
-    CLIENT_ID="" \
-    CLIENT_SECRET="" \
     DEPENDENCIES="" \
     INIT_FROM="" \
     REPOSITORIES="" \
-    DATA_DIR="/data"
+    DATA_DIR="/data" \
+    MCP_TAGS="" \
+    MCP_PORT="9090"
 
 # Create and declare volume for routes data
 VOLUME /data
 
-# Expose the gRPC port
-EXPOSE ${GRPC_PORT}
+# Expose the MCP server port
+EXPOSE ${MCP_PORT}
 
 # Run the application with environment variables.
 # This part uses shell parameter expansion to conditionally add command-line arguments to the Java application.
@@ -36,17 +32,13 @@ EXPOSE ${GRPC_PORT}
 # with value. Otherwise, substitute it with nothing (an empty string)."
 ENTRYPOINT ["sh", "-c", "java -jar /app/app.jar \
     ${REGISTRATION_URL:+--registration-url $REGISTRATION_URL} \
-    ${REGISTRATION_ANNOUNCE_ADDRESS:+--registration-announce-address $REGISTRATION_ANNOUNCE_ADDRESS} \
-    ${GRPC_PORT:+--grpc-port $GRPC_PORT} \
     ${SERVICE_NAME:+--name $SERVICE_NAME} \
     ${ROUTES_PATH:+--routes-ref $ROUTES_PATH} \
-    ${ROUTES_RULES:+--rules-ref $ROUTES_RULES} \
     ${SERVICE_CATALOG:+--service-catalog $SERVICE_CATALOG} \
     ${SERVICE_CATALOG_SYSTEM:+--service-catalog-system $SERVICE_CATALOG_SYSTEM} \
-    ${TOKEN_ENDPOINT:+--token-endpoint $TOKEN_ENDPOINT} \
-    ${CLIENT_ID:+--client-id $CLIENT_ID} \
-    ${CLIENT_SECRET:+--client-secret $CLIENT_SECRET} \
     ${DEPENDENCIES:+--dependencies $DEPENDENCIES} \
     ${INIT_FROM:+--init-from $INIT_FROM} \
     ${REPOSITORIES:+--repositories $REPOSITORIES} \
-    ${DATA_DIR:+--data-dir $DATA_DIR}"]
+    ${DATA_DIR:+--data-dir $DATA_DIR} \
+    ${MCP_TAGS:+--mcp-tags $MCP_TAGS} \
+    ${MCP_PORT:+--mcp-port $MCP_PORT}"]

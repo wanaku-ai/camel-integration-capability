@@ -1,13 +1,13 @@
 - route:
     id: route-3104
     from:
-      id: from-1702
-      uri: direct
+      uri: ai-tool:sends-greeting
       parameters:
-        name: wanaku
-      steps:
-        - log:
-            id: log-2526
-            message: Hello ${body}
-        - setBody:
-            simple: Hello ${body} from ${routeId}
+        description: "Sends a greeting message to show that the application is working"
+        parameter.wanaku_body: string
+        parameter.wanaku_body.description: "The greeting message to send"
+    steps:
+      - log:
+          message: Hello ${body}
+      - setBody:
+          simple: Hello ${body} from ${routeId}

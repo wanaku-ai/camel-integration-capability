@@ -6,21 +6,11 @@ import java.nio.file.Path;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.UUID;
 import java.util.concurrent.Callable;
-import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import io.grpc.Grpc;
-import io.grpc.InsecureServerCredentials;
-import io.grpc.Server;
-import io.grpc.ServerBuilder;
 import ai.wanaku.capabilities.sdk.api.types.DataStore;
 import ai.wanaku.capabilities.sdk.api.types.WanakuResponse;
-import ai.wanaku.capabilities.sdk.api.types.providers.ServiceTarget;
-import ai.wanaku.capabilities.sdk.api.types.providers.ServiceType;
 import ai.wanaku.capabilities.sdk.common.config.DefaultServiceConfig;
 import ai.wanaku.capabilities.sdk.common.config.ServiceConfig;
 import ai.wanaku.capabilities.sdk.common.serializer.JacksonSerializer;
@@ -33,16 +23,8 @@ import ai.wanaku.capabilities.sdk.runtime.camel.downloader.ResourceRefs;
 import ai.wanaku.capabilities.sdk.runtime.camel.downloader.ResourceType;
 import ai.wanaku.capabilities.sdk.runtime.camel.downloader.RetryPolicy;
 import ai.wanaku.capabilities.sdk.runtime.camel.downloader.ServiceCatalogExtractor;
-import ai.wanaku.capabilities.sdk.runtime.camel.grpc.CamelHealthProbe;
-import ai.wanaku.capabilities.sdk.runtime.camel.grpc.CamelResource;
-import ai.wanaku.capabilities.sdk.runtime.camel.grpc.CamelTool;
-import ai.wanaku.capabilities.sdk.runtime.camel.grpc.ProvisionBase;
-import ai.wanaku.capabilities.sdk.runtime.camel.grpc.WanakuRegistrationInfo;
 import ai.wanaku.capabilities.sdk.runtime.camel.init.Initializer;
 import ai.wanaku.capabilities.sdk.runtime.camel.init.InitializerFactory;
-import ai.wanaku.capabilities.sdk.runtime.camel.model.McpSpec;
-import ai.wanaku.capabilities.sdk.runtime.camel.util.McpRulesManager;
-import ai.wanaku.capabilities.sdk.security.TokenEndpoint;
 import ai.wanaku.capabilities.sdk.services.ServicesHttpClient;
 import ai.wanaku.capability.camel.util.VersionHelper;
 import picocli.CommandLine;
@@ -62,12 +44,6 @@ public class CamelToolMain implements Callable<Integer> {
             defaultValue = "http://localhost:8080",
             required = true)
     private String registrationUrl;
-
-    @CommandLine.Option(
-            names = {"--grpc-port"},
-            description = "The gRPC port to use",
-            defaultValue = "9190")
-    private int grpcPort;
 
     @CommandLine.Option(
             names = {"--name"},
@@ -92,51 +68,19 @@ public class CamelToolMain implements Callable<Integer> {
                 names = {"--routes-ref"},
                 required = true,
                 description =
-                        "The reference path to the Apache Camel routes YAML file. Supports datastore:// and file:// schemes (e.g., datastore://routes.camel.yaml or file:///path/to/routes.yaml)")
+                        "The reference path to the Apache Camel routes YAML file. Supports datastore:// and file:// schemes")
         private String routesRef;
 
         @CommandLine.Option(
-                names = {"--rules-ref"},
-                required = true,
-                description =
-                        "The path to the YAML file with route exposure rules. Supports datastore:// and file:// schemes (e.g., datastore://routes-expose.yaml or file:///path/to/rules.yaml)")
-        private String rulesRef;
-
-        @CommandLine.Option(
                 names = {"-d", "--dependencies"},
-                required = true,
                 description =
                         "The dependencies to include in runtime. Supports datastore:// and file:// schemes (comma-separated)")
         private String dependenciesRef;
     }
 
-    static class AuthConfig {
-        @CommandLine.Option(
-                names = {"--token-endpoint"},
-                required = true,
-                description = "The base URL for the authentication")
-        String tokenEndpoint;
-
-        @CommandLine.Option(
-                names = {"--client-id"},
-                required = true,
-                description = "The client ID for authentication")
-        String clientId;
-
-        @CommandLine.Option(
-                names = {"--client-secret"},
-                required = true,
-                description = "The client secret for authentication")
-        String clientSecret;
-    }
-
-    @CommandLine.ArgGroup(exclusive = false)
-    private AuthConfig authConfig;
-
     @CommandLine.Option(
             names = {"--repositories"},
-            description =
-                    "Comma-separated list of additional repositories from which to download dependencies to include in runtime (i.e.: https://my-private-repo.com/) ")
+            description = "Comma-separated list of additional Maven repositories for dependency resolution")
     private String repositoriesList;
 
     @CommandLine.Option(
@@ -148,7 +92,7 @@ public class CamelToolMain implements Callable<Integer> {
     @CommandLine.Option(
             names = {"--init-from"},
             description =
-                    "Git repository URL to clone during initialization. Cloned files can be referenced using file:// (e.g., git@github.com:wanaku-ai/wanaku-recipes.git)")
+                    "Git repository URL to clone during initialization. Cloned files can be referenced using file://")
     private String initFrom;
 
     static class ServiceCatalogOptions {
@@ -182,14 +126,21 @@ public class CamelToolMain implements Callable<Integer> {
             defaultValue = "false")
     private boolean failFast;
 
+    @CommandLine.Option(
+            names = {"--mcp-tags"},
+            description = "Comma-separated tags for MCP tool filtering (selects which ai-tool routes to expose)",
+            defaultValue = "wanaku")
+    private String mcpTags;
+
+    @CommandLine.Option(
+            names = {"--mcp-port"},
+            description = "Port for the MCP server (HTTP/SSE transport)",
+            defaultValue = "9090")
+    private int mcpPort;
+
     public static void main(String[] args) {
         int exitCode = new CommandLine(new CamelToolMain()).execute(args);
-
         System.exit(exitCode);
-    }
-
-    public ServicesHttpClient createClient(ServiceConfig serviceConfig) {
-        return new ServicesHttpClient(serviceConfig);
     }
 
     @Override
@@ -206,74 +157,27 @@ public class CamelToolMain implements Callable<Integer> {
         final ServiceConfig serviceConfig = DefaultServiceConfig.Builder.newBuilder()
                 .baseUrl(registrationUrl)
                 .serializer(new JacksonSerializer())
-                .clientId(authConfig != null ? authConfig.clientId : null)
-                .tokenEndpoint(TokenEndpoint.autoResolve(
-                        registrationUrl, authConfig != null ? authConfig.tokenEndpoint : null))
-                .secret(authConfig != null ? authConfig.clientSecret : null)
                 .build();
 
-        final CompletableFuture<WanakuRegistrationInfo> registrationInfoFuture = new CompletableFuture<>();
-
-        final ServerBuilder<?> serverBuilder =
-                Grpc.newServerBuilderForPort(grpcPort, InsecureServerCredentials.create());
-        final Server server = serverBuilder
-                .addService(new CamelTool(registrationInfoFuture))
-                .addService(new CamelResource(registrationInfoFuture))
-                .addService(new ProvisionBase(name))
-                .addService(new CamelHealthProbe(registrationInfoFuture))
-                .build();
-
-        server.start();
+        Map<ResourceType, Path> downloadedResources = downloadExternalResources(serviceConfig, dataDirPath);
+        if (downloadedResources == null) {
+            LOG.error("Failed to download external resources");
+            return 1;
+        }
 
         final WanakuCamelManager.RouteLoadingFailurePolicy policy = failFast
                 ? WanakuCamelManager.RouteLoadingFailurePolicy.FAIL_FAST
                 : WanakuCamelManager.RouteLoadingFailurePolicy.LOG_AND_CONTINUE;
 
-        ExecutorService executor = Executors.newSingleThreadExecutor(r -> new Thread(r, "download"));
-
-        CompletableFuture.supplyAsync(() -> downloadExternalResources(serviceConfig, dataDirPath), executor)
-                .thenApply(result -> newWanakuRegistrationInfo(result, policy))
-                .whenComplete((info, ex) -> tearDown(info, ex, registrationInfoFuture, server, executor));
-
-        server.awaitTermination();
+        WanakuCamelManager camelManager =
+                new WanakuCamelManager(downloadedResources, repositoriesList, mcpTags, mcpPort, policy);
+        camelManager.run();
 
         return 0;
     }
 
-    private static void tearDown(
-            WanakuRegistrationInfo info,
-            Throwable ex,
-            CompletableFuture<WanakuRegistrationInfo> registrationInfoFuture,
-            Server server,
-            ExecutorService executor) {
-        if (ex != null) {
-            LOG.error("Download failed, shutting down", ex);
-            registrationInfoFuture.completeExceptionally(ex);
-            server.shutdown();
-        } else {
-            registrationInfoFuture.complete(info);
-        }
-        executor.shutdown();
-    }
-
-    private WanakuRegistrationInfo newWanakuRegistrationInfo(
-            Map<ResourceType, Path> downloadedResources, WanakuCamelManager.RouteLoadingFailurePolicy policy) {
-        if (downloadedResources == null) {
-            throw new RuntimeException("Failed to download external resources");
-        }
-
-        McpSpec mcpSpec = createMcpSpec(downloadedResources);
-        WanakuCamelManager camelManager = new WanakuCamelManager(downloadedResources, repositoriesList, policy);
-
-        ServiceTarget serviceTarget =
-                ServiceTarget.newEmptyTarget(name, "localhost", grpcPort, ServiceType.MULTI_CAPABILITY.asValue());
-        serviceTarget.setId(UUID.randomUUID().toString());
-
-        return new WanakuRegistrationInfo(camelManager.getCamelContext(), mcpSpec, serviceTarget);
-    }
-
     private Map<ResourceType, Path> downloadExternalResources(ServiceConfig serviceConfig, Path dataDirPath) {
-        ServicesHttpClient httpClient = createClient(serviceConfig);
+        ServicesHttpClient httpClient = new ServicesHttpClient(serviceConfig);
         DownloaderFactory downloaderFactory = new DownloaderFactory(httpClient, dataDirPath);
 
         DownloaderConfiguration downloaderConfig = DownloaderConfiguration.newBuilder()
@@ -349,11 +253,14 @@ public class CamelToolMain implements Callable<Integer> {
     }
 
     private Map<ResourceType, Path> downloadResources(DownloaderFactory downloaderFactory, RetryPolicy retryPolicy) {
-        List<ResourceRefs<URI>> resources = ResourceListBuilder.newBuilder()
-                .addRoutesRef(resourceSourceOptions.routeRefOptions.routesRef)
-                .addRulesRef(resourceSourceOptions.routeRefOptions.rulesRef)
-                .addDependenciesRef(resourceSourceOptions.routeRefOptions.dependenciesRef)
-                .build();
+        ResourceListBuilder builder =
+                ResourceListBuilder.newBuilder().addRoutesRef(resourceSourceOptions.routeRefOptions.routesRef);
+
+        if (resourceSourceOptions.routeRefOptions.dependenciesRef != null) {
+            builder.addDependenciesRef(resourceSourceOptions.routeRefOptions.dependenciesRef);
+        }
+
+        List<ResourceRefs<URI>> resources = builder.build();
 
         Map<ResourceType, Path> downloadedResources = new HashMap<>();
         int maxAttempts = 1 + retryPolicy.maxRetries();
@@ -396,13 +303,5 @@ public class CamelToolMain implements Callable<Integer> {
         }
 
         return downloadedResources;
-    }
-
-    public McpSpec createMcpSpec(Map<ResourceType, Path> downloadedResources) {
-        String rulesRef =
-                downloadedResources.get(ResourceType.RULES_REF).toAbsolutePath().toString();
-        McpRulesManager mcpRulesManager = new McpRulesManager(name, rulesRef);
-
-        return mcpRulesManager.loadMcpSpecAndRegister((n, def) -> {}, (n, def) -> {});
     }
 }

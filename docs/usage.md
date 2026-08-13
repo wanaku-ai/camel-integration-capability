@@ -1,17 +1,16 @@
-# Camel Core Downstream Service
+# Camel Integration Capability
 
-A capability service for the [Wanaku MCP Router](https://wanaku.ai) that provides [Apache Camel](https://camel.apache.org) route
-execution capabilities.
+A capability service for the [Wanaku MCP Router](https://wanaku.ai) that provides [Apache Camel](https://camel.apache.org) route execution capabilities.
 
-This service integrates with the Wanaku ecosystem to execute Camel routes dynamically through Wanaku's gRPC bridge.
+This service downloads Camel routes, runs them using Apache Camel's Main runtime, and exposes `ai-tool:` routes as MCP tools via a built-in HTTP/SSE MCP server.
 
 ## Overview
 
-This service implements a Wanaku capability that can:
+This service:
 
-- Execute Apache Camel routes defined in YAML format
-- Register itself with a Wanaku discovery service
-- Support service-to-router authentication via OAuth2/OIDC
+- Downloads and executes Apache Camel routes defined in YAML format
+- Exposes routes using the `ai-tool:` URI format as MCP tools
+- Provides an HTTP/SSE MCP server for tool invocation
 
 > [TIP]
 > Design your Camel routes with ease using the [Kaoto Integration Designer](http://kaoto.io) for Apache Camel.
@@ -21,65 +20,43 @@ This service implements a Wanaku capability that can:
 > [NOTE]
 > Upgrading from a previous version? See the [Migration Guide](migration-guide.md) for breaking changes and upgrade steps.
 
-## Deployment Options
-
-This capability can be deployed in two ways:
-
-1. **Standalone Application** (this document) - Run as a separate service with CLI configuration
-2. **[Plugin Mode](plugin-usage.md)** - Embed into an existing Apache Camel application using SPI
-
 ## Related Guides
 
 - **[CLI Reference](cli-reference.md)** - Complete command-line parameter reference
 - **[Service Catalog Guide](service-catalog-guide.md)** - Creating and publishing service catalogs
-- **[Rules Schema](rules-schema.md)** - Route exposure rules YAML reference
 - **[Troubleshooting](troubleshooting.md)** - Common issues and solutions
 
 ## Requirements
 
 - Java 21 or higher
 - Maven 3.6+ for building
-- Access to a Wanaku discovery service
-- OAuth2/OIDC authentication provider
+- Access to a Wanaku server (for downloading resources)
 
 ## Running this Capability
 
-This capability service requires configuration parameters to connect to the Wanaku ecosystem. When launching it, you need to
-set them so that this capability service can talk to Wanaku and register itself.
-
-> [NOTE]
-> Although this capability is intended to be run inside Kubernetes or OpenShift, it is entirely possible to execute it locally.
-
 ### Required Parameters
-
-- `--registration-url`: URL of the Wanaku discovery service
-- `--registration-announce-address`: Address to announce for service discovery
 
 One of the following is required to provide routes:
 
-- `--service-catalog`: Name of the service catalog to load routes, rules, and dependencies from (recommended). Requires `--service-catalog-system`
+- `--service-catalog`: Name of the service catalog to load routes and dependencies from (recommended). Requires `--service-catalog-system`
 - `--routes-ref`: Reference to the Apache Camel routes YAML file. Supports `datastore://` and `file://` schemes
 
 ### Optional Parameters
 
-- `--client-id`: OAuth2 client ID for authentication. Required when `--client-secret` is provided.
-- `--client-secret`: OAuth2 client secret for authentication. When omitted, authentication is disabled.
+- `--registration-url`: URL of the Wanaku server for downloading resources (default: `http://localhost:8080`)
 - `--service-catalog-system`: The system name within the service catalog (required when using `--service-catalog`)
-- `--token-endpoint`: OAuth2/OIDC token endpoint base URL. When pointing to a Keycloak instance, include the realm path (e.g., `http://keycloak:8543/realms/my-realm/`). The realm name is fully configurable — there is no default.
-- `--rules-ref`: Reference to the YAML file with route exposure rules. Supports `datastore://` and `file://` schemes
 - `--dependencies`: Comma-separated list of dependencies. Supports `datastore://` and `file://` schemes
 - `--init-from`: Git repository URL to clone during initialization (SSH or HTTPS format)
-- `--grpc-port`: gRPC server port (default: 9190)
-- `--name`: Service name for registration (default: "camel")
-- `--retries`: Maximum registration retries (default: 12)
+- `--mcp-port`: Port for the MCP server (default: 8080)
+- `--mcp-tags`: Comma-separated tags for filtering which `ai-tool:` routes to expose
+- `--name`: Service name (default: "camel")
+- `--retries`: Maximum download retries (default: 12)
 - `--wait-seconds`: Wait time between retries in seconds (default: 5)
-- `--initial-delay`: Initial registration delay in seconds (default: 5)
-- `--period`: Period between registration attempts in seconds (default: 5)
 - `--data-dir`: Directory where downloaded files will be saved (default: `/tmp` for CLI, `/data` for Docker)
 
 > [NOTE]
-> `--service-catalog` is mutually exclusive with `--routes-ref`, `--rules-ref`, and `--dependencies`.
-> When using a service catalog, all three resources are extracted from the catalog automatically.
+> `--service-catalog` is mutually exclusive with `--routes-ref` and `--dependencies`.
+> When using a service catalog, all resources are extracted from the catalog automatically.
 
 ### URI Schemes
 
@@ -90,53 +67,32 @@ The service supports multiple URI schemes for resource references:
 
 ### Basic Example Using a Service Catalog (Recommended)
 
-Service catalogs are the recommended way to provide routes to the capability. A service catalog bundles routes,
-rules, and dependencies into a single versioned artifact stored in Wanaku. This simplifies configuration and
-makes it easy to update all resources at once.
+Service catalogs bundle routes and dependencies into a single versioned artifact stored in Wanaku.
 
 ```bash
-java -jar target/camel-integration-capability-main-0.1.1-jar-with-dependencies.jar \
+java -jar target/camel-integration-capability-main-*-jar-with-dependencies.jar \
   --registration-url http://localhost:8080 \
-  --registration-announce-address localhost \
-  --grpc-port 9190 \
   --name employee-system \
   --service-catalog employee-system-v2 \
-  --service-catalog-system employee-system \
-  --client-id wanaku-service \
-  --client-secret aBqsU3EzUPCHumf9sTK5sanxXkB0yFtv
+  --service-catalog-system employee-system
 ```
-
-With service catalogs, `--routes-ref`, `--rules-ref`, and `--dependencies` are not needed — the catalog
-contains all required resources for the given system.
 
 ### Basic Example Using Individual References
 
-For cases where routes, rules, and dependencies are managed separately (e.g., during development):
+For cases where routes and dependencies are managed separately (e.g., during development):
 
 ```bash
-java -jar target/camel-integration-capability-main-0.1.1-jar-with-dependencies.jar \
+java -jar target/camel-integration-capability-main-*-jar-with-dependencies.jar \
   --registration-url http://localhost:8080 \
-  --registration-announce-address localhost \
-  --grpc-port 9190 \
   --name camel-core \
-  --routes-ref datastore://promote-employee.camel.yaml \
-  --rules-ref datastore://promote-employee-rules.yaml \
-  --token-endpoint http://localhost:8543/realms/my-realm/ \
-  --client-id wanaku-service \
-  --client-secret aBqsU3EzUPCHumf9sTK5sanxXkB0yFtv \
-  --dependencies datastore://promote-employee-dependencies.txt \
-  --data-dir /tmp/camel-data
-```
-
-Where `promote-employee-dependencies.txt` is a text file containing the dependencies in a comma-separated list:
-
-```shell
-org.apache.camel:camel-http:4.14.2,org.apache.camel:camel-jackson:4.14.2
+  --routes-ref file:///path/to/routes.camel.yaml \
+  --dependencies file:///path/to/deps.txt \
+  --mcp-port 9090
 ```
 
 ## Deploying the Service
 
-The service can be deployed to Kubernetes or OpenShift using the Wanaku's operator.
+The service can be deployed to Kubernetes or OpenShift using Wanaku's operator.
 
 ### Using a Service Catalog (Recommended)
 
@@ -146,17 +102,10 @@ kind: Wanaku
 metadata:
   name: wanaku-dev
 spec:
-  auth:
-    authServer: http://address-of-the-keycloak-instance
-    authProxy: "auto"
   router:
     image: quay.io/wanaku/wanaku-router-backend:latest
     imagePullPolicy: Always
-  secrets:
-    oidcCredentialsSecret: <credentials-go-here>
   capabilities:
-    - name: wanaku-http
-      image: quay.io/wanaku/wanaku-tool-service-http:latest
     - name: employee-system
       type: camel-integration-capability
       image: quay.io/wanaku/camel-integration-capability:latest
@@ -175,25 +124,16 @@ kind: Wanaku
 metadata:
   name: wanaku-dev
 spec:
-  auth:
-    authServer: http://address-of-the-keycloak-instance
-    authProxy: "auto"
   router:
     image: quay.io/wanaku/wanaku-router-backend:latest
     imagePullPolicy: Always
-  secrets:
-    oidcCredentialsSecret: <credentials-go-here>
   capabilities:
-    - name: wanaku-http
-      image: quay.io/wanaku/wanaku-tool-service-http:latest
     - name: employee-system
       type: camel-integration-capability
       image: quay.io/wanaku/camel-integration-capability:latest
       env:
         - name: ROUTES_REF
           value: "datastore://employee-backend.camel.yaml"
-        - name: RULES_REF
-          value: "datastore://employee-backend-rules.yaml"
         - name: DEPENDENCIES
           value: "datastore://employee-backend-dependencies.txt"
 ```
@@ -205,14 +145,15 @@ spec:
 | `SERVICE_CATALOG`        | Name of the service catalog (recommended)                  | `employee-system-v2`           |
 | `SERVICE_CATALOG_SYSTEM` | System name within the catalog (required with above)       | `employee-system`              |
 | `ROUTES_REF`             | Reference to the Camel routes YAML file                    | `datastore://route.camel.yaml` |
-| `RULES_REF`              | Reference to the route exposure rules YAML                 | `datastore://route-rules.yaml` |
 | `DEPENDENCIES`           | Reference to a text file containing a list of dependencies | `datastore://dependencies.txt` |
 | `INIT_FROM`              | Git repository URL to clone during startup                 | `git@github.com:org/repo.git`  |
 | `DATA_DIR`               | Directory where downloaded files are saved                 | `/data`                        |
 | `REPOSITORIES`           | Additional Maven repositories to use                       | `http://repo.com`              |
+| `MCP_PORT`               | Port for the MCP server                                    | `8080`                         |
+| `MCP_TAGS`               | Comma-separated tags for tool filtering                    | `hr,employee`                  |
 
 > [NOTE]
-> `SERVICE_CATALOG` is mutually exclusive with `ROUTES_REF`, `RULES_REF`, and `DEPENDENCIES`.
+> `SERVICE_CATALOG` is mutually exclusive with `ROUTES_REF` and `DEPENDENCIES`.
 
 ### Troubleshooting
 
@@ -225,11 +166,11 @@ Common issues and solutions:
 kubectl exec deployment/camel-integration-capability -- ls -la /data
 ```
 
-**Service not registering:**
+**MCP server not responding:**
 
 ```bash
 # Check environment variables
-kubectl exec deployment/camel-integration-capability -- env | grep -E "(REGISTRATION|TOKEN)"
+kubectl exec deployment/camel-integration-capability -- env | grep -E "(REGISTRATION|MCP)"
 
 # View application logs
 kubectl logs -f deployment/camel-integration-capability -c camel-integration-capability
@@ -245,7 +186,7 @@ kubectl get svc camel-integration-capability
 kubectl describe pod -l app=camel-integration-capability
 
 # Test connectivity
-kubectl run test-pod --rm -it --image=busybox -- telnet camel-integration-capability 9190
+kubectl run test-pod --rm -it --image=busybox -- telnet camel-integration-capability 8080
 ```
 
 ## Designing Routes
@@ -253,251 +194,37 @@ kubectl run test-pod --rm -it --image=busybox -- telnet camel-integration-capabi
 The easiest way to design the routes for this project, is to use a visual editor such as [Kaoto](http://kaoto.io) or
 [Camel Karavan](http://camel.apache.org/karavan) to design the routes.
 
-Those editors should allow you to visualize the route. For instance:
+### ai-tool: Route Format
 
-![Kaoto Route Example](imgs/kaoto.png)
-
-### Camel Routes
-
-Camel routes should be defined in YAML format in the file specified by `--routes-ref`. Example route structure:
+Routes that should be exposed as MCP tools use the `ai-tool:` URI format. This format embeds tool metadata directly in the route definition:
 
 ```yaml
 - route:
-    id: example-route
+    id: get-employee-info
     from:
-      uri: direct
+      uri: ai-tool:get-employee-info
       parameters:
-        name: start
+        description: "Fetches core profile data for a specific employee"
       steps:
-        - log:
-            message: Hello ${body}
-        - setBody:
-            simple: Hello Camel from ${routeId}
+        - toD: https://api.example.com/employees/${header.employeeId}
 ```
 
-### Route Exposure Rules
+The `ai-tool:` prefix tells Camel's MCP server to expose this route as an MCP tool. The tool name, description, and parameters are all defined within the route YAML.
 
-> [TIP]
-> For the complete rules YAML schema reference, see [Rules Schema](rules-schema.md).
+### Standard Routes
 
-Routes can be exposed as MCP tools or resources by defining rules in a YAML file specified by `--rules-ref`.
-This file maps route definitions to tool specifications:
-
-```yaml
-mcp:
-  tools:
-    - initiate-employee-promotion:
-        route:
-          id: "route-3103"
-        description: "Initiate the promotion process for an employee"
-        namespace: hr-operations
-        properties:
-          - name: employee
-            type: string
-            description: The employee to confirm the promotion
-            required: true
-            mapping:
-              type: header
-              name: EMPLOYEE
-    - confirm-employee-promotion:
-        route:
-          id: "route-3104"
-        description: "Confirm the promotion of an employee"
-        namespace: hr-operations
-        properties:
-          - name: employee
-            type: string
-            description: The employee to confirm the promotion
-            required: true
-            mapping:
-              type: header
-              name: EMPLOYEE
-  resources:
-    - employee-performance-history:
-        route:
-          id: "route-3105"
-        description: "Obtain the employee performance history"
-        namespace: hr-data
-```
-
-#### Namespace Configuration
-
-Each tool or resource can optionally specify a `namespace` to organize routes within the Wanaku router:
-
-- **`namespace`**: The namespace where the tool or resource will be registered (optional)
-  - If not specified, the route is registered in the default namespace
-  - Useful for organizing related tools/resources together
-  - Example: `namespace: hr-operations`
-
-For resource routes, the code doesn't necessarily run the route. Instead, it
-uses only the endpoint URI for accessing it via a consumer template. For resources
-the data MUST be convertable to a Java String.
-
-> [IMPORTANT]
-> Routes serving resources MUST have their auto-start disabled.
-
-#### Parameter to Header Mapping
-
-The capability automatically maps MCP tool parameters to Apache Camel headers. There are two mapping strategies:
-
-##### Automatic Mapping (Default)
-
-When no `properties` are defined in the tool definition, **all MCP parameters are automatically mapped to Camel headers** with a `Wanaku.` prefix.
-
-**Example tool definition without properties:**
-
-```yaml
-mcp:
-  tools:
-    - get-employee-info:
-        route:
-          id: "get-employee-route"
-        description: "Retrieve employee information"
-```
-
-**How it works:**
-
-When an AI agent invokes this tool with parameters like:
-
-```json
-{
-  "employeeId": "12345",
-  "includeHistory": "true"
-}
-```
-
-The capability automatically creates these Camel headers:
-
-- `Wanaku.employeeId` → `"12345"`
-- `Wanaku.includeHistory` → `"true"`
-
-**Accessing parameters in Camel routes:**
-
-```yaml
-- route:
-    id: get-employee-route
-    from:
-      uri: direct:get-employee-route
-      steps:
-        - log:
-            message: "Fetching employee ${header.Wanaku.employeeId}"
-        - toD: "https://api.example.com/employees/${header.Wanaku.employeeId}?history=${header.Wanaku.includeHistory}"
-```
-
-> [!NOTE]
-> Automatic mapping is ideal for quick prototypes or when you want all parameters passed through without explicit control.
-
-##### Explicit Mapping (Filtered)
-
-When you define `properties` with `mapping` elements, only those explicitly mapped parameters are passed to the Camel route.
-This provides fine-grained control over parameter names and validation.
-
-**Example tool definition with explicit mappings:**
-
-```yaml
-mcp:
-  tools:
-    - initiate-employee-promotion:
-        route:
-          id: "route-3103"
-        description: "Initiate the promotion process for an employee"
-        properties:
-          - name: employee
-            type: string
-            description: The employee ID to promote
-            required: true
-            mapping:
-              type: header
-              name: EMPLOYEE
-          - name: newLevel
-            type: string
-            description: The new organizational level
-            required: true
-            mapping:
-              type: header
-              name: NEW_LEVEL
-```
-
-**How it works:**
-
-When invoked with parameters:
-
-```json
-{
-  "employee": "EMP-789",
-  "newLevel": "Senior Manager"
-}
-```
-
-The capability creates these Camel headers:
-
-- `EMPLOYEE` → `"EMP-789"`
-- `NEW_LEVEL` → `"Senior Manager"`
-
-**Accessing parameters in Camel routes:**
-
-```yaml
-- route:
-    id: route-3103
-    from:
-      uri: direct:route-3103
-      steps:
-        - log:
-            message: "Promoting ${header.EMPLOYEE} to ${header.NEW_LEVEL}"
-        - setHeader:
-            name: CamelHttpMethod
-            constant: POST
-        - toD: "https://hr-api.example.com/promotions?emp=${header.EMPLOYEE}&level=${header.NEW_LEVEL}"
-```
-
-> [!IMPORTANT]
-> With explicit mapping, **only** the defined properties are mapped. Any additional parameters sent by the AI agent will be ignored.
-
-##### Mapping Configuration
-
-The `mapping` element supports the following options:
-
-- **`type`**: The mapping type
-  - `header`: Map to a Camel header (most common)
-  - Additional types may be supported in future versions
-- **`name`**: The target header name in the Camel exchange
-
-##### Choosing a Mapping Strategy
-
-| Strategy | When to Use | Pros | Cons |
-|----------|-------------|------|------|
-| **Automatic** | Quick prototypes, flexible parameter sets | Simple configuration, all parameters available | Less control, `Wanaku.` prefix required in routes |
-| **Explicit** | Production use, strict API contracts | Full control over naming, validation, documentation | More verbose configuration, must update for new parameters |
-
-**Best Practices:**
-
-1. **Use automatic mapping** during development and prototyping
-2. **Switch to explicit mapping** for production deployments when you need:
-   - Custom header names without prefixes
-   - Parameter validation and required fields
-   - Clear API documentation for tool consumers
-   - To restrict which parameters are passed to backend systems
-3. **Never mix both**: Either define properties with mappings (explicit) OR omit properties entirely (automatic)
+Routes that should NOT be exposed as MCP tools use standard Camel URIs (e.g., `direct:`, `timer:`). These routes can still be invoked internally by `ai-tool:` routes.
 
 ### Handling Dependencies
 
 The capability only comes with a subset of the Apache Camel dependencies.
-As such, when running it for the first time, the capability will automatically download the dependencies required for the
-integration.
-
-However, external dependencies, such as those containing the beans for your integration,
-will have to be provided externally.
-You can do so by providing a list of external dependencies to download and store that list in a text file.
-The capability can automatically download and include on the classpath all these dependencies.
-
-For instance, to include the `com.mycompany:beans-app1:2.0.0` and `com.mycompany:beans-support:1.5.0` dependencies, you can create a text file
-with the following contents:
+External dependencies can be provided in a text file:
 
 ```text
-com.mycompany:beans-app1:2.0.0,com.mycompany:beans-support:1.5.0
+org.apache.camel:camel-http:4.22.0,org.apache.camel:camel-jackson:4.22.0
 ```
 
-Then publish it to Wanaku's Data Store (or, git, if using the git initializer) and refer to the file accordingly
+Then reference the file:
 
 - `--dependencies datastore://filename.txt` if using the data store
 - `--dependencies file:///path/to/filename.txt` if using the git initializer
@@ -508,15 +235,12 @@ Then publish it to Wanaku's Data Store (or, git, if using the git initializer) a
 
 ## Running the Capability and Exposing Camel Routes
 
-After designing the routes, you will need to have the capability use them and expose them as MCP
-tools or MCP resources. To do so, the capability needs to have access to the files.
-
 Route files can be provided to the capability using one of the following methods:
 
-1. **From a Wanaku Service Catalog** (recommended): Bundles routes, rules, and dependencies into a single versioned artifact
-2. **From Wanaku's Data Store**: Uses Wanaku's Data Store to download individual files after registration
+1. **From a Wanaku Service Catalog** (recommended): Bundles routes and dependencies into a single versioned artifact
+2. **From Wanaku's Data Store**: Uses Wanaku's Data Store to download individual files
 3. **Built-in Git initialization**: Use `--init-from` to clone a repository during startup
-4. **Init container**: Use a separate container to clone files before the main container starts (see example below)
+4. **Init container**: Use a separate container to clone files before the main container starts
 5. **Volume mounts**: Mount ConfigMaps or persistent volumes containing route files
 
 ### Using a Service Catalog
@@ -524,77 +248,35 @@ Route files can be provided to the capability using one of the following methods
 > [TIP]
 > For a complete guide on creating and publishing service catalogs, see the [Service Catalog Guide](service-catalog-guide.md).
 
-This is the recommended way to obtain route files. A service catalog is a versioned ZIP archive stored in Wanaku
-that bundles all resources (routes, rules, and optionally dependencies) for one or more systems. Using a catalog
-simplifies deployment because a single `--service-catalog` parameter replaces `--routes-ref`, `--rules-ref`, and
-`--dependencies`.
-
-The catalog ZIP must contain an `index.properties` file mapping system names to their resources:
-
-```properties
-catalog.name=employee-system-v2
-catalog.services=employee-system
-catalog.routes.employee-system=employee-system/routes.camel.yaml
-catalog.rules.employee-system=employee-system/rules.wanaku-rules.yaml
-catalog.dependencies.employee-system=employee-system/dependencies.txt
-```
-
-When running manually:
+This is the recommended way to obtain route files. A service catalog is a versioned ZIP archive stored in Wanaku that bundles routes and optionally dependencies for one or more systems.
 
 ```bash
-java -jar target/camel-integration-capability-main-0.1.1-jar-with-dependencies.jar \
+java -jar target/camel-integration-capability-main-*-jar-with-dependencies.jar \
   --registration-url http://localhost:8080 \
-  --registration-announce-address localhost \
-  --grpc-port 9190 \
   --name employee-system \
   --service-catalog employee-system-v2 \
-  --service-catalog-system employee-system \
-  --client-id wanaku-service \
-  --client-secret aBqsU3EzUPCHumf9sTK5sanxXkB0yFtv
+  --service-catalog-system employee-system
 ```
-
-The capability will download the catalog after registration, extract the files for the specified system,
-and start serving the routes automatically. Failed downloads are retried with exponential backoff.
 
 ### Using Wanaku's Data Store
 
-In this mode, the capability downloads individual files directly from Wanaku after registration.
-This is useful during development or when you need fine-grained control over each resource.
-
 ```bash
-java -jar target/camel-integration-capability-main-0.1.1-jar-with-dependencies.jar \
+java -jar target/camel-integration-capability-main-*-jar-with-dependencies.jar \
   --registration-url http://localhost:8080 \
-  --registration-announce-address localhost \
-  --grpc-port 9190 \
   --name camel-core \
   --routes-ref datastore://promote-employee.camel.yaml \
-  --rules-ref datastore://promote-employee-rules.yaml \
   --dependencies datastore://promote-employee-dependencies.txt \
-  --token-endpoint http://localhost:8543/realms/my-realm/ \
-  --client-id wanaku-service \
-  --client-secret aBqsU3EzUPCHumf9sTK5sanxXkB0yFtv \
-  --data-dir /tmp
+  --data-dir /tmp/camel-data
 ```
 
 ### Using Git Initialization
 
-To clone a Git repository containing routes and reference files directly:
-
 ```bash
-java -jar target/camel-integration-capability-main-0.1.1-jar-with-dependencies.jar \
+java -jar target/camel-integration-capability-main-*-jar-with-dependencies.jar \
   --registration-url http://localhost:8080 \
-  --registration-announce-address localhost \
-  --grpc-port 9190 \
   --name camel-core \
   --init-from git@github.com:wanaku-ai/wanaku-recipes.git \
   --routes-ref file:///tmp/cloned-repo/routes/promote-employee.camel.yaml \
-  --rules-ref file:///tmp/cloned-repo/rules/promote-employee-rules.yaml \
   --dependencies file:///tmp/cloned-repo/dependencies/promote-employee-dependencies.txt \
-  --token-endpoint http://localhost:8543/realms/my-realm/ \
-  --client-id wanaku-service \
-  --client-secret aBqsU3EzUPCHumf9sTK5sanxXkB0yFtv \
   --data-dir /tmp
 ```
-
-The `--init-from` option clones the repository to `/tmp/cloned-repo` during startup.
-Files are then referenced using `file://` URIs with absolute paths.
