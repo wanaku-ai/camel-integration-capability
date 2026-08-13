@@ -45,13 +45,15 @@ class WanakuCamelRouteLoaderIT {
                 ResourceType.ROUTES_REF, routesFile,
                 ResourceType.DEPENDENCY_REF, dependenciesFile);
 
-        camelManager = new WanakuCamelManager(downloadedResources, null);
+        camelManager = new WanakuCamelManager(
+                downloadedResources, null, null, 0, WanakuCamelManager.RouteLoadingFailurePolicy.FAIL_FAST);
+        camelManager.start();
     }
 
     @AfterAll
-    static void tearDown() {
+    static void tearDown() throws Exception {
         if (camelManager != null) {
-            camelManager.getCamelContext().stop();
+            camelManager.stop();
         }
     }
 
@@ -133,7 +135,7 @@ class WanakuCamelRouteLoaderIT {
     }
 
     @Test
-    void emptyRouteDefinitionsCanContinueInLenientMode() {
+    void emptyRouteDefinitionsCanContinueInLenientMode() throws Exception {
         Path routesFile = Path.of("src", "test", "resources", "empty-routes.camel.yaml");
         Path dependenciesFile = Path.of("src", "test", "resources", "test-routes-dependencies.txt");
 
@@ -142,15 +144,16 @@ class WanakuCamelRouteLoaderIT {
                 ResourceType.DEPENDENCY_REF, dependenciesFile);
 
         WanakuCamelManager lenientCamelManager = new WanakuCamelManager(
-                downloadedResources, null, WanakuCamelManager.RouteLoadingFailurePolicy.LOG_AND_CONTINUE);
+                downloadedResources, null, null, 0, WanakuCamelManager.RouteLoadingFailurePolicy.LOG_AND_CONTINUE);
 
         try {
+            lenientCamelManager.start();
             CamelContext context = lenientCamelManager.getCamelContext();
             assertNotNull(context, "CamelContext should still be created in lenient mode");
             assertTrue(context.isStarted(), "CamelContext should start in lenient mode");
             assertEquals(0, context.getRoutes().size(), "No routes should be loaded from an empty file");
         } finally {
-            lenientCamelManager.getCamelContext().stop();
+            lenientCamelManager.stop();
         }
     }
 }

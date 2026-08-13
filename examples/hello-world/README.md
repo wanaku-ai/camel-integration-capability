@@ -13,7 +13,6 @@ The example exposes a single route that:
 ## Files
 
 - **hello-quote.camel.yaml**: A simple Camel route that processes greeting messages
-- **hello-quote-rules.yaml**: MCP tool configuration exposing the route to AI agents
 
 ## Running the Example
 
@@ -21,64 +20,29 @@ The example exposes a single route that:
 
 - Java 21 or higher
 - The Camel Integration Capability JAR built or downloaded
-- A running Wanaku MCP Router instance
-- OAuth2/OIDC credentials (or authentication disabled in Wanaku)
+- A running Wanaku server instance (for datastore mode) or use local files
 
 ### Start the Service
 
 ```bash
 java -jar ../../camel-integration-capability-runtimes/camel-integration-capability-main/target/camel-integration-capability-main-*-jar-with-dependencies.jar \
   --registration-url http://localhost:8080 \
-  --registration-announce-address localhost \
   --name hello-world \
-  --routes-ref file://$(pwd)/hello-quote.camel.yaml \
-  --rules-ref file://$(pwd)/hello-quote-rules.yaml \
-  --client-id wanaku-service \
-  --client-secret your-secret
+  --routes-ref file://$(pwd)/hello-quote.camel.yaml
 ```
 
 ### Test via AI Agent
 
-Once registered with Wanaku, AI agents can invoke the `sends-greeting` tool:
-
-```text
-AI: Send a greeting with message "World"
-```
-
-Expected response:
-
-```text
-Hello World from route-3104
-```
+Once the MCP server is running, AI agents can invoke the tool through the Wanaku MCP Router.
 
 ## Key Concepts
 
-### Automatic Parameter Mapping
+### ai-tool: Route Format
 
-This example uses **automatic parameter mapping**. The MCP parameter `wanaku_body` is automatically mapped to the Camel message body because it follows the naming convention `wanaku_body`.
-
-The Camel route accesses it via `${body}`:
-
-```yaml
-- log:
-    message: Hello ${body}
-```
-
-### Route Exposure
-
-The rules file defines which routes are exposed as MCP tools:
-
-```yaml
-tools:
-  - sends-greeting:
-      route:
-        id: "route-3104"
-```
-
-This makes the route available to AI agents via the Wanaku MCP Router.
+Routes that use the `ai-tool:` URI format are automatically exposed as MCP tools by the built-in MCP server. The tool name, description, and parameters are defined within the route YAML.
 
 ## Next Steps
 
-- Try the [Employee System Example](../employee-system) for a more realistic scenario with explicit parameter mapping
+- Try the [Employee System Example](../employee-system) for a more realistic scenario with multiple routes
 - Learn about [Service Catalogs](../service-catalog) for production deployments
 - Review the [Usage Guide](../../docs/usage.md) for detailed configuration options

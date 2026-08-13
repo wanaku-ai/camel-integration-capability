@@ -38,11 +38,21 @@
             <version>${wanaku-capabilities-sdk.version}</version>
         </dependency>
 
-        <!-- CLI -->
+        <!-- Camel -->
         <dependency>
             <groupId>org.apache.camel</groupId>
             <artifactId>camel-main</artifactId>
         </dependency>
+        <dependency>
+            <groupId>org.apache.camel</groupId>
+            <artifactId>camel-mcp-server</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.camel</groupId>
+            <artifactId>camel-platform-http-main</artifactId>
+        </dependency>
+
+        <!-- CLI -->
         <dependency>
             <groupId>info.picocli</groupId>
             <artifactId>picocli</artifactId>

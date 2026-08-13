@@ -2,301 +2,220 @@
 
 This guide helps you upgrade between major versions of the Camel Integration Capability.
 
-## Upgrading from 0.0.9 to 0.1.0
+## Upgrading from 0.1.x to 0.2.0
 
-Version 0.1.0 introduces significant architectural changes, particularly around project structure and recommended deployment patterns.
+Version 0.2.0 is a major architectural change. The custom gRPC bridge, authentication layer, and rules YAML files have been removed. The capability now uses Apache Camel 4.22's built-in MCP server with the `ai-tool:` route format.
 
-### 1. Multi-Module Restructuring
+### 1. Architecture Changes
 
-The project was split into multiple Maven modules. This affects Maven coordinates and artifact selection.
+**Before (0.1.x):** CIC registered with Wanaku via gRPC, used OAuth2 for authentication, and required separate rules YAML files to expose routes as MCP tools.
 
-**Before (0.0.9):**
+**After (0.2.0):** CIC downloads routes and runs them using Camel Main. Routes using the `ai-tool:` URI format are automatically exposed as MCP tools via a built-in HTTP/SSE MCP server.
 
-```xml
-<dependency>
-    <groupId>ai.wanaku</groupId>
-    <artifactId>camel-integration-capability</artifactId>
-    <version>0.0.9</version>
-</dependency>
+### 2. Rules YAML to ai-tool: Migration
+
+The most significant change is the migration from separate rules YAML files to the `ai-tool:` route format. Tool metadata is now embedded directly in the route definition.
+
+**Before (rules YAML + separate route):**
+
+```yaml
+# rules.yaml
+mcp:
+  tools:
+    - get-employee-info:
+        route:
+          id: "get-employee-route"
+        description: "Retrieve employee information by ID"
+        properties:
+          - name: employeeId
+            type: string
+            description: The employee ID
+            required: true
+            mapping:
+              type: header
+              name: EMPLOYEE_ID
 ```
 
-**After (0.1.0):**
-
-Choose the appropriate module based on your use case:
-
-**Standalone CLI application:**
-
-```xml
-<dependency>
-    <groupId>ai.wanaku</groupId>
-    <artifactId>camel-integration-capability-main</artifactId>
-    <version>0.1.0</version>
-</dependency>
+```yaml
+# routes.camel.yaml
+- route:
+    id: get-employee-route
+    from:
+      uri: direct:get-employee-route
+      steps:
+        - toD: https://api.example.com/employees/${header.EMPLOYEE_ID}
 ```
 
-**SPI plugin for existing Camel apps:**
+**After (single ai-tool: route):**
 
-```xml
-<dependency>
-    <groupId>ai.wanaku</groupId>
-    <artifactId>camel-integration-capability-plugin</artifactId>
-    <version>0.1.0</version>
-</dependency>
+```yaml
+# routes.camel.yaml
+- route:
+    id: get-employee-info
+    from:
+      uri: ai-tool:get-employee-info
+      parameters:
+        description: "Retrieve employee information by ID"
+      steps:
+        - toD: https://api.example.com/employees/${header.employeeId}
 ```
 
-**Shared library/common utilities:**
+**Key differences:**
 
-```xml
-<dependency>
-    <groupId>ai.wanaku</groupId>
-    <artifactId>camel-integration-capability-common</artifactId>
-    <version>0.1.0</version>
-</dependency>
+- The `ai-tool:` URI replaces `direct:` for routes exposed as MCP tools
+- Tool description is defined as a route parameter, not in a separate file
+- Parameter mapping is handled automatically by the MCP server
+- No separate rules file is needed
+
+### 3. Removed CLI Parameters
+
+The following CLI parameters have been removed:
+
+| Removed Parameter | Reason |
+|-------------------|--------|
+| `--registration-announce-address` | No more service registration |
+| `--grpc-port` | No more gRPC server |
+| `--rules-ref` | Rules embedded in routes via `ai-tool:` format |
+| `--token-endpoint` | No more OAuth2 authentication |
+| `--client-id` | No more OAuth2 authentication |
+| `--client-secret` | No more OAuth2 authentication |
+| `--initial-delay` | No more registration retry loop |
+| `--period` | No more registration retry loop |
+
+### 4. New CLI Parameters
+
+| New Parameter | Default | Description |
+|---------------|---------|-------------|
+| `--mcp-port` | `8080` | Port for the built-in MCP server (HTTP/SSE transport) |
+| `--mcp-tags` | (none) | Comma-separated tags for filtering which `ai-tool:` routes to expose |
+
+### 5. Removed Modules
+
+The following modules have been removed:
+
+- **camel-integration-capability-plugin**: The SPI plugin for embedding into existing Camel applications
+- **camel-integration-capability-common**: Shared gRPC services and models
+
+The project now has a simpler structure focused on the standalone CLI application.
+
+### 6. Docker Image Changes
+
+**Environment variables removed:**
+
+- `REGISTRATION_ANNOUNCE_ADDRESS`
+- `GRPC_PORT`
+- `ROUTES_RULES`
+- `TOKEN_ENDPOINT`
+- `CLIENT_ID`
+- `CLIENT_SECRET`
+
+**Environment variables added:**
+
+- `MCP_TAGS` -- Comma-separated tags for tool filtering
+- `MCP_PORT` -- MCP server port (default: 8080)
+
+**Port change:**
+
+- Before: `EXPOSE 9190` (gRPC)
+- After: `EXPOSE 8080` (MCP HTTP/SSE)
+
+### 7. Service Catalog Changes
+
+Service catalogs no longer require a `catalog.rules.<system>` entry. The rules are now embedded in the route files themselves.
+
+**Before:**
+
+```properties
+catalog.name=employee-system-v2
+catalog.services=employee-system
+catalog.routes.employee-system=employee-system/routes.camel.yaml
+catalog.rules.employee-system=employee-system/rules.wanaku-rules.yaml
+catalog.dependencies.employee-system=employee-system/dependencies.txt
 ```
 
-The JAR file names also changed:
+**After:**
 
-- Main: `camel-integration-capability-main-0.1.0-jar-with-dependencies.jar`
-- Plugin: `camel-integration-capability-plugin-0.1.0-shaded.jar`
-
-### 2. Wanaku SDK Upgrade
-
-The Wanaku Capabilities SDK was upgraded from 0.0.x to 0.1.0. This introduces breaking changes in registration APIs.
-
-**Impact:**
-
-- Internal registration logic updated to use new SDK APIs
-- No action required for CLI users
-- Plugin users: ensure your Camel app uses compatible SDK versions
-
-### 3. Service Catalogs (Recommended Approach)
-
-Version 0.1.0 introduces **service catalogs** as the preferred way to package and distribute routes, rules, and dependencies.
-
-**Before (0.0.9):** Individual file references
-
-```bash
-java -jar camel-integration-capability.jar \
-  --routes-ref file:///path/to/routes.yaml \
-  --rules-ref file:///path/to/rules.yaml \
-  --dependencies file:///path/to/deps.txt
+```properties
+catalog.name=employee-system-v2
+catalog.services=employee-system
+catalog.routes.employee-system=employee-system/routes.camel.yaml
+catalog.dependencies.employee-system=employee-system/dependencies.txt
 ```
 
-**After (0.1.0):** Service catalog
+### 8. Kubernetes Deployment Changes
 
-```bash
-java -jar camel-integration-capability-main-*-jar-with-dependencies.jar \
-  --service-catalog employee-system-v2 \
-  --service-catalog-system employee-system
+**Before:**
+
+```yaml
+capabilities:
+  - name: employee-system
+    type: camel-integration-capability
+    image: quay.io/wanaku/camel-integration-capability:latest
+    env:
+      - name: SERVICE_CATALOG
+        value: "employee-system-v2"
+      - name: SERVICE_CATALOG_SYSTEM
+        value: "employee-system"
+      - name: CLIENT_ID
+        valueFrom:
+          secretKeyRef:
+            name: wanaku-credentials
+            key: client-id
+      - name: CLIENT_SECRET
+        valueFrom:
+          secretKeyRef:
+            name: wanaku-credentials
+            key: client-secret
 ```
 
-Individual file references (`--routes-ref`, `--rules-ref`, `--dependencies`) are still supported for development and testing.
+**After:**
 
-**Creating a service catalog:**
-
-1. Create a directory structure:
-
-   ```text
-   my-catalog/
-   ├── index.properties
-   └── employee-system/
-       ├── routes.camel.yaml
-       ├── rules.wanaku-rules.yaml
-       └── dependencies.txt
-   ```
-
-2. Define `index.properties`:
-
-   ```properties
-   catalog.name=my-catalog-v1
-   catalog.services=employee-system
-   catalog.routes.employee-system=employee-system/routes.camel.yaml
-   catalog.rules.employee-system=employee-system/rules.wanaku-rules.yaml
-   catalog.dependencies.employee-system=employee-system/dependencies.txt
-   ```
-
-3. Package as a ZIP:
-
-   ```bash
-   cd my-catalog && zip -r my-catalog-v1.zip *
-   ```
-
-4. Upload to a DataStore or file server and reference by name.
-
-See the [examples/service-catalog](../examples/service-catalog) directory for a complete working example.
-
-### 4. Optional Authentication
-
-The `--client-secret` parameter is now **optional**. Authentication can be disabled in the Wanaku MCP Router.
-
-**Before (0.0.9):** Always required
-
-```bash
-java -jar camel-integration-capability.jar \
-  --client-id wanaku-service \
-  --client-secret your-secret
+```yaml
+capabilities:
+  - name: employee-system
+    type: camel-integration-capability
+    image: quay.io/wanaku/camel-integration-capability:latest
+    env:
+      - name: SERVICE_CATALOG
+        value: "employee-system-v2"
+      - name: SERVICE_CATALOG_SYSTEM
+        value: "employee-system"
+      - name: MCP_PORT
+        value: "8080"
 ```
 
-**After (0.1.0):** Optional
+### 9. Health Check Changes
 
-```bash
-# With authentication
-java -jar camel-integration-capability-main-*-jar-with-dependencies.jar \
-  --client-id wanaku-service \
-  --client-secret your-secret
+**Before:** gRPC health probes on port 9190
 
-# Without authentication (if Wanaku is configured to allow it)
-java -jar camel-integration-capability-main-*-jar-with-dependencies.jar \
-  --client-id wanaku-service
-```
-
-### 5. Health Checks
-
-Version 0.1.0 adds gRPC health check support. The gRPC server now starts **before** registration to ensure health probes succeed.
-
-**Impact:**
-
-- Kubernetes/OpenShift deployments can now use gRPC health probes
-- No configuration changes required
-- Health endpoint: gRPC Health Checking Protocol on the gRPC port
-
-**Example Kubernetes health probe:**
+**After:** HTTP probes on the MCP server port (default 8080)
 
 ```yaml
 livenessProbe:
-  grpc:
-    port: 9190
-  initialDelaySeconds: 10
+  httpGet:
+    path: /
+    port: 8080
+  initialDelaySeconds: 15
   periodSeconds: 10
 ```
 
-### 6. Route Loading Policies
-
-Version 0.1.0 introduces configurable route loading error handling.
-
-**Behavior:**
-
-- **Fail-fast (default):** Application exits if any route fails to load
-- **Log-and-continue:** Logs errors but continues with remaining routes
-
-**Configuration:**
-Set via environment variable or system property (exact mechanism depends on deployment mode).
-
-### 7. Breaking Changes
-
-#### Docker Image
-
-The Docker image entry point was updated to use the new JAR name:
-
-**Before (0.0.9):**
-
-```dockerfile
-ENTRYPOINT ["java", "-jar", "camel-integration-capability.jar"]
-```
-
-**After (0.1.0):**
-
-```dockerfile
-ENTRYPOINT ["java", "-jar", "camel-integration-capability-main.jar"]
-```
-
-If you have custom Docker images or scripts referencing the old JAR name, update them accordingly.
-
-#### Artifact Coordinates
-
-As described in section 1, all Maven coordinates changed. Update your `pom.xml` or build scripts.
-
-#### Plugin Mode
-
-The plugin JAR is now a separate artifact (`camel-integration-capability-plugin`) with a shaded classifier. Update your classpath configuration if embedding the plugin in an existing Camel application.
-
-### 8. Deprecated Features
-
-None. All features from 0.0.9 are still supported in 0.1.0, but service catalogs are now the recommended approach.
-
-### 9. New Features
-
-- **Service catalogs:** Versioned, self-contained route packages
-- **Health checks:** gRPC health probes for Kubernetes/OpenShift
-- **Exponential backoff:** Retry logic for resource downloads
-- **Spotless formatting:** Code quality enforcement
-
 ### 10. Upgrade Checklist
 
-- [ ] Update Maven coordinates in `pom.xml` (use `-main`, `-plugin`, or `-common` as appropriate)
-- [ ] Update JAR file name in scripts, Docker images, and deployment manifests
-- [ ] Consider migrating to service catalogs for production deployments
-- [ ] Add gRPC health probes to Kubernetes/OpenShift deployments
-- [ ] Test authentication with and without `--client-secret` (if applicable)
-- [ ] Verify route loading behavior (fail-fast vs log-and-continue)
-- [ ] Update any custom integrations using Wanaku SDK 0.0.x to 0.1.0
+- [ ] Convert rules YAML files to `ai-tool:` route format
+- [ ] Remove `--rules-ref` from CLI arguments and deployment manifests
+- [ ] Remove authentication parameters (`--client-id`, `--client-secret`, `--token-endpoint`)
+- [ ] Remove `--grpc-port` and `--registration-announce-address`
+- [ ] Add `--mcp-port` if a non-default port is needed
+- [ ] Add `--mcp-tags` if tag-based filtering is needed
+- [ ] Update Docker port mapping from 9190 to 8080
+- [ ] Update Kubernetes health probes from gRPC to HTTP
+- [ ] Update service catalog `index.properties` to remove `catalog.rules.*` entries
+- [ ] Remove the plugin module dependency if used
+- [ ] Test all routes with the new format
 
-## Upgrading from 0.1.0 to 0.1.1
+## Upgrading from 0.0.9 to 0.1.0
 
-Version 0.1.1 promotes service catalogs as the recommended deployment model, makes authentication fully optional, and adds configurable Keycloak realm support.
-
-### 1. Service Catalogs (Recommended)
-
-Service catalogs are now the preferred way to package routes, rules, and dependencies. Individual file references (`--routes-ref`, `--rules-ref`, `--dependencies`) are still supported but should be reserved for local development.
-
-**Before (individual file references):**
-
-```bash
-java -jar camel-integration-capability-main-*-jar-with-dependencies.jar \
-  --routes-ref file:///path/to/routes.camel.yaml \
-  --rules-ref file:///path/to/rules.yaml \
-  --dependencies file:///path/to/deps.txt
-```
-
-**After (service catalog):**
-
-```bash
-java -jar camel-integration-capability-main-*-jar-with-dependencies.jar \
-  --service-catalog employee-system-v2 \
-  --service-catalog-system employee-system
-```
-
-See the [Service Catalog Guide](service-catalog-guide.md) for creating and publishing catalogs.
-
-### 2. Optional Authentication
-
-The `--client-secret` parameter is no longer required. When the Wanaku MCP Router is configured without authentication, you can omit `--client-secret` entirely while still providing `--client-id` (used as the service identifier).
-
-```bash
-# Without authentication (if Wanaku allows unauthenticated access)
-java -jar camel-integration-capability-main-*-jar-with-dependencies.jar \
-  --client-id wanaku-service \
-  --service-catalog my-catalog-v1 \
-  --service-catalog-system my-system
-```
-
-### 3. Configurable Keycloak Realm
-
-The Keycloak realm name is fully configurable via the `--token-endpoint` parameter. There is no hardcoded default realm; use whatever realm your Keycloak instance defines.
-
-```bash
---token-endpoint http://keycloak:8080/realms/my-realm/protocol/openid-connect/token
-```
-
-### 4. Bug Fixes
-
-- Fixed health check race condition: gRPC server now starts before registration (#82)
-- Fixed dependencies file parser ignoring lines after the first entry
-- Improved route loading error messages
-
-### 5. Dependency Updates
-
-- Wanaku Capabilities SDK: 0.1.0 → 0.1.1
-- SLF4J: 2.0.17 → 2.0.18
-- Jackson: 2.21.2 → 2.21.3
-- Spotless Maven Plugin: 3.4.0 → 3.5.1
-
-### 6. Upgrade Checklist
-
-- [ ] Migrate from individual file references to service catalogs for production deployments
-- [ ] Remove `--client-secret` if running without authentication
-- [ ] Update `--token-endpoint` to use your actual Keycloak realm name (no default realm)
-- [ ] Update Wanaku SDK dependency to 0.1.1 if using the plugin mode
+See the [0.1.0 migration section in git history](https://github.com/wanaku-ai/camel-integration-capability) for details on the multi-module restructuring and service catalog introduction.
 
 ## Need Help?
 

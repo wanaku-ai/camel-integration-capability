@@ -39,7 +39,3 @@ distributions:
     artifacts:
       - path: ./camel-integration-capability-runtimes/camel-integration-capability-main/target/camel-integration-capability-main-{{projectVersion}}-jar-with-dependencies.jar
     type: SINGLE_JAR
-  camel-integration-capability-plugin:
-    artifacts:
-      - path: ./camel-integration-capability-runtimes/camel-integration-capability-plugin/target/camel-integration-capability-plugin-{{projectVersion}}-shaded.jar
-    type: SINGLE_JAR

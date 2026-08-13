@@ -20,7 +20,6 @@ package ai.wanaku.capability.camel;
 import java.nio.file.Path;
 import java.util.Map;
 import ai.wanaku.capabilities.sdk.runtime.camel.downloader.ResourceType;
-import ai.wanaku.capabilities.sdk.runtime.camel.exceptions.RouteLoadingException;
 
 import org.junit.jupiter.api.Test;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
@@ -37,7 +36,11 @@ class WanakuCamelRouteLoaderFailIT {
                 ResourceType.ROUTES_REF, routesFile,
                 ResourceType.DEPENDENCY_REF, dependenciesFile);
 
-        assertThrows(RouteLoadingException.class, () -> new WanakuCamelManager(downloadedResources, null));
+        assertThrows(Exception.class, () -> {
+            WanakuCamelManager manager = new WanakuCamelManager(
+                    downloadedResources, null, null, 0, WanakuCamelManager.RouteLoadingFailurePolicy.FAIL_FAST);
+            manager.start();
+        });
     }
 
     @Test
@@ -49,7 +52,11 @@ class WanakuCamelRouteLoaderFailIT {
                 ResourceType.ROUTES_REF, routesFile,
                 ResourceType.DEPENDENCY_REF, dependenciesFile);
 
-        assertDoesNotThrow(() -> new WanakuCamelManager(
-                downloadedResources, null, WanakuCamelManager.RouteLoadingFailurePolicy.LOG_AND_CONTINUE));
+        assertDoesNotThrow(() -> {
+            WanakuCamelManager manager = new WanakuCamelManager(
+                    downloadedResources, null, null, 0, WanakuCamelManager.RouteLoadingFailurePolicy.LOG_AND_CONTINUE);
+            manager.start();
+            manager.stop();
+        });
     }
 }

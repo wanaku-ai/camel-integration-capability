@@ -2,7 +2,7 @@
 
 ![License](https://img.shields.io/badge/license-Apache%202.0-blue.svg)
 ![Java](https://img.shields.io/badge/java-21%2B-orange.svg)
-![Camel](https://img.shields.io/badge/Apache%20Camel-4.18.2-red.svg)
+![Camel](https://img.shields.io/badge/Apache%20Camel-4.22-red.svg)
 
 A capability service for the [Wanaku MCP Router](https://wanaku.ai) that enables AI agents to interact with backend systems through dynamically executed [Apache Camel](https://camel.apache.org) routes.
 
@@ -10,46 +10,34 @@ A capability service for the [Wanaku MCP Router](https://wanaku.ai) that enables
 
 The Integration Capability for Apache Camel bridges AI agents with enterprise integration patterns.
 
-It exposes Apache Camel routes as MCP (Model Context Protocol) tools and resources, allowing AI agents to perform complex backend operations through standardized gRPC interfaces.
+It downloads Apache Camel routes and runs them using Camel's built-in MCP server. Routes that use the `ai-tool:` URI format are automatically exposed as MCP tools via HTTP/SSE transport, allowing AI agents to perform complex backend operations.
 
 **Key Use Cases:**
 
 - Enable AI agents to query databases, CRMs, or inventory systems
 - Orchestrate multi-step business workflows through natural language
 - Integrate AI capabilities with existing enterprise service buses
-- Provide controlled, rule-based access to backend APIs for AI agents
 
 ## Project Structure
 
 ```text
 camel-integration-capability/
-├── camel-integration-capability-common/           # Shared utilities, models, gRPC services
 └── camel-integration-capability-runtimes/
-    ├── camel-integration-capability-plugin/       # SPI plugin for existing Camel apps
     └── camel-integration-capability-main/         # Standalone CLI application
 ```
-
-## Deployment Options
-
-| Option                             | Use Case                       | Configuration         |
-|------------------------------------|--------------------------------|-----------------------|
-| **[Standalone](docs/usage.md)**    | Dedicated service deployment   | CLI arguments         |
-| **[Plugin](docs/plugin-usage.md)** | Embed into existing Camel apps | Environment variables |
 
 ## Architecture Overview
 
 ```mermaid
 graph TB
     A[AI Agent/LLM] -->|MCP Protocol| B[Wanaku MCP Router]
-    B -->|gRPC| C[Camel Integration Capability]
-    C -->|OAuth2/OIDC| B
+    B -->|HTTP/SSE| C[Camel Integration Capability]
     C -->|Execute| E[Apache Camel Routes]
     E -->|HTTP/REST| F[Backend APIs]
     E -->|Database| G[Data Sources]
     E -->|Message Queue| H[Messaging Systems]
 
-    I[Service Catalog] -.->|Routes, Rules & Dependencies| C
-    J[DataStore Service] -.->|Individual Resources| C
+    I[Service Catalog] -.->|Routes & Dependencies| C
 ```
 
 ## Quick Start
@@ -58,8 +46,7 @@ graph TB
 
 - Java 21 or higher
 - Maven 3.6+ (for building from source)
-- Access to a Wanaku MCP Router instance
-- OAuth2/OIDC authentication provider (e.g., Keycloak)
+- Access to a Wanaku server instance
 
 ### 5-Minute Setup
 
@@ -71,78 +58,38 @@ graph TB
    mvn clean package
    ```
 
-2. **Prepare your Camel routes** (example `my-routes.camel.yaml`):
+2. **Prepare your Camel routes** using the `ai-tool:` format (example `my-routes.camel.yaml`):
 
    ```yaml
    - route:
        id: get-employee-info
        from:
-         uri: direct:get-employee-info
+         uri: ai-tool:get-employee-info
+         parameters:
+           description: "Fetches core profile data for a specific employee"
          steps:
-           - toD: https://api.example.com/employees/${header.Wanaku.employeeId}
+           - toD: https://api.example.com/employees/${header.employeeId}
    ```
 
-3. **Prepare route exposure rules** (example `my-rules.yaml`):
+3. **Run the capability**:
 
-   ```yaml
-   mcp:
-     tools:
-        - get-employee-info:
-            route:
-             id: get-employee-info
-            description: "Fetches core profile data for a specific employee"
+   The recommended approach is to use a **service catalog**, which bundles routes and dependencies into a single versioned artifact:
+
+   ```bash
+   java -jar camel-integration-capability-runtimes/camel-integration-capability-main/target/camel-integration-capability-main-*-jar-with-dependencies.jar \
+     --registration-url http://localhost:8080 \
+     --name employee-system \
+     --service-catalog employee-system-v2 \
+     --service-catalog-system employee-system
    ```
 
-   > [!NOTE]
-   > This example uses automatic parameter mapping.
-   > All MCP parameters are mapped to Camel headers with the `Wanaku.` prefix (e.g., `employeeId` → `Wanaku.employeeId`).
-   > For explicit control over parameter names, see the [Usage Guide](docs/usage.md#parameter-to-header-mapping).
+   You can also reference individual files instead of a catalog (useful during development):
 
-### Option 1: Standalone Application
-
-Run as a dedicated service with CLI configuration. The recommended approach is to use a **service catalog**, which
-bundles routes, rules, and dependencies into a single versioned artifact:
-
-```bash
-java -jar camel-integration-capability-runtimes/camel-integration-capability-main/target/camel-integration-capability-main-*-jar-with-dependencies.jar \
-  --registration-url http://localhost:8080 \
-  --registration-announce-address localhost \
-  --name employee-system \
-  --service-catalog employee-system-v2 \
-  --service-catalog-system employee-system \
-  --client-id wanaku-service \
-  --client-secret your-secret
-```
-
-You can also reference individual files instead of a catalog (useful during development):
-
-```bash
-java -jar camel-integration-capability-runtimes/camel-integration-capability-main/target/camel-integration-capability-main-*-jar-with-dependencies.jar \
-  --registration-url http://localhost:8080 \
-  --registration-announce-address localhost \
-  --routes-ref file:///path/to/routes.camel.yaml \
-  --rules-ref file:///path/to/rules.yaml \
-  --client-id wanaku-service \
-  --client-secret your-secret
-```
-
-### Option 2: Plugin Mode
-
-Embed into an existing Camel application using SPI. Add the shaded jar to your classpath and configure via environment variables:
-
-```bash
-export REGISTRATION_URL=http://localhost:8080
-export REGISTRATION_ANNOUNCE_ADDRESS=localhost
-export GRPC_PORT=9190
-export SERVICE_NAME=my-camel-app
-export ROUTES_RULES=file:///path/to/rules.yaml
-export CLIENT_ID=wanaku-service
-export CLIENT_SECRET=your-secret
-
-java -cp camel-integration-capability-plugin-*-shaded.jar:your-app.jar your.MainClass
-```
-
-The plugin is automatically discovered via `META-INF/services/org.apache.camel.spi.ContextServicePlugin`.
+   ```bash
+   java -jar camel-integration-capability-runtimes/camel-integration-capability-main/target/camel-integration-capability-main-*-jar-with-dependencies.jar \
+     --registration-url http://localhost:8080 \
+     --routes-ref file:///path/to/routes.camel.yaml
+   ```
 
 > [!TIP]
 > Design your Camel routes visually using the [Kaoto Integration Designer](http://kaoto.io) for Apache Camel.
@@ -158,12 +105,10 @@ For stable release documentation, visit the **[Wanaku Documentation](https://wan
 
 The guides below cover development and unreleased features. They may describe behavior that differs from the latest stable release.
 
-- **[Usage Guide](docs/usage.md)** - Standalone application configuration
-- **[Plugin Guide](docs/plugin-usage.md)** - Embedding in Camel applications
+- **[Usage Guide](docs/usage.md)** - Configuration and deployment
 - **[Service Catalog Guide](docs/service-catalog-guide.md)** - Creating and publishing service catalogs
 - **[CLI Reference](docs/cli-reference.md)** - Complete command-line parameter reference
-- **[Rules Schema](docs/rules-schema.md)** - Route exposure rules YAML reference
-- **[Authentication](docs/authentication.md)** - OAuth2/OIDC configuration
+- **[Architecture](docs/architecture.md)** - System design and data flow
 - **[Operations](docs/operations.md)** - Production deployment and monitoring
 - **[Troubleshooting](docs/troubleshooting.md)** - Common issues and solutions
 - **[Building](docs/building.md)** - Build instructions and development setup
@@ -179,7 +124,7 @@ The guides below cover development and unreleased features. They may describe be
 ```bash
 mvn clean package -DskipTests
 docker build -t camel-integration-capability .
-docker run -p 9190:9190 camel-integration-capability [options]
+docker run -p 8080:8080 camel-integration-capability [options]
 ```
 
 ### Kubernetes/OpenShift

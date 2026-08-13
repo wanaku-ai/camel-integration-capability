@@ -15,7 +15,6 @@
     <description>Aggregator for runtime modules (plugin and standalone application)</description>
 
     <modules>
-        <module>camel-integration-capability-plugin</module>
         <module>camel-integration-capability-main</module>
     </modules>
 

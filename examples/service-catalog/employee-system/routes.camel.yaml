@@ -1,4 +1,43 @@
 - route:
+    id: ai-tool-get-employee-information
+    from:
+      uri: ai-tool:get-employee-information
+      parameters:
+        description: "Fetches core profile data for a specific employee (eg. name, id, level and days in level)."
+        parameter.employeeId: int
+        parameter.employeeId.description: "The employee ID to retrieve information for"
+    steps:
+      - setHeader:
+          name: EMPLOYEE_ID
+          simple: ${header.employeeId}
+      - to: direct:employee-information
+- route:
+    id: ai-tool-get-employee-reviews
+    from:
+      uri: ai-tool:get-employee-reviews
+      parameters:
+        description: "Displays all past and current performance reviews, ratings, and manager feedback."
+        parameter.employeeId: int
+        parameter.employeeId.description: "The employee ID to get the review information for"
+    steps:
+      - setHeader:
+          name: EMPLOYEE_ID
+          simple: ${header.employeeId}
+      - to: direct:employee-reviews
+- route:
+    id: ai-tool-get-employee-compensation
+    from:
+      uri: ai-tool:get-employee-compensation
+      parameters:
+        description: "Fetches current and historical pay details for the selected employee."
+        parameter.employeeId: int
+        parameter.employeeId.description: "The employee ID to fetch the information for"
+    steps:
+      - setHeader:
+          name: EMPLOYEE_ID
+          simple: ${header.employeeId}
+      - to: direct:employee-compensation
+- route:
     id: get-employee-information
     description: Retrieve employee basic information
     from:
@@ -12,21 +51,15 @@
             parameters:
               bridgeEndpoint: true
         - convertBodyTo:
-            id: convertBodyTo-2338
             type: String
         - choice:
-            id: choice-1451
             otherwise:
-              id: otherwise-3272
               steps:
                 - log:
-                    id: log-1277
                     message: ${body}
             when:
-              - id: when-2868
-                steps:
+              - steps:
                   - setBody:
-                      id: setBody-5284
                       constant:
                         expression: '{"error":"Employee information for executives is restricted"}'
                   - log:
@@ -49,7 +82,6 @@
         - log:
             message: "Retrieved employee reviews for ID: ${header.EMPLOYEE_ID}"
         - convertBodyTo:
-            id: convertBodyTo-2339
             type: String
 - route:
     id: get-employee-compensation
@@ -67,7 +99,6 @@
         - log:
             message: "Retrieved employee compensation for ID: ${header.EMPLOYEE_ID}"
         - convertBodyTo:
-            id: convertBodyTo-2340
             type: String
 - route:
     id: get-employee-complete-profile

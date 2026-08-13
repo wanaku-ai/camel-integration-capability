@@ -22,7 +22,7 @@
         <maven.compiler.target>21</maven.compiler.target>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
 
-        <camel.version>4.20.0</camel.version>
+        <camel.version>4.22.0</camel.version>
         <slf4j.version>2.0.18</slf4j.version>
         <log4j.version>2.26.1</log4j.version>
         <picocli.version>4.7.7</picocli.version>
@@ -97,26 +97,6 @@
             <dependency>
                 <groupId>ai.wanaku.sdk</groupId>
                 <artifactId>capabilities-common</artifactId>
-                <version>${wanaku-capabilities-sdk.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>ai.wanaku.sdk</groupId>
-                <artifactId>capabilities-discovery</artifactId>
-                <version>${wanaku-capabilities-sdk.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>ai.wanaku.sdk</groupId>
-                <artifactId>capabilities-data-files</artifactId>
-                <version>${wanaku-capabilities-sdk.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>ai.wanaku.sdk</groupId>
-                <artifactId>capabilities-exchange</artifactId>
-                <version>${wanaku-capabilities-sdk.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>ai.wanaku.sdk</groupId>
-                <artifactId>capabilities-runtime</artifactId>
                 <version>${wanaku-capabilities-sdk.version}</version>
             </dependency>
             <dependency>
