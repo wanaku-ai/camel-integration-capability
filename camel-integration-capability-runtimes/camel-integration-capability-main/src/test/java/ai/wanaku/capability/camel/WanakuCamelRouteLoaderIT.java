@@ -46,7 +46,7 @@ class WanakuCamelRouteLoaderIT {
                 ResourceType.DEPENDENCY_REF, dependenciesFile);
 
         camelManager = new WanakuCamelManager(
-                downloadedResources, null, null, 0, WanakuCamelManager.RouteLoadingFailurePolicy.FAIL_FAST);
+                downloadedResources, null, null, 0, false, 0, WanakuCamelManager.RouteLoadingFailurePolicy.FAIL_FAST);
         camelManager.start();
     }
 
@@ -144,7 +144,13 @@ class WanakuCamelRouteLoaderIT {
                 ResourceType.DEPENDENCY_REF, dependenciesFile);
 
         WanakuCamelManager lenientCamelManager = new WanakuCamelManager(
-                downloadedResources, null, null, 0, WanakuCamelManager.RouteLoadingFailurePolicy.LOG_AND_CONTINUE);
+                downloadedResources,
+                null,
+                null,
+                0,
+                false,
+                0,
+                WanakuCamelManager.RouteLoadingFailurePolicy.LOG_AND_CONTINUE);
 
         try {
             lenientCamelManager.start();
