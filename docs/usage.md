@@ -49,6 +49,8 @@ One of the following is required to provide routes:
 - `--init-from`: Git repository URL to clone during initialization (SSH or HTTPS format)
 - `--mcp-port`: Port for the MCP server (default: 8080)
 - `--mcp-tags`: Comma-separated tags for filtering which `ai-tool:` routes to expose
+- `--health-port`: HTTP port for health check endpoints `/observe/health`, `/observe/health/live`, `/observe/health/ready` (default: 8081)
+- `--no-health`: Disable the HTTP health check endpoints
 - `--name`: Service name (default: "camel")
 - `--retries`: Maximum download retries (default: 12)
 - `--wait-seconds`: Wait time between retries in seconds (default: 5)
