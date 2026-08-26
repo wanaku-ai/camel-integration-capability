@@ -2,15 +2,15 @@
 
 This guide helps you upgrade between major versions of the Camel Integration Capability.
 
-## Upgrading from 0.1.x to 0.2.0
+## Upgrading from 0.1.x to 0.3.0
 
-Version 0.2.0 is a major architectural change. The custom gRPC bridge, authentication layer, and rules YAML files have been removed. The capability now uses Apache Camel 4.22's built-in MCP server (`camel-mcp-server`) together with its new unified tool abstraction (`camel-ai-tool`), exposed through the `ai-tool:` route format.
+Version 0.3.0 is a major architectural change. The custom gRPC bridge, authentication layer, and rules YAML files have been removed. The capability now uses Apache Camel 4.22's built-in MCP server (`camel-mcp-server`) together with its new unified tool abstraction (`camel-ai-tool`), exposed through the `ai-tool:` route format.
 
 ### 1. Architecture Changes
 
 **Before (0.1.x):** CIC registered with Wanaku via gRPC, used OAuth2 for authentication, and required separate rules YAML files to expose routes as MCP tools.
 
-**After (0.2.0):** CIC downloads routes and runs them using Camel Main. Routes started with the `ai-tool:` URI are registered in Camel's `AiToolRegistry`, and the built-in `McpServerBridge` exposes them as MCP tools over HTTP/SSE -- provided the route's `tags` match `--mcp-tags` (see below). The tool's name, description, and parameters all live inside the route; there's no separate rules file and no registration handshake with Wanaku.
+**After (0.3.0):** CIC downloads routes and runs them using Camel Main. Routes started with the `ai-tool:` URI are registered in Camel's `AiToolRegistry`, and the built-in `McpServerBridge` exposes them as MCP tools over HTTP/SSE -- provided the route's `tags` match `--mcp-tags` (see below). The tool's name, description, and parameters all live inside the route; there's no separate rules file and no registration handshake with Wanaku.
 
 ### 2. Rules YAML to ai-tool: Migration
 
@@ -278,7 +278,7 @@ livenessProbe:
 
 ### 11. Known Limitations
 
-A couple of things to keep in mind while migrating to 0.2.0:
+A couple of things to keep in mind while migrating to 0.3.0:
 
 - **wanaku-barn backend**: still catching up with the router in several areas. If you're migrating a production deployment, prefer running against the Wanaku router directly rather than through barn for now.
 - **Operator support**: the Wanaku operator has been updated for the new deployment shape, but this path is not yet covered by automated tests. Validate operator-based deployments carefully before relying on them in production.
