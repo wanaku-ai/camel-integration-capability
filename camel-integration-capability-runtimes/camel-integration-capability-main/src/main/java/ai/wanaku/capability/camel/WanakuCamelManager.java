@@ -12,6 +12,7 @@ import org.apache.camel.component.mcp.server.McpServerBridge;
 import org.apache.camel.component.mcp.server.McpServerConfiguration;
 import org.apache.camel.component.platform.http.main.MainHttpServer;
 import org.apache.camel.impl.DefaultCamelContext;
+import org.apache.camel.impl.engine.DefaultCamelContextNameStrategy;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import ai.wanaku.capabilities.sdk.maven.GAV;
@@ -79,6 +80,7 @@ public class WanakuCamelManager {
             MainHttpServer httpServer = new MainHttpServer();
             httpServer.setPort(mcpPort);
             context.addService(httpServer);
+            context.setNameStrategy(new DefaultCamelContextNameStrategy("wanaku"));
 
             McpServerConfiguration mcpConfig = new McpServerConfiguration();
             if (mcpTags != null && !mcpTags.isEmpty()) {
