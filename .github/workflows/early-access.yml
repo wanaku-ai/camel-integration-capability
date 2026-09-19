@@ -16,6 +16,9 @@ jobs:
     runs-on: ${{ matrix.os }}
     permissions:
       contents: write
+      discussions: write
+    env:
+      GH_TOKEN: ${{ github.token }}
     steps:
       - name: Determine SDK ref
         id: sdk-ref
@@ -70,6 +73,22 @@ jobs:
           JRELEASER_GPG_PUBLIC_KEY: ${{ secrets.GPG_PUBLIC_KEY }}
           JRELEASER_GPG_PASSPHRASE: ${{ secrets.MAVEN_GPG_PASSPHRASE }}
           JRELEASER_GPG_SECRET_KEY: ${{ secrets.GPG_PRIVATE_KEY }}
+
+      - name: Announce release in GitHub Discussions
+        if: matrix.os == 'ubuntu-latest' && github.repository == 'wanaku-ai/camel-integration-capability'
+        env:
+          RELEASE_TAG: early-access
+          RELEASE_VERSION: ${{ github.event.inputs.currentDevelopmentVersion }}
+        run: |
+          release_url=$(gh release view "$RELEASE_TAG" --json url --jq '.url')
+          sed \
+            -e "s|{{projectVersion}}|${RELEASE_VERSION}|g" \
+            -e "s|{{releaseNotesUrl}}|${release_url}|g" \
+            jreleaser/discussions.tpl > "$RUNNER_TEMP/discussion.md"
+          gh discussion create \
+            --category Announcements \
+            --title "Camel Integration Capability ${RELEASE_VERSION} is available" \
+            --body-file "$RUNNER_TEMP/discussion.md"
 
       # Persist logs
 
