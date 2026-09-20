@@ -4,7 +4,7 @@
 ![Java](https://img.shields.io/badge/java-21%2B-orange.svg)
 ![Camel](https://img.shields.io/badge/Apache%20Camel-4.22-red.svg)
 
-A capability service for the [Wanaku Governed Action Proxy](https://wanaku.ai) that enables AI agents to interact with 
+A capability service for the [Wanaku Governed Action Proxy](https://wanaku.ai) that enables AI agents to interact with
 backend systems through dynamically executed [Apache Camel](https://camel.apache.org) routes.
 
 ## What is This?
