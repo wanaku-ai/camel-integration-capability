@@ -88,7 +88,7 @@ jobs:
           gh discussion create \
             --category Announcements \
             --repo wanaku-ai/wanaku \
-            --title "Camel Integration Capability ${RELEASE_VERSION} is available" \
+            --title "Camel Integration Capability ${RELEASE_VERSION} Early Access Build is available" \
             --body-file "$RUNNER_TEMP/discussion.md"
 
       # Persist logs
