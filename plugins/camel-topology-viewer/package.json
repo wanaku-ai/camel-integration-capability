@@ -1,0 +1,28 @@
+{
+  "name": "camel-topology-viewer",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build:plugin": "tsc -b && vite build --config vite.plugin.config.ts && cp plugin.json plugin-dist/",
+    "lint": "eslint ."
+  },
+  "dependencies": {
+    "@carbon/react": "^1.114.0",
+    "@carbon/icons-react": "^11.86.0",
+    "@xyflow/react": "^12.8.5",
+    "@dagrejs/dagre": "^1.1.4",
+    "react": "^19.2.4",
+    "react-dom": "^19.2.4",
+    "sass": "^1.98.0"
+  },
+  "devDependencies": {
+    "@types/react": "^19.2.14",
+    "@types/react-dom": "^19.2.3",
+    "@vitejs/plugin-react": "^4.7.0",
+    "typescript": "~5.7.3",
+    "vite": "^6.4.1"
+  },
+  "packageManager": "yarn@1.22.22"
+}

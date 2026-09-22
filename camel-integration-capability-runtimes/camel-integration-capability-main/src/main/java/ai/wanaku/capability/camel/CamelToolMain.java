@@ -138,6 +138,18 @@ public class CamelToolMain implements Callable<Integer> {
             defaultValue = "9090")
     private int mcpPort;
 
+    @CommandLine.Option(
+            names = {"--dev-console"},
+            description = "Enable the Camel dev console (exposes route topology at /q/dev/route-topology)",
+            defaultValue = "false")
+    private boolean devConsoleEnabled;
+
+    @CommandLine.Option(
+            names = {"--management-port"},
+            description = "Port for the management server (dev console, topology endpoint)",
+            defaultValue = "9091")
+    private int managementPort;
+
     public static void main(String[] args) {
         int exitCode = new CommandLine(new CamelToolMain()).execute(args);
         System.exit(exitCode);
@@ -169,8 +181,8 @@ public class CamelToolMain implements Callable<Integer> {
                 ? WanakuCamelManager.RouteLoadingFailurePolicy.FAIL_FAST
                 : WanakuCamelManager.RouteLoadingFailurePolicy.LOG_AND_CONTINUE;
 
-        WanakuCamelManager camelManager =
-                new WanakuCamelManager(downloadedResources, repositoriesList, mcpTags, mcpPort, policy);
+        WanakuCamelManager camelManager = new WanakuCamelManager(
+                downloadedResources, repositoriesList, mcpTags, mcpPort, devConsoleEnabled, managementPort, policy);
         camelManager.run();
 
         return 0;

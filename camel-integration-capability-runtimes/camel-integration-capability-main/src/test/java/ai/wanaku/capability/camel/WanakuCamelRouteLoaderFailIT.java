@@ -38,7 +38,13 @@ class WanakuCamelRouteLoaderFailIT {
 
         assertThrows(Exception.class, () -> {
             WanakuCamelManager manager = new WanakuCamelManager(
-                    downloadedResources, null, null, 0, WanakuCamelManager.RouteLoadingFailurePolicy.FAIL_FAST);
+                    downloadedResources,
+                    null,
+                    null,
+                    0,
+                    false,
+                    0,
+                    WanakuCamelManager.RouteLoadingFailurePolicy.FAIL_FAST);
             manager.start();
         });
     }
@@ -54,7 +60,13 @@ class WanakuCamelRouteLoaderFailIT {
 
         assertDoesNotThrow(() -> {
             WanakuCamelManager manager = new WanakuCamelManager(
-                    downloadedResources, null, null, 0, WanakuCamelManager.RouteLoadingFailurePolicy.LOG_AND_CONTINUE);
+                    downloadedResources,
+                    null,
+                    null,
+                    0,
+                    false,
+                    0,
+                    WanakuCamelManager.RouteLoadingFailurePolicy.LOG_AND_CONTINUE);
             manager.start();
             manager.stop();
         });
