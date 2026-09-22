@@ -55,7 +55,7 @@ podman build -t camel-integration-capability:latest .
 ## Architecture
 
 - **Common Module** (`camel-integration-capability-common`):
-  - Shared utilities, models, and gRPC services
+  - Shared utilities and models
   - No CLI or logging dependencies
   - Can be used as a library
 
