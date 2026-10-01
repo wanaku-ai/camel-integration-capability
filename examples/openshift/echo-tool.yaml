@@ -1,0 +1,88 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: echo-tool-routes
+data:
+  wanaku-echo-tool.camel.yaml: |
+    - route:
+        id: echo-tool
+        from:
+          uri: ai-tool:echo
+          parameters:
+            tags: wanaku
+            description: "Echo back the input message duplicated with a separator"
+            parameter.message: string
+            parameter.message.description: "The message to echo back"
+          steps:
+            - setBody:
+                expression:
+                  simple:
+                    expression: "${header.message}{{echo.separator}}${header.message}"
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: echo-tool
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: echo-tool
+  template:
+    metadata:
+      labels:
+        app: echo-tool
+    spec:
+      automountServiceAccountToken: false
+      containers:
+        - name: echo-tool
+          image: quay.io/wanaku/camel-integration-capability:latest
+          imagePullPolicy: Always
+          env:
+            - name: JAVA_TOOL_OPTIONS
+              value: "-Decho.separator=-"
+            - name: ROUTES_PATH
+              value: "file:///routes/wanaku-echo-tool.camel.yaml"
+            - name: MCP_PORT
+              value: "9090"
+            - name: DATA_DIR
+              value: /data
+          ports:
+            - name: mcp
+              containerPort: 9090
+          readinessProbe:
+            tcpSocket:
+              port: mcp
+            initialDelaySeconds: 10
+            periodSeconds: 5
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop: [ALL]
+            runAsNonRoot: true
+            seccompProfile:
+              type: RuntimeDefault
+          volumeMounts:
+            - name: routes
+              mountPath: /routes
+              readOnly: true
+            - name: data
+              mountPath: /data
+      volumes:
+        - name: routes
+          configMap:
+            name: echo-tool-routes
+        - name: data
+          emptyDir: {}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: echo-tool
+spec:
+  selector:
+    app: echo-tool
+  ports:
+    - name: mcp
+      port: 9090
+      targetPort: mcp
