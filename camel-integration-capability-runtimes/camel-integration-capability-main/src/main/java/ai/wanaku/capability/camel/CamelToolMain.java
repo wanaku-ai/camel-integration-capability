@@ -46,6 +46,26 @@ public class CamelToolMain implements Callable<Integer> {
     private String registrationUrl;
 
     @CommandLine.Option(
+            names = {"--health-port"},
+            description =
+                    "The HTTP port for the health check endpoints (/observe/health, /observe/health/live, /observe/health/ready)",
+            defaultValue = "8081")
+    private int healthPort;
+
+    @CommandLine.Option(
+            names = {"--no-health"},
+            description = "Disable the HTTP health check endpoints",
+            defaultValue = "false")
+    private boolean noHealth;
+
+    @CommandLine.Option(
+            names = {"--registration-announce-address"},
+            description = "The announce address to use when registering",
+            defaultValue = "auto",
+            required = true)
+    private String registrationAnnounceAddress;
+
+    @CommandLine.Option(
             names = {"--name"},
             description = "The service name to use",
             defaultValue = "camel")
@@ -169,8 +189,8 @@ public class CamelToolMain implements Callable<Integer> {
                 ? WanakuCamelManager.RouteLoadingFailurePolicy.FAIL_FAST
                 : WanakuCamelManager.RouteLoadingFailurePolicy.LOG_AND_CONTINUE;
 
-        WanakuCamelManager camelManager =
-                new WanakuCamelManager(downloadedResources, repositoriesList, mcpTags, mcpPort, policy);
+        WanakuCamelManager camelManager = new WanakuCamelManager(
+                downloadedResources, repositoriesList, mcpTags, mcpPort, noHealth ? 0 : healthPort, policy);
         camelManager.run();
 
         return 0;

@@ -4,16 +4,35 @@ This guide covers production deployment, monitoring, and operational best practi
 
 ## Health Checks
 
-The capability exposes an HTTP health endpoint via the built-in MCP server.
+The capability exposes HTTP health endpoints backed by the [Camel Health Check API](https://camel.apache.org/manual/health-check.html), served by Camel's built-in management HTTP server. They are intended for cluster/container orchestration (e.g., Kubernetes liveness and readiness probes).
 
-### MCP Server Health
+### HTTP Health Endpoints (Camel Health)
 
-- **Protocol:** HTTP
-- **Port:** Same as MCP server (default: 8080)
+- **Port:** 8081 by default (configurable with `--health-port`, disable with `--no-health`)
+- **Endpoints:**
+  - `/observe/health` — all health checks
+  - `/observe/health/live` — liveness checks only
+  - `/observe/health/ready` — readiness checks only (includes route and consumer checks)
+- **Response codes:** `200` when all checks are `UP`, `503` when any check is `DOWN`
+- **Detail level:** every check is reported individually; append `?exposureLevel=oneline` for a compact response
+
+Example response:
+
+```json
+{
+  "status": "UP",
+  "checks": [
+    { "name": "context", "status": "UP" },
+    { "name": "route:my-route", "status": "UP" }
+  ]
+}
+```
+
+The health endpoints become available once the Camel context starts (after resources are downloaded and routes are loaded). Account for that startup window in the probe timings below, or use a Kubernetes `startupProbe`.
 
 ### Kubernetes Health Checks
 
-Configure liveness and readiness probes using HTTP probes:
+Configure liveness and readiness probes using the HTTP health endpoints:
 
 ```yaml
 apiVersion: apps/v1
@@ -25,22 +44,24 @@ spec:
     spec:
       containers:
       - name: camel-capability
-        image: camel-integration-capability:latest
+        image: camel-integration-capability:0.2.0
         ports:
           - containerPort: 8080
             name: mcp
+          - containerPort: 8081
+            name: health
         livenessProbe:
           httpGet:
-            path: /
-            port: 8080
+            path: /observe/health/live
+            port: 8081
           initialDelaySeconds: 15
           periodSeconds: 10
           timeoutSeconds: 5
           failureThreshold: 3
         readinessProbe:
           httpGet:
-            path: /
-            port: 8080
+            path: /observe/health/ready
+            port: 8081
           initialDelaySeconds: 10
           periodSeconds: 5
           timeoutSeconds: 3
@@ -51,6 +72,7 @@ spec:
 
 - **Liveness Probe:** `initialDelaySeconds: 15` allows time for Camel context initialization
 - **Readiness Probe:** `initialDelaySeconds: 10` allows time for route loading
+- On cold starts, dependency downloads can take 20-40 seconds before the health port is bound; increase `initialDelaySeconds`/`failureThreshold` or add a `startupProbe` if your routes pull many dependencies
 
 ## Resource Sizing
 
