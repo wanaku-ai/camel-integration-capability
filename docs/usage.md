@@ -22,6 +22,7 @@ This service:
 
 ## Related Guides
 
+- **[OpenShift Echo Tool](openshift-echo-tool.md)** - Test a file-based echo route and explore deployment details
 - **[CLI Reference](cli-reference.md)** - Complete command-line parameter reference
 - **[Service Catalog Guide](service-catalog-guide.md)** - Creating and publishing service catalogs
 - **[Troubleshooting](troubleshooting.md)** - Common issues and solutions
@@ -92,7 +93,9 @@ java -jar target/camel-integration-capability-main-*-jar-with-dependencies.jar \
 
 ## Deploying the Service
 
-The service can be deployed to Kubernetes or OpenShift using Wanaku's operator.
+For production deployments on Kubernetes or OpenShift, use Wanaku's operator.
+The [OpenShift Echo Tool guide](openshift-echo-tool.md) provides a standalone
+manifest for testing and exploring deployment details.
 
 ### Using a Service Catalog (Recommended)
 
