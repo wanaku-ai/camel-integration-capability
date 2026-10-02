@@ -11,6 +11,7 @@ import org.apache.camel.CamelContext;
 import org.apache.camel.component.mcp.server.McpServerBridge;
 import org.apache.camel.component.mcp.server.McpServerConfiguration;
 import org.apache.camel.component.platform.http.main.MainHttpServer;
+import org.apache.camel.component.platform.http.main.ManagementHttpServer;
 import org.apache.camel.impl.DefaultCamelContext;
 import org.apache.camel.impl.engine.DefaultCamelContextNameStrategy;
 import org.slf4j.Logger;
@@ -40,6 +41,8 @@ public class WanakuCamelManager {
             String repositoriesList,
             String mcpTags,
             int mcpPort,
+            boolean devConsoleEnabled,
+            int managementPort,
             RouteLoadingFailurePolicy routeLoadingFailurePolicy) {
         this.routeLoadingFailurePolicy =
                 Objects.requireNonNull(routeLoadingFailurePolicy, "RouteLoadingFailurePolicy must not be null");
@@ -67,9 +70,14 @@ public class WanakuCamelManager {
 
         context = new DefaultCamelContext();
         context.setApplicationContextClassLoader(mavenDownloader.getClassLoader());
+        context.setDevConsole(devConsoleEnabled);
 
         if (mcpPort > 0) {
             setupMcpServer(mcpTags, mcpPort);
+        }
+
+        if (devConsoleEnabled && managementPort > 0) {
+            setupManagementServer(managementPort);
         }
 
         loadRoutes();
@@ -89,6 +97,17 @@ public class WanakuCamelManager {
             context.addService(new McpServerBridge(mcpConfig));
         } catch (Exception e) {
             throw new RuntimeException("Failed to setup MCP server", e);
+        }
+    }
+
+    private void setupManagementServer(int managementPort) {
+        try {
+            ManagementHttpServer mgmtServer = new ManagementHttpServer();
+            mgmtServer.setPort(managementPort);
+            mgmtServer.setDevConsoleEnabled(true);
+            context.addService(mgmtServer);
+        } catch (Exception e) {
+            throw new RuntimeException("Failed to setup management server", e);
         }
     }
 
