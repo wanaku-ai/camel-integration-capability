@@ -1,0 +1,13 @@
+{
+  "id": "camel-topology-viewer",
+  "name": "Camel Topology Viewer",
+  "version": "0.1.0",
+  "entrypoint": "plugin.js",
+  "styles": ["plugin.css"],
+  "requires": {
+    "hostApi": ">=1.0 <2.0",
+    "services": [
+      {"id": "camel-topology-api", "version": "1.0"}
+    ]
+  }
+}
