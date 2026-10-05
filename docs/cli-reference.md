@@ -98,6 +98,8 @@ Control the built-in MCP server (HTTP/SSE transport).
 | Parameter | Environment Variable | Required | Default | Description |
 |-----------|---------------------|----------|---------|-------------|
 | `--mcp-port` | `MCP_PORT` | No | `8080` | Port the MCP server listens on. Clients connect to this port using HTTP/SSE transport. |
+| `--health-port` | - | No | `8081` | Port for the HTTP health check endpoints (`/observe/health`, `/observe/health/live`, `/observe/health/ready`), served by Camel's management HTTP server and backed by the Camel Health Check API. Use these for Kubernetes liveness/readiness probes. |
+| `--no-health` | - | No | `false` | If `true`, the HTTP health check endpoints are disabled. |
 | `--mcp-tags` | `MCP_TAGS` | No | - | Comma-separated tags for MCP tool filtering. Only `ai-tool:` routes whose tags match will be exposed as MCP tools. If omitted, all `ai-tool:` routes are exposed. |
 
 **Example: Custom MCP Port**:
