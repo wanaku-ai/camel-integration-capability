@@ -1,12 +1,18 @@
 package ai.wanaku.capability.camel;
 
+import java.io.IOException;
 import java.net.URI;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
+import java.time.Duration;
 import java.util.HashMap;
+import java.util.HexFormat;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.Callable;
+import java.util.regex.Pattern;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import ai.wanaku.capabilities.sdk.api.types.DataStore;
@@ -31,6 +37,10 @@ import picocli.CommandLine;
 
 public class CamelToolMain implements Callable<Integer> {
     private static final Logger LOG = LoggerFactory.getLogger(CamelToolMain.class);
+    private static final Pattern FORWARD_NAME = Pattern.compile("[A-Za-z0-9][A-Za-z0-9._-]*");
+
+    @CommandLine.Spec
+    private CommandLine.Model.CommandSpec spec;
 
     @CommandLine.Option(
             names = {"-h", "--help"},
@@ -40,20 +50,21 @@ public class CamelToolMain implements Callable<Integer> {
 
     @CommandLine.Option(
             names = {"--registration-url"},
-            description = "The Wanaku server URL to use for downloading resources",
+            description =
+                    "The Wanaku Barn base URL used to download datastore:// resources and service catalogs. Not used for registration",
             defaultValue = "http://localhost:8080",
             required = true)
     private String registrationUrl;
 
     @CommandLine.Option(
             names = {"--name"},
-            description = "The service name to use",
+            description = "The service name. Used as the forward name when --register is set",
             defaultValue = "camel")
     private String name;
 
     @CommandLine.Option(
             names = {"--retries"},
-            description = "The maximum number of retries for downloads",
+            description = "The maximum number of retries for downloads and Wanaku registration",
             defaultValue = "12")
     private int retries;
 
@@ -138,6 +149,35 @@ public class CamelToolMain implements Callable<Integer> {
             defaultValue = "9090")
     private int mcpPort;
 
+    @CommandLine.Option(
+            names = {"--register"},
+            arity = "0..1",
+            description = "Register this capability as a forward with Wanaku on startup and remove it on shutdown",
+            defaultValue = "false")
+    private boolean register;
+
+    @CommandLine.Option(
+            names = {"--wanaku-url"},
+            description = "The Wanaku management API URL (for example, http://wanaku:8080). Required with --register")
+    private String wanakuUrl;
+
+    @CommandLine.Option(
+            names = {"--namespace"},
+            description = "The Wanaku namespace for the forward",
+            defaultValue = "default")
+    private String namespace;
+
+    @CommandLine.Option(
+            names = {"--advertised-address"},
+            description =
+                    "The MCP address that Wanaku uses to reach this capability (for example, http://my-tool:9090/mcp). Required with --register")
+    private String advertisedAddress;
+
+    @CommandLine.Option(
+            names = {"--wanaku-token-env"},
+            description = "The name of the environment variable that contains a bearer token for the Wanaku API")
+    private String wanakuTokenEnv;
+
     public static void main(String[] args) {
         int exitCode = new CommandLine(new CamelToolMain()).execute(args);
         System.exit(exitCode);
@@ -145,6 +185,7 @@ public class CamelToolMain implements Callable<Integer> {
 
     @Override
     public Integer call() throws Exception {
+        validateRegistrationOptions();
         LOG.info("Camel Integration Capability {} is starting", VersionHelper.VERSION);
 
         Path dataDirPath = Path.of(dataDir);
@@ -169,11 +210,74 @@ public class CamelToolMain implements Callable<Integer> {
                 ? WanakuCamelManager.RouteLoadingFailurePolicy.FAIL_FAST
                 : WanakuCamelManager.RouteLoadingFailurePolicy.LOG_AND_CONTINUE;
 
+        WanakuForwardRegistration registration = createRegistration(downloadedResources.get(ResourceType.ROUTES_REF));
+
         WanakuCamelManager camelManager =
                 new WanakuCamelManager(downloadedResources, repositoriesList, mcpTags, mcpPort, policy);
-        camelManager.run();
+        return camelManager.run(registration);
+    }
 
-        return 0;
+    void validateRegistrationOptions() {
+        if (!register) {
+            return;
+        }
+        if (isBlank(wanakuUrl)) {
+            throw usageError("--wanaku-url is required with --register");
+        }
+        if (isBlank(advertisedAddress)) {
+            throw usageError("--advertised-address is required with --register");
+        }
+        if (!isHttpUrl(wanakuUrl)) {
+            throw usageError("--wanaku-url must be an http or https URL: " + wanakuUrl);
+        }
+        if (!isHttpUrl(advertisedAddress)) {
+            throw usageError("--advertised-address must be an http or https URL: " + advertisedAddress);
+        }
+        if (name == null || !FORWARD_NAME.matcher(name).matches()) {
+            throw usageError("--name must contain only letters, digits, '.', '_' and '-' with --register: " + name);
+        }
+        if (mcpPort <= 0) {
+            throw usageError("--register requires the MCP server (--mcp-port greater than 0)");
+        }
+        if (wanakuTokenEnv != null && isBlank(System.getenv(wanakuTokenEnv))) {
+            throw usageError("The environment variable named by --wanaku-token-env is not set: " + wanakuTokenEnv);
+        }
+    }
+
+    WanakuForwardRegistration createRegistration(Path routesFile) throws IOException {
+        if (!register) {
+            return null;
+        }
+        String token = wanakuTokenEnv == null ? null : System.getenv(wanakuTokenEnv);
+        WanakuForwardRegistration.Settings settings = new WanakuForwardRegistration.Settings(
+                wanakuUrl, name, namespace, advertisedAddress, token, retries, Duration.ofSeconds(retryWaitSeconds));
+        return new WanakuForwardRegistration(
+                settings, Map.of("cic.version", VersionHelper.VERSION.trim(), "cic.routes-digest", sha256(routesFile)));
+    }
+
+    private static String sha256(Path file) throws IOException {
+        try {
+            return HexFormat.of().formatHex(MessageDigest.getInstance("SHA-256").digest(Files.readAllBytes(file)));
+        } catch (NoSuchAlgorithmException e) {
+            throw new IllegalStateException(e);
+        }
+    }
+
+    private CommandLine.ParameterException usageError(String message) {
+        return new CommandLine.ParameterException(spec.commandLine(), message);
+    }
+
+    private static boolean isBlank(String value) {
+        return value == null || value.isBlank();
+    }
+
+    private static boolean isHttpUrl(String value) {
+        try {
+            URI uri = URI.create(value);
+            return ("http".equals(uri.getScheme()) || "https".equals(uri.getScheme())) && uri.getHost() != null;
+        } catch (IllegalArgumentException e) {
+            return false;
+        }
     }
 
     private Map<ResourceType, Path> downloadExternalResources(ServiceConfig serviceConfig, Path dataDirPath) {

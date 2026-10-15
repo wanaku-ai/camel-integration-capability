@@ -10,7 +10,7 @@ Version 0.3.0 is a major architectural change. The custom gRPC bridge, authentic
 
 **Before (0.1.x):** CIC registered with Wanaku via gRPC, used OAuth2 for authentication, and required separate rules YAML files to expose routes as MCP tools.
 
-**After (0.3.0):** CIC downloads routes and runs them using Camel Main. Routes started with the `ai-tool:` URI are registered in Camel's `AiToolRegistry`, and the built-in `McpServerBridge` exposes them as MCP tools over HTTP/SSE -- provided the route's `tags` match `--mcp-tags` (see below). The tool's name, description, and parameters all live inside the route; there's no separate rules file and no registration handshake with Wanaku.
+**After (0.3.0):** CIC downloads routes and runs them using Camel Main. Routes started with the `ai-tool:` URI are registered in Camel's `AiToolRegistry`, and the built-in `McpServerBridge` exposes them as MCP tools over HTTP/SSE -- provided the route's `tags` match `--mcp-tags` (see below). The tool's name, description, and parameters all live inside the route; there's no separate rules file and no gRPC registration handshake with Wanaku. Registration is optional: add the capability to Wanaku as an MCP forward (for example, with `wanaku forwards add`), or turn on self-registration with `--register` (see [Self-registration with Wanaku](usage.md#self-registration-with-wanaku)).
 
 ### 2. Rules YAML to ai-tool: Migration
 
@@ -20,7 +20,7 @@ Converting an existing route is a three-step process:
 
 1. **Replace the consumer.** Drop the `direct:` endpoint the old rules file pointed at and start the route with `ai-tool:<tool-name>` instead.
 2. **Move the rules-file properties onto the route.** Each `properties` entry from the rules file becomes a `parameter.<name>: <type>` / `parameter.<name>.description` pair under `from.parameters`, and the tool's `description` moves there too. Also add a `tags` parameter matching `--mcp-tags` -- unlike the old rules file, a route with no matching tag is never exposed over MCP (see the note below).
-3. **Delete the rules file and launch directly.** Drop `--rules-ref` -- just point `--routes-ref` at the route file. There's no registration step.
+3. **Delete the rules file and launch directly.** Drop `--rules-ref` -- just point `--routes-ref` at the route file. There's no gRPC registration step.
 
 **Before (rules YAML + separate route):**
 
@@ -134,21 +134,28 @@ The following CLI parameters have been removed:
 
 | Removed Parameter | Reason |
 |-------------------|--------|
-| `--registration-announce-address` | No more service registration |
+| `--registration-announce-address` | No more gRPC service registration. Use `--advertised-address` with `--register` |
 | `--grpc-port` | No more gRPC server |
 | `--rules-ref` | Rules embedded in routes via `ai-tool:` format |
-| `--token-endpoint` | No more OAuth2 authentication |
+| `--token-endpoint` | No more OAuth2 authentication. Use `--wanaku-token-env` with `--register` |
 | `--client-id` | No more OAuth2 authentication |
 | `--client-secret` | No more OAuth2 authentication |
-| `--initial-delay` | No more registration retry loop |
-| `--period` | No more registration retry loop |
+| `--initial-delay` | No more gRPC registration retry loop |
+| `--period` | No more gRPC registration retry loop |
 
 ### 4. New CLI Parameters
 
 | New Parameter | Default | Description |
 |---------------|---------|-------------|
-| `--mcp-port` | `8080` | Port for the built-in MCP server (HTTP/SSE transport) |
-| `--mcp-tags` | (none) | Comma-separated tags for filtering which `ai-tool:` routes to expose |
+| `--mcp-port` | `9090` | Port for the built-in MCP server (HTTP/SSE transport) and the health endpoints |
+| `--mcp-tags` | `wanaku` | Comma-separated tags for filtering which `ai-tool:` routes to expose |
+| `--register` | `false` | Optional self-registration as a Wanaku forward |
+| `--wanaku-url` | (none) | Wanaku management API URL. Required with `--register` |
+| `--namespace` | `default` | Wanaku namespace of the forward |
+| `--advertised-address` | (none) | MCP URL that Wanaku uses to reach the capability. Required with `--register` |
+| `--wanaku-token-env` | (none) | Name of the environment variable that contains the Wanaku bearer token |
+
+`--registration-url` is kept. It is the Wanaku Barn base URL for `datastore://` downloads and service catalogs. It does not register the capability.
 
 ### 5. Removed Modules
 
@@ -174,12 +181,13 @@ The project now has a simpler structure focused on the standalone CLI applicatio
 **Environment variables added:**
 
 - `MCP_TAGS` -- Comma-separated tags for tool filtering
-- `MCP_PORT` -- MCP server port (default: 8080)
+- `MCP_PORT` -- MCP server port (default: 9090)
+- `WANAKU_REGISTER`, `WANAKU_URL`, `WANAKU_NAMESPACE`, `MCP_ADDRESS`, `WANAKU_TOKEN_ENV` -- self-registration options
 
 **Port change:**
 
 - Before: `EXPOSE 9190` (gRPC)
-- After: `EXPOSE 8080` (MCP HTTP/SSE)
+- After: `EXPOSE 9090` (MCP HTTP/SSE and health endpoints)
 
 ### 7. Service Catalog Changes
 
@@ -243,23 +251,31 @@ capabilities:
       - name: SERVICE_CATALOG_SYSTEM
         value: "employee-system"
       - name: MCP_PORT
-        value: "8080"
+        value: "9090"
 ```
 
 ### 9. Health Check Changes
 
 **Before:** gRPC health probes on port 9190
 
-**After:** HTTP probes on the MCP server port (default 8080)
+**After:** HTTP probes on the MCP server port (default 9090)
 
 ```yaml
 livenessProbe:
   httpGet:
-    path: /
-    port: 8080
+    path: /observe/health/live
+    port: 9090
   initialDelaySeconds: 15
   periodSeconds: 10
+readinessProbe:
+  httpGet:
+    path: /observe/health/ready
+    port: 9090
+  initialDelaySeconds: 10
+  periodSeconds: 5
 ```
+
+See [Operations](operations.md#health-checks) for the health checks that each endpoint includes.
 
 ### 10. Upgrade Checklist
 
@@ -270,8 +286,9 @@ livenessProbe:
 - [ ] Add `--mcp-port` if a non-default port is needed
 - [ ] Add `--mcp-tags` if tag-based filtering is needed
 - [ ] Add a matching `tags` parameter to every `ai-tool:` route -- without one, the route is never exposed over MCP
-- [ ] Update Docker port mapping from 9190 to 8080
-- [ ] Update Kubernetes health probes from gRPC to HTTP
+- [ ] Update Docker port mapping from 9190 to 9090
+- [ ] Update Kubernetes health probes from gRPC to HTTP (`/observe/health/live` and `/observe/health/ready`)
+- [ ] Optional: replace the old gRPC registration with `--register` (see [Self-registration with Wanaku](usage.md#self-registration-with-wanaku))
 - [ ] Update service catalog `index.properties` to remove `catalog.rules.*` entries
 - [ ] Remove the plugin module dependency if used
 - [ ] Test all routes with the new format

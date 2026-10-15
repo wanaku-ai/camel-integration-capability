@@ -4,7 +4,7 @@ Complete parameter reference for the Camel Integration Capability standalone app
 
 ## Parameter Overview
 
-Parameters are grouped by function: resource loading, MCP server configuration, and general settings.
+Parameters are grouped by function: resource loading, MCP server configuration, Wanaku self-registration, and general settings.
 
 ## Resource Loading Parameters
 
@@ -97,7 +97,7 @@ Control the built-in MCP server (HTTP/SSE transport).
 
 | Parameter | Environment Variable | Required | Default | Description |
 |-----------|---------------------|----------|---------|-------------|
-| `--mcp-port` | `MCP_PORT` | No | `8080` | Port the MCP server listens on. Clients connect to this port using HTTP/SSE transport. |
+| `--mcp-port` | `MCP_PORT` | No | `9090` | Port the MCP server listens on. Clients connect to this port using HTTP/SSE transport at the `/mcp` path. The same port serves the health endpoints (`/observe/health`, `/observe/health/live`, `/observe/health/ready`). |
 | `--mcp-tags` | `MCP_TAGS` | No | - | Comma-separated tags for MCP tool filtering. Only `ai-tool:` routes whose tags match will be exposed as MCP tools. If omitted, all `ai-tool:` routes are exposed. |
 
 **Example: Custom MCP Port**:
@@ -114,14 +114,41 @@ Control the built-in MCP server (HTTP/SSE transport).
 
 This exposes only `ai-tool:` routes tagged with `hr` or `employee`.
 
+## Wanaku Self-registration Parameters
+
+Register the capability as an MCP forward in Wanaku on startup, and remove the forward on shutdown. Self-registration is off by default. See [Self-registration with Wanaku](usage.md#self-registration-with-wanaku) for the lifecycle, the ownership rules, and a Kubernetes example.
+
+| Parameter | Environment Variable | Required | Default | Description |
+|-----------|---------------------|----------|---------|-------------|
+| `--register` | `WANAKU_REGISTER` | No | `false` | Turns on self-registration. Accepts `--register`, `--register=true` or `--register=false`. |
+| `--wanaku-url` | `WANAKU_URL` | Yes (with `--register`) | - | Wanaku management API URL, for example `http://wanaku:8080`. Must be an `http` or `https` URL. |
+| `--namespace` | `WANAKU_NAMESPACE` | No | `default` | Wanaku namespace of the forward. |
+| `--advertised-address` | `MCP_ADDRESS` | Yes (with `--register`) | - | MCP URL that Wanaku uses to reach this capability, for example `http://my-tool.tools.svc:9090/mcp`. Must be an `http` or `https` URL. |
+| `--wanaku-token-env` | `WANAKU_TOKEN_ENV` | No | - | Name of the environment variable that contains a bearer token for the Wanaku API. The variable must be set and not empty. |
+
+With `--register`, `--name` is the forward name, and `--retries` and `--wait-seconds` also control the registration retries.
+
+**Example**:
+
+```bash
+export WANAKU_TOKEN=my-token
+java -jar camel-integration-capability-main-*-jar-with-dependencies.jar \
+  --routes-ref file:///workspace/routes.camel.yaml \
+  --name echo-tool \
+  --register \
+  --wanaku-url http://localhost:8080 \
+  --advertised-address http://localhost:9090/mcp \
+  --wanaku-token-env WANAKU_TOKEN
+```
+
 ## Server Configuration Parameters
 
 | Parameter | Environment Variable | Required | Default | Description |
 |-----------|---------------------|----------|---------|-------------|
-| `--registration-url` | `REGISTRATION_URL` | Yes | `http://localhost:8080` | The Wanaku server URL used for downloading resources (routes, catalogs, dependencies). |
-| `--name` | `SERVICE_NAME` | No | `camel` | Service name identifier. |
-| `--retries` | - | No | `12` | Maximum number of download retries. |
-| `--wait-seconds` | - | No | `5` | Wait time between retries in seconds. Used as the initial delay for exponential backoff. |
+| `--registration-url` | `REGISTRATION_URL` | Yes | `http://localhost:8080` | The Wanaku Barn base URL used to download `datastore://` resources and service catalogs. It does not register the capability (see `--register`). |
+| `--name` | `SERVICE_NAME` | No | `camel` | Service name identifier. The forward name with `--register`. |
+| `--retries` | - | No | `12` | Maximum number of download retries. Also the maximum number of registration retries with `--register`. |
+| `--wait-seconds` | - | No | `5` | Wait time between retries in seconds. Used as the initial delay for exponential backoff of downloads, and as the fixed wait between registration attempts. |
 | `--data-dir` | `DATA_DIR` | No | `/tmp` | Directory where downloaded files (routes, dependencies) are saved. In Docker, the default is `/data`. |
 | `--fail-fast` | - | No | `false` | If `true`, the service fails immediately if any route fails to load. If `false`, route loading errors are logged and the service continues with successfully loaded routes. |
 
@@ -199,7 +226,7 @@ env:
   - name: SERVICE_CATALOG_SYSTEM
     value: "employee-system"
   - name: MCP_PORT
-    value: "8080"
+    value: "9090"
   - name: MCP_TAGS
     value: "hr,employee"
 ```
@@ -228,14 +255,27 @@ The service validates parameters at startup. Common validation errors:
 Either --routes-ref or --service-catalog must be provided
 ```
 
-Validation errors cause the service to exit immediately with a non-zero status code.
+**Self-registration options**:
+
+```text
+--wanaku-url is required with --register
+--advertised-address is required with --register
+--name must contain only letters, digits, '.', '_' and '-' with --register: <name>
+--register requires the MCP server (--mcp-port greater than 0)
+The environment variable named by --wanaku-token-env is not set: <variable>
+```
+
+Validation errors cause the service to exit immediately with a non-zero status code (2 for usage errors).
+A failed self-registration causes the service to exit with status code 1.
 
 ## Default Values Summary
 
 | Parameter | Default |
 |-----------|---------|
-| `--mcp-port` | `8080` |
+| `--mcp-port` | `9090` |
 | `--name` | `camel` |
+| `--register` | `false` |
+| `--namespace` | `default` |
 | `--retries` | `12` |
 | `--wait-seconds` | `5` |
 | `--data-dir` | `/tmp` (CLI), `/data` (Docker) |

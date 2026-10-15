@@ -95,7 +95,7 @@ Set the application logger to DEBUG:
 
 ### Verify MCP Port
 
-Check that `--mcp-port` (default 8080) is not already in use:
+Check that `--mcp-port` (default 9090) is not already in use:
 
 ```bash
 kubectl logs deployment/camel-integration-capability | grep -i "port\|bind\|mcp"
@@ -104,19 +104,19 @@ kubectl logs deployment/camel-integration-capability | grep -i "port\|bind\|mcp"
 Look for:
 
 ```text
-INFO  MCP server started on port 8080
+INFO  MCP server started on port 9090
 ```
 
 Or:
 
 ```text
-ERROR Failed to bind to port 8080: Address already in use
+ERROR Failed to bind to port 9090: Address already in use
 ```
 
 **Fix**: Change the port:
 
 ```bash
---mcp-port 9090
+--mcp-port 9091
 ```
 
 ### Check ai-tool: Route Configuration
@@ -160,9 +160,24 @@ spec:
     app: camel-integration-capability
   ports:
     - name: mcp
-      port: 8080
-      targetPort: 8080
+      port: 9090
+      targetPort: 9090
 ```
+
+## Self-registration Failures
+
+**Symptom**: With `--register`, the capability exits with status 1 and logs `Failed to register with Wanaku`.
+
+Check the message after `Failed to register with Wanaku:`:
+
+- `The MCP server at ... exposes no tools`: no `ai-tool:` route matches `--mcp-tags`. Fix the route tags.
+- `Cannot reach Wanaku`: the capability cannot connect to `--wanaku-url`. Make sure that the URL points to the Wanaku management API.
+- `Wanaku rejected the forward with HTTP 401` or `403`: the token is missing or not valid. Check `--wanaku-token-env` and the variable that it names.
+- `Wanaku could not discover the forward`: Wanaku cannot connect to `--advertised-address`. Make sure that Wanaku can resolve and reach this address. In Kubernetes, set `publishNotReadyAddresses: true` on the Service, because the pod is not ready before registration.
+
+**Symptom**: After a restart, the old instance did not remove the forward.
+
+This is the expected behavior when a newer instance owns the forward. The capability deletes the forward only when its `cic.instance` label matches the identifier of the stopping process.
 
 ## Dependency Download Failures
 

@@ -39,47 +39,35 @@ We expect all contributors to be respectful and professional. Create a welcoming
 4. **Run the application locally**:
 
    ```bash
-   java -jar camel-integration-capability-runtimes/camel-integration-capability-main/target/camel-integration-capability-main-0.1.1-jar-with-dependencies.jar \
-     --registration-url http://localhost:8080 \
-     --registration-announce-address localhost \
+   java -jar camel-integration-capability-runtimes/camel-integration-capability-main/target/camel-integration-capability-main-*-jar-with-dependencies.jar \
      --routes-ref file:///path/to/example-routes.camel.yaml \
-     --rules-ref file:///path/to/example-rules.yaml \
-     --client-id wanaku-service \
-     --client-secret test-secret
+     --mcp-port 9090
    ```
 
 > [!NOTE]
-> You'll need a running Wanaku stack (Wanaku MCP Router, OAuth2 provider) for full integration testing. See the [Usage Guide](docs/usage.md) for setup instructions.
+> Routes loaded from `file://` references need no Wanaku server. You need Wanaku Barn for `datastore://` references and service catalogs (`--registration-url`), and a Wanaku server to test self-registration (`--register`). See the [Usage Guide](docs/usage.md) for setup instructions.
 
 ## Project Structure
 
 ```text
 camel-integration-capability/
-├── src/
-│   ├── main/
-│   │   ├── java/ai/wanaku/capability/camel/
-│   │   │   ├── CamelToolMain.java          # Application entry point
-│   │   │   ├── WanakuCamelManager.java     # Camel context management
-│   │   │   ├── grpc/                       # gRPC service implementations
-│   │   │   │   ├── CamelTool.java          # Tool invocation service
-│   │   │   │   ├── CamelResource.java      # Resource retrieval service
-│   │   │   │   └── ProvisionBase.java      # Capability metadata service
-│   │   │   ├── model/                      # Data models
-│   │   │   ├── spec/                       # MCP specification handling
-│   │   │   │   └── rules/                  # Route exposure rules
-│   │   │   ├── util/                       # Utilities
-│   │   │   │   └── WanakuRoutesLoader.java # Route loading logic
-│   │   │   ├── downloader/                 # Resource downloaders
-│   │   │   └── init/                       # Initialization logic
-│   │   └── resources/
-│   │       └── log4j2.xml                  # Logging configuration
-│   └── test/
-│       └── java/                           # Unit and integration tests
-├── docs/                                   # Documentation
-├── pom.xml                                 # Maven build configuration
-├── Dockerfile                              # Container build definition
-└── README.md                               # Project overview
-```text
+├── camel-integration-capability-common/        # Shared utilities (version reporting)
+├── camel-integration-capability-runtimes/
+│   └── camel-integration-capability-main/
+│       └── src/
+│           ├── main/java/ai/wanaku/capability/camel/
+│           │   ├── CamelToolMain.java                  # Application entry point (CLI options)
+│           │   ├── WanakuCamelManager.java             # Camel context, MCP server, and lifecycle
+│           │   ├── WanakuForwardRegistration.java      # Optional Wanaku forward registration
+│           │   ├── McpSelfCheck.java                   # Local MCP check before registration
+│           │   └── WanakuRegistrationHealthCheck.java  # Readiness check
+│           └── test/                                   # Unit (*Test) and integration (*IT) tests
+├── docs/                                       # Documentation
+├── examples/                                   # Example routes and manifests
+├── pom.xml                                     # Maven build configuration
+├── Dockerfile                                  # Container build definition
+└── README.md                                   # Project overview
+```
 
 ## Development Workflow
 

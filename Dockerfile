@@ -18,12 +18,17 @@ ENV REGISTRATION_URL="" \
     REPOSITORIES="" \
     DATA_DIR="/data" \
     MCP_TAGS="" \
-    MCP_PORT="9090"
+    MCP_PORT="9090" \
+    WANAKU_REGISTER="" \
+    WANAKU_URL="" \
+    WANAKU_NAMESPACE="" \
+    MCP_ADDRESS="" \
+    WANAKU_TOKEN_ENV=""
 
 # Create and declare volume for routes data
 VOLUME /data
 
-# Expose the MCP server port
+# Expose the MCP server port (also serves the /observe/health endpoints)
 EXPOSE ${MCP_PORT}
 
 # Run the application with environment variables.
@@ -41,4 +46,9 @@ ENTRYPOINT ["sh", "-c", "java -jar /app/app.jar \
     ${REPOSITORIES:+--repositories $REPOSITORIES} \
     ${DATA_DIR:+--data-dir $DATA_DIR} \
     ${MCP_TAGS:+--mcp-tags $MCP_TAGS} \
-    ${MCP_PORT:+--mcp-port $MCP_PORT}"]
+    ${MCP_PORT:+--mcp-port $MCP_PORT} \
+    ${WANAKU_REGISTER:+--register=$WANAKU_REGISTER} \
+    ${WANAKU_URL:+--wanaku-url $WANAKU_URL} \
+    ${WANAKU_NAMESPACE:+--namespace $WANAKU_NAMESPACE} \
+    ${MCP_ADDRESS:+--advertised-address $MCP_ADDRESS} \
+    ${WANAKU_TOKEN_ENV:+--wanaku-token-env $WANAKU_TOKEN_ENV}"]

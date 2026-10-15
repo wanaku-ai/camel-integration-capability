@@ -51,7 +51,8 @@ spec:
             - name: mcp
               containerPort: 9090
           readinessProbe:
-            tcpSocket:
+            httpGet:
+              path: /observe/health/ready
               port: mcp
             initialDelaySeconds: 10
             periodSeconds: 5

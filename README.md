@@ -125,7 +125,7 @@ The guides below cover development and unreleased features. They may describe be
 ```bash
 mvn clean package -DskipTests
 docker build -t camel-integration-capability .
-docker run -p 8080:8080 camel-integration-capability [options]
+docker run -p 9090:9090 camel-integration-capability [options]
 ```
 
 ### Kubernetes/OpenShift
