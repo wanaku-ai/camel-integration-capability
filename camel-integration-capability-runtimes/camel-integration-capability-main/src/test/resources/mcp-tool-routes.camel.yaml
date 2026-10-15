@@ -1,0 +1,12 @@
+- route:
+    id: echo-tool
+    from:
+      uri: ai-tool:echo
+      parameters:
+        tags: wanaku
+        description: "Echo back the input message"
+        parameter.message: string
+        parameter.message.description: "The message to echo back"
+      steps:
+        - setBody:
+            simple: "${header.message}"

@@ -4,12 +4,27 @@ This guide covers production deployment, monitoring, and operational best practi
 
 ## Health Checks
 
-The capability exposes an HTTP health endpoint via the built-in MCP server.
+The capability serves the Camel health endpoints on the MCP server port.
 
-### MCP Server Health
+### Health Endpoints
 
 - **Protocol:** HTTP
-- **Port:** Same as MCP server (default: 8080)
+- **Port:** Same as the MCP server (`--mcp-port`, default: 9090)
+- **Paths:**
+  - `/observe/health/live`: liveness checks
+  - `/observe/health/ready`: readiness checks
+  - `/observe/health`: all checks
+
+An endpoint returns HTTP 200 when all its checks are UP, and HTTP 503 when a check is DOWN.
+
+The readiness checks include `wanaku-registration`:
+
+- With self-registration (`--register`), the check is DOWN until the forward is registered in Wanaku.
+- Without self-registration, the check is UP after startup.
+- The check is DOWN while the capability stops.
+
+> [NOTE]
+> The health endpoints are available only when the MCP server is on (`--mcp-port` greater than 0).
 
 ### Kubernetes Health Checks
 
@@ -27,20 +42,20 @@ spec:
       - name: camel-capability
         image: camel-integration-capability:latest
         ports:
-          - containerPort: 8080
+          - containerPort: 9090
             name: mcp
         livenessProbe:
           httpGet:
-            path: /
-            port: 8080
+            path: /observe/health/live
+            port: mcp
           initialDelaySeconds: 15
           periodSeconds: 10
           timeoutSeconds: 5
           failureThreshold: 3
         readinessProbe:
           httpGet:
-            path: /
-            port: 8080
+            path: /observe/health/ready
+            port: mcp
           initialDelaySeconds: 10
           periodSeconds: 5
           timeoutSeconds: 3
@@ -51,6 +66,7 @@ spec:
 
 - **Liveness Probe:** `initialDelaySeconds: 15` allows time for Camel context initialization
 - **Readiness Probe:** `initialDelaySeconds: 10` allows time for route loading
+- **Self-registration:** Wanaku must reach the pod before the pod is ready. Set `publishNotReadyAddresses: true` on the Service that the advertised address uses. See [Self-registration with Wanaku](usage.md#self-registration-with-wanaku).
 
 ## Resource Sizing
 
@@ -226,11 +242,11 @@ The capability uses `/data` as the default directory for downloaded Maven depend
 
 ### Ports
 
-Expose the MCP server port:
+Expose the MCP server port. This port also serves the health endpoints:
 
 ```yaml
 ports:
-  - containerPort: 8080
+  - containerPort: 9090
     name: mcp
     protocol: TCP
 ```
