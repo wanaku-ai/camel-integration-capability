@@ -7,8 +7,15 @@ on:
         description: 'The current development version'
         required: true
 
+env:
+  CONTAINER_REGISTRY: ${{ vars.CONTAINER_REGISTRY || 'quay.io' }}
+  CONTAINER_GROUP: ${{ vars.CONTAINER_GROUP || 'wanaku' }}
+
 jobs:
   build:
+    env:
+      QUAY_USERNAME: ${{ secrets.QUAY_USERNAME }}
+      QUAY_PASSWORD: ${{ secrets.QUAY_PASSWORD }}
     strategy:
       fail-fast: false
       matrix:
@@ -46,18 +53,18 @@ jobs:
         id: arch
         run: echo "arch=$(uname -m)" >> $GITHUB_OUTPUT
       - name: Login to Container Registry
-        if: github.repository == 'wanaku-ai/camel-integration-capability'
+        if: env.QUAY_USERNAME != '' && env.QUAY_PASSWORD != ''
         uses: docker/login-action@af1e73f918a031802d376d3c8bbc3fe56130a9b0 # v4.4.0
         with:
-          registry: quay.io
+          registry: ${{ env.CONTAINER_REGISTRY }}
           username: ${{ secrets.QUAY_USERNAME }}
           password: ${{ secrets.QUAY_PASSWORD }}
       - name: Build containers
-        if: github.repository == 'wanaku-ai/camel-integration-capability'
-        run: podman build -t quay.io/wanaku/camel-integration-capability:${{ github.event.inputs.currentDevelopmentVersion }}-${{ steps.arch.outputs.arch }} .
+        if: env.QUAY_USERNAME != '' && env.QUAY_PASSWORD != ''
+        run: podman build -t ${{ env.CONTAINER_REGISTRY }}/${{ env.CONTAINER_GROUP }}/camel-integration-capability:${{ github.event.inputs.currentDevelopmentVersion }}-${{ steps.arch.outputs.arch }} .
       - name: Push containers
-        if: github.repository == 'wanaku-ai/camel-integration-capability'
-        run: podman push quay.io/wanaku/camel-integration-capability:${{ github.event.inputs.currentDevelopmentVersion }}-${{ steps.arch.outputs.arch }}
+        if: env.QUAY_USERNAME != '' && env.QUAY_PASSWORD != ''
+        run: podman push ${{ env.CONTAINER_REGISTRY }}/${{ env.CONTAINER_GROUP }}/camel-integration-capability:${{ github.event.inputs.currentDevelopmentVersion }}-${{ steps.arch.outputs.arch }}
 
       - name: Run JReleaser (Linux)
         if: matrix.os == 'ubuntu-latest' && github.repository == 'wanaku-ai/camel-integration-capability'
@@ -83,18 +90,22 @@ jobs:
             out/jreleaser/output.properties
 
   createManifests:
+    env:
+      QUAY_USERNAME: ${{ secrets.QUAY_USERNAME }}
+      QUAY_PASSWORD: ${{ secrets.QUAY_PASSWORD }}
     needs: build
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
       - name: Login to Container Registry
-        if: github.repository == 'wanaku-ai/camel-integration-capability'
+        if: env.QUAY_USERNAME != '' && env.QUAY_PASSWORD != ''
         uses: docker/login-action@af1e73f918a031802d376d3c8bbc3fe56130a9b0 # v4.4.0
         with:
-          registry: quay.io
+          registry: ${{ env.CONTAINER_REGISTRY }}
           username: ${{ secrets.QUAY_USERNAME }}
           password: ${{ secrets.QUAY_PASSWORD }}
       - name: Build and Push Manifests
+        if: env.QUAY_USERNAME != '' && env.QUAY_PASSWORD != ''
         run: |
           chmod +x build-manifests.sh
-          ./build-manifests.sh ${{ github.event.inputs.currentDevelopmentVersion }}
+          ./build-manifests.sh ${{ github.event.inputs.currentDevelopmentVersion }} "${CONTAINER_REGISTRY}/${CONTAINER_GROUP}"
