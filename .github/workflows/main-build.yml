@@ -68,17 +68,17 @@ jobs:
       id: arch
       run: echo "arch=$(uname -m)" >> $GITHUB_OUTPUT
     - name: Login to Container Registry
-      if: github.repository == 'wanaku-ai/camel-integration-capability'
+      if: env.QUAY_USERNAME != '' && env.QUAY_PASSWORD != ''
       uses: docker/login-action@af1e73f918a031802d376d3c8bbc3fe56130a9b0 # v4.4.0
       with:
         registry: quay.io
         username: ${{ secrets.QUAY_USERNAME }}
         password: ${{ secrets.QUAY_PASSWORD }}
     - name: Build containers
-      if: github.repository == 'wanaku-ai/camel-integration-capability'
+      if: env.QUAY_USERNAME != '' && env.QUAY_PASSWORD != ''
       run: podman build -t quay.io/wanaku/camel-integration-capability:${{ github.ref_name }}-${{ steps.arch.outputs.arch }} .
     - name: Push containers
-      if: github.repository == 'wanaku-ai/camel-integration-capability'
+      if: env.QUAY_USERNAME != '' && env.QUAY_PASSWORD != ''
       run: podman push quay.io/wanaku/camel-integration-capability:${{ github.ref_name }}-${{ steps.arch.outputs.arch }}
 
   createManifests:
