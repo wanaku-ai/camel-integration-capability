@@ -1,3 +1,8 @@
+---
+title: Test the echo tool on OpenShift
+description: Deploy one echo route on OpenShift with a ConfigMap, a Deployment and a Service, call the MCP endpoint, and remove the example again.
+---
+
 # Test the echo tool on OpenShift
 
 This guide is for testing the echo tool and exploring the deployment details,
@@ -78,3 +83,8 @@ To remove the example:
 oc delete route echo-tool --ignore-not-found
 oc delete -f examples/openshift/echo-tool.yaml
 ```
+
+## Next steps
+
+- [Deploy on Kubernetes](kubernetes.md): deploy CIC with the Wanaku Operator.
+- [Operations](production.md): health probes and resource sizing.

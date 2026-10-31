@@ -1,3 +1,8 @@
+---
+title: Operations
+description: "Run the Camel Integration Capability in production: health checks, resource sizing, startup time, logging, scaling, and container practices."
+---
+
 # Operations
 
 This guide covers production deployment, monitoring, and operational best practices for the Camel Integration Capability.
@@ -300,3 +305,8 @@ For mission-critical deployments:
 - Use pod anti-affinity to spread across nodes
 - Deploy across multiple availability zones
 - Use PodDisruptionBudget to prevent simultaneous evictions
+
+## Next steps
+
+- [Deploy on Kubernetes](kubernetes.md): deploy CIC with the Wanaku Operator.
+- [Troubleshooting](troubleshooting.md): find the cause and the fix for common problems.

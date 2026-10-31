@@ -8,6 +8,9 @@ on:
       - '**/*.md'
       - '.lycheeignore'
       - '.github/workflows/lychee-links.yml'
+      - 'docs/nav.json'
+      - 'docs/redirects.txt'
+      - '.github/check-docs-nav.py'
   pull_request:
     branches:
       - main
@@ -15,6 +18,9 @@ on:
       - '**/*.md'
       - '.lycheeignore'
       - '.github/workflows/lychee-links.yml'
+      - 'docs/nav.json'
+      - 'docs/redirects.txt'
+      - '.github/check-docs-nav.py'
 
 permissions:
   contents: read
@@ -38,5 +44,12 @@ jobs:
             --exclude-path specs
             --exclude-path target
             '**/*.md'
-          # Report-only until the docs restructure (#156) makes it blocking.
-          fail: false
+          fail: true
+
+  docs-conventions:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - name: Check docs navigation and frontmatter
+        run: python3 .github/check-docs-nav.py
