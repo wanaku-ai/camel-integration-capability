@@ -1,4 +1,9 @@
-# Building Camel Integration Capability
+---
+title: Build the Camel Integration Capability
+description: Build the Camel Integration Capability from source with Maven, run the standalone application, and package it as a container image.
+---
+
+# Build the Camel Integration Capability
 
 ## Prerequisites
 
@@ -12,9 +17,8 @@ This is a multi-module Maven project:
 ```text
 pom.xml                                    # Parent aggregator
 ├── camel-integration-capability-common/   # Shared library
-├── camel-integration-capability-runtimes/
-│   ├── camel-integration-capability-plugin/  # Camel SPI plugin
-│   └── camel-integration-capability-main/    # Standalone CLI app
+└── camel-integration-capability-runtimes/
+    └── camel-integration-capability-main/    # Standalone CLI app
 ```
 
 ## Building All Modules
@@ -29,9 +33,6 @@ mvn package
 ```bash
 # Common module only
 mvn -pl camel-integration-capability-common clean install
-
-# Plugin module (requires common)
-mvn -pl camel-integration-capability-runtimes/camel-integration-capability-plugin -am clean install
 
 # Main module (requires common)
 mvn -pl camel-integration-capability-runtimes/camel-integration-capability-main -am clean package
@@ -59,12 +60,12 @@ podman build -t camel-integration-capability:latest .
   - No CLI or logging dependencies
   - Can be used as a library
 
-- **Plugin Module** (`camel-integration-capability-plugin`):
-  - `CamelIntegrationPlugin` - ContextServicePlugin implementation
-  - `PluginConfiguration` - Properties/env configuration loader
-  - SPI discovery via `META-INF/services`
-
 - **Main Module** (`camel-integration-capability-main`):
   - `CamelToolMain` - CLI entry point (picocli)
   - Standalone application with embedded logging
   - Fat jar packaging for deployment
+
+## Next steps
+
+- [Release guide](release-guide.md): prepare and trigger a release.
+- [Architecture](../get-started/architecture.md): how the components work together.

@@ -32,6 +32,7 @@ Java 21: Follow standard conventions
 - The website publishes the `docs/` tree. Each folder of `docs/` is a section with an `index.md` hub.
 - When you add a documentation page, add it to `docs/nav.json` and to the hub of its section.
 - When you move or rename a page, add a line with the old and the new slug to `docs/redirects.txt`.
+- Follow the page conventions in `docs/contributing/documentation.md`, and run `python3 .github/check-docs-nav.py` before you push.
 - Changelogs are handled automatically by jreleaser — do not create or maintain a manual CHANGELOG.md.
 
 ## Acceptance Criteria

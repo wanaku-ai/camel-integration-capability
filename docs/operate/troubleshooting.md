@@ -1,3 +1,8 @@
+---
+title: Troubleshooting
+description: "Find the cause and the fix for common Camel Integration Capability problems: routes, the MCP server, registration, dependencies, catalogs."
+---
+
 # Troubleshooting Guide
 
 This guide walks through common issues when running the Camel Integration Capability and how to diagnose them.
@@ -348,3 +353,8 @@ volumes:
     configMap:
       name: log4j2-config
 ```
+
+## Next steps
+
+- [CLI reference](../reference/cli.md): check the option values.
+- [Operations](production.md): logging and health checks.

@@ -1,3 +1,8 @@
+---
+title: Migration guide
+description: "Upgrade the Camel Integration Capability from 0.1.x to 0.3.0: ai-tool routes, removed and new options, images, catalogs, and Kubernetes."
+---
+
 # Migration Guide
 
 This guide helps you upgrade between major versions of the Camel Integration Capability.
@@ -307,9 +312,12 @@ A couple of things to keep in mind while migrating to 0.3.0:
 
 See the [0.1.0 migration section in git history](https://github.com/wanaku-ai/camel-integration-capability) for details on the multi-module restructuring and service catalog introduction.
 
-## Need Help?
+## Next steps
 
 - Review the [examples](https://github.com/wanaku-ai/camel-integration-capability/tree/main/examples) directory for working configurations
 - Check [Get started](../get-started/index.md) for detailed documentation
 - Read the [Camel 4.22 AI Tools & MCP Server announcement](https://camel.apache.org/blog/2026/08/camel-ai-tools-mcp-422/index.html) for background on `camel-ai-tool` and `camel-mcp-server`
 - Open an issue on [GitHub](https://github.com/wanaku-ai/camel-integration-capability/issues)
+- [Write and load routes](../build/routes.md): the `ai-tool:` route format.
+- [Deploy on Kubernetes](kubernetes.md): the `WanakuIntegration` resource.
+- [CLI reference](../reference/cli.md): all the current options.

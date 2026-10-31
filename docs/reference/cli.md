@@ -1,3 +1,8 @@
+---
+title: CLI reference
+description: All command-line options and environment variables of the Camel Integration Capability, with their default values and validation rules.
+---
+
 # CLI Reference
 
 Complete parameter reference for the Camel Integration Capability standalone application. The service uses [picocli](https://picocli.info/) for command-line parsing.
@@ -282,3 +287,8 @@ A failed self-registration causes the service to exit with status code 1.
 | `--registration-url` | `http://localhost:8080` |
 
 All other parameters have no default and must be provided (or are optional).
+
+## Next steps
+
+- [Write and load routes](../build/routes.md): use the route options.
+- [Self-registration with Wanaku](../operate/self-registration.md): use the registration options.

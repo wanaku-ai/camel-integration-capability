@@ -1,3 +1,8 @@
+---
+title: Release guide
+description: "Release the Camel Integration Capability: the checks before a release, the release branch, the version settings, and the release workflow."
+---
+
 # Release Guide
 
 ## Pre-Release Checklist
@@ -46,3 +51,8 @@ After the release workflow completes:
 
 1. Verify release artifacts on the [GitHub Releases page](https://github.com/wanaku-ai/camel-integration-capability/releases)
 2. Update the [Wanaku documentation site](https://wanaku.ai/docs/) if needed
+
+## Next steps
+
+- [Build the Camel Integration Capability](building.md): build and package from source.
+- [Migration guide](../operate/migration-guide.md): document the breaking changes of a release.

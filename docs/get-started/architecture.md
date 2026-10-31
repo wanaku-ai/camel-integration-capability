@@ -1,3 +1,8 @@
+---
+title: Architecture
+description: The components of the Camel Integration Capability, how routes load and tools run, the design decisions, and the deployment model.
+---
+
 # Architecture
 
 This document describes the architecture and design decisions for the Camel Integration Capability.
@@ -268,3 +273,8 @@ The capability uses SLF4J with Log4j2 backend:
 - Prometheus metrics export
 - OpenTelemetry integration
 - Route hot reload
+
+## Next steps
+
+- [Quickstart](quickstart.md): run one route and add it to Wanaku.
+- [Write and load routes](../build/routes.md): the `ai-tool:` route format.

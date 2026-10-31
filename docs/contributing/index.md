@@ -9,7 +9,8 @@ These pages are for contributors. For the code style, the pull request process, 
 
 ## Pages in this section
 
-- [Building](building.md): build the modules, run the application, and package the containers.
+- [Build the Camel Integration Capability](building.md): build the modules, run the application, and package the containers.
+- [Write documentation](documentation.md): the page conventions and the checks that CI runs on `docs/`.
 - [Release guide](release-guide.md): prepare and trigger a release.
 
 ## Next steps
