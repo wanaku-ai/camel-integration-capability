@@ -31,7 +31,7 @@ The service will:
 3. Locate the `employee-system` resources within the catalog
 4. Load routes and dependencies from the extracted files
 
-See [Service Catalog Guide](service-catalog-guide.md) for details on creating and publishing catalogs.
+See [Service Catalog Guide](../build/service-catalogs.md) for details on creating and publishing catalogs.
 
 ### Individual File References Mode
 
@@ -116,7 +116,7 @@ This exposes only `ai-tool:` routes tagged with `hr` or `employee`.
 
 ## Wanaku Self-registration Parameters
 
-Register the capability as an MCP forward in Wanaku on startup, and remove the forward on shutdown. Self-registration is off by default. See [Self-registration with Wanaku](usage.md#self-registration-with-wanaku) for the lifecycle, the ownership rules, and a Kubernetes example.
+Register the capability as an MCP forward in Wanaku on startup, and remove the forward on shutdown. Self-registration is off by default. See [Self-registration with Wanaku](../get-started/usage.md#self-registration-with-wanaku) for the lifecycle, the ownership rules, and a Kubernetes example.
 
 | Parameter | Environment Variable | Required | Default | Description |
 |-----------|---------------------|----------|---------|-------------|

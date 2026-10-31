@@ -10,7 +10,7 @@ Version 0.3.0 is a major architectural change. The custom gRPC bridge, authentic
 
 **Before (0.1.x):** CIC registered with Wanaku via gRPC, used OAuth2 for authentication, and required separate rules YAML files to expose routes as MCP tools.
 
-**After (0.3.0):** CIC downloads routes and runs them using Camel Main. Routes started with the `ai-tool:` URI are registered in Camel's `AiToolRegistry`, and the built-in `McpServerBridge` exposes them as MCP tools over HTTP/SSE -- provided the route's `tags` match `--mcp-tags` (see below). The tool's name, description, and parameters all live inside the route; there's no separate rules file and no gRPC registration handshake with Wanaku. Registration is optional: add the capability to Wanaku as an MCP forward (for example, with `wanaku forwards add`), or turn on self-registration with `--register` (see [Self-registration with Wanaku](usage.md#self-registration-with-wanaku)).
+**After (0.3.0):** CIC downloads routes and runs them using Camel Main. Routes started with the `ai-tool:` URI are registered in Camel's `AiToolRegistry`, and the built-in `McpServerBridge` exposes them as MCP tools over HTTP/SSE -- provided the route's `tags` match `--mcp-tags` (see below). The tool's name, description, and parameters all live inside the route; there's no separate rules file and no gRPC registration handshake with Wanaku. Registration is optional: add the capability to Wanaku as an MCP forward (for example, with `wanaku forwards add`), or turn on self-registration with `--register` (see [Self-registration with Wanaku](../get-started/usage.md#self-registration-with-wanaku)).
 
 ### 2. Rules YAML to ai-tool: Migration
 
@@ -275,7 +275,7 @@ readinessProbe:
   periodSeconds: 5
 ```
 
-See [Operations](operations.md#health-checks) for the health checks that each endpoint includes.
+See [Operations](production.md#health-checks) for the health checks that each endpoint includes.
 
 ### 10. Upgrade Checklist
 
@@ -288,7 +288,7 @@ See [Operations](operations.md#health-checks) for the health checks that each en
 - [ ] Add a matching `tags` parameter to every `ai-tool:` route -- without one, the route is never exposed over MCP
 - [ ] Update Docker port mapping from 9190 to 9090
 - [ ] Update Kubernetes health probes from gRPC to HTTP (`/observe/health/live` and `/observe/health/ready`)
-- [ ] Optional: replace the old gRPC registration with `--register` (see [Self-registration with Wanaku](usage.md#self-registration-with-wanaku))
+- [ ] Optional: replace the old gRPC registration with `--register` (see [Self-registration with Wanaku](../get-started/usage.md#self-registration-with-wanaku))
 - [ ] Update service catalog `index.properties` to remove `catalog.rules.*` entries
 - [ ] Remove the plugin module dependency if used
 - [ ] Test all routes with the new format
@@ -307,6 +307,6 @@ See the [0.1.0 migration section in git history](https://github.com/wanaku-ai/ca
 ## Need Help?
 
 - Review the [examples](https://github.com/wanaku-ai/camel-integration-capability/tree/main/examples) directory for working configurations
-- Check the [Usage Guide](usage.md) for detailed documentation
+- Check the [Usage Guide](../get-started/usage.md) for detailed documentation
 - Read the [Camel 4.22 AI Tools & MCP Server announcement](https://camel.apache.org/blog/2026/08/camel-ai-tools-mcp-422/index.html) for background on `camel-ai-tool` and `camel-mcp-server`
 - Open an issue on [GitHub](https://github.com/wanaku-ai/camel-integration-capability/issues)

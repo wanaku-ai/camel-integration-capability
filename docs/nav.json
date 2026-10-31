@@ -1,0 +1,45 @@
+{
+  "sidebar": [
+    {
+      "text": "Get started",
+      "link": "get-started/",
+      "items": [
+        { "text": "Camel Integration Capability", "link": "get-started/usage" },
+        { "text": "Architecture", "link": "get-started/architecture" }
+      ]
+    },
+    {
+      "text": "Build routes and catalogs",
+      "link": "build/",
+      "items": [
+        { "text": "Service catalogs", "link": "build/service-catalogs" }
+      ]
+    },
+    {
+      "text": "Deploy and operate",
+      "link": "operate/",
+      "items": [
+        { "text": "Operations", "link": "operate/production" },
+        { "text": "Migration guide", "link": "operate/migration-guide" },
+        { "text": "Echo tool on OpenShift", "link": "operate/openshift-echo-tool" },
+        { "text": "Troubleshooting", "link": "operate/troubleshooting" }
+      ]
+    },
+    {
+      "text": "Reference",
+      "link": "reference/",
+      "items": [
+        { "text": "CLI reference", "link": "reference/cli" }
+      ]
+    },
+    {
+      "text": "Contribute",
+      "link": "contributing/",
+      "collapsed": true,
+      "items": [
+        { "text": "Building", "link": "contributing/building" },
+        { "text": "Release guide", "link": "contributing/release-guide" }
+      ]
+    }
+  ]
+}

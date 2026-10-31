@@ -29,8 +29,9 @@ Java 21: Follow standard conventions
 
 ## Documentation
 
-- The primary user-facing documentation is `docs/usage.md` — this is the file published to the documentation website.
-- When adding new documentation files, always link them from `docs/usage.md` (in the "Related Guides" section), not just from `README.md`.
+- The website publishes the `docs/` tree. Each folder of `docs/` is a section with an `index.md` hub.
+- When you add a documentation page, add it to `docs/nav.json` and to the hub of its section.
+- When you move or rename a page, add a line with the old and the new slug to `docs/redirects.txt`.
 - Changelogs are handled automatically by jreleaser — do not create or maintain a manual CHANGELOG.md.
 
 ## Acceptance Criteria

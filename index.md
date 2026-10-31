@@ -8,10 +8,10 @@ hero:
   actions:
     - theme: brand
       text: Read the Usage Guide
-      link: ./docs/usage
+      link: ./docs/get-started/usage
 
 features:
   - title: Building
     details: Learn how to build and package this capability
-    link: ./docs/building
+    link: ./docs/contributing/building
 ---

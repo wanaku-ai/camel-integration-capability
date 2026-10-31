@@ -45,7 +45,7 @@ We expect all contributors to be respectful and professional. Create a welcoming
    ```
 
 > [!NOTE]
-> Routes loaded from `file://` references need no Wanaku server. You need Wanaku Barn for `datastore://` references and service catalogs (`--registration-url`), and a Wanaku server to test self-registration (`--register`). See the [Usage Guide](docs/usage.md) for setup instructions.
+> Routes loaded from `file://` references need no Wanaku server. You need Wanaku Barn for `datastore://` references and service catalogs (`--registration-url`), and a Wanaku server to test self-registration (`--register`). See the [Usage Guide](docs/get-started/usage.md) for setup instructions.
 
 ## Project Structure
 
@@ -279,7 +279,7 @@ docker run -p 9190:9190 camel-capability:dev [options]
 
 ### Release Build
 
-Releases are automated via GitHub Actions. See [Release Guide](docs/release-guide.md).
+Releases are automated via GitHub Actions. See [Release Guide](docs/contributing/release-guide.md).
 
 ## Reporting Issues
 

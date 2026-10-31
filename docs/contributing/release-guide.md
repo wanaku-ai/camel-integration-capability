@@ -8,7 +8,7 @@ Before triggering a release, verify the following:
 - [ ] Version numbers consistent across all module POMs
 - [ ] No unintended SNAPSHOT dependencies
 - [ ] Documentation updated for new features
-- [ ] Breaking changes documented in the [Migration Guide](migration-guide.md)
+- [ ] Breaking changes documented in the [Migration Guide](../operate/migration-guide.md)
 
 ## Triggering a Release
 

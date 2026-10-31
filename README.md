@@ -98,7 +98,7 @@ graph TB
 <!-- -->
 
 > [!NOTE]
-> For detailed configuration options and deployment scenarios, see the [Usage Guide](docs/usage.md).
+> For detailed configuration options and deployment scenarios, see the [Usage Guide](docs/get-started/usage.md).
 
 ## Documentation
 
@@ -106,14 +106,14 @@ For stable release documentation, visit the **[Wanaku Documentation](https://wan
 
 The guides below cover development and unreleased features. They may describe behavior that differs from the latest stable release.
 
-- **[Usage Guide](docs/usage.md)** - Configuration and deployment
-- **[Service Catalog Guide](docs/service-catalog-guide.md)** - Creating and publishing service catalogs
-- **[CLI Reference](docs/cli-reference.md)** - Complete command-line parameter reference
-- **[Architecture](docs/architecture.md)** - System design and data flow
-- **[Operations](docs/operations.md)** - Production deployment and monitoring
-- **[Troubleshooting](docs/troubleshooting.md)** - Common issues and solutions
-- **[Building](docs/building.md)** - Build instructions and development setup
-- **[Migration Guide](docs/migration-guide.md)** - Upgrading between versions
+- **[Usage Guide](docs/get-started/usage.md)** - Configuration and deployment
+- **[Service Catalog Guide](docs/build/service-catalogs.md)** - Creating and publishing service catalogs
+- **[CLI Reference](docs/reference/cli.md)** - Complete command-line parameter reference
+- **[Architecture](docs/get-started/architecture.md)** - System design and data flow
+- **[Operations](docs/operate/production.md)** - Production deployment and monitoring
+- **[Troubleshooting](docs/operate/troubleshooting.md)** - Common issues and solutions
+- **[Building](docs/contributing/building.md)** - Build instructions and development setup
+- **[Migration Guide](docs/operate/migration-guide.md)** - Upgrading between versions
 - **[Examples](examples/)** - Working example routes and configurations
 - **[Contributing](CONTRIBUTING.md)** - Guidelines for contributing
 - **[Security](SECURITY.md)** - Vulnerability reporting
@@ -130,7 +130,7 @@ docker run -p 9090:9090 camel-integration-capability [options]
 
 ### Kubernetes/OpenShift
 
-Deploy using the Wanaku operator. See [Usage Guide](docs/usage.md#deploying-the-service) for examples.
+Deploy using the Wanaku operator. See [Usage Guide](docs/get-started/usage.md#deploying-the-service) for examples.
 
 ## Support
 
