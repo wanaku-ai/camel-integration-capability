@@ -3,6 +3,7 @@
     from:
       uri: ai-tool:sends-greeting
       parameters:
+        tags: wanaku
         description: "Sends a greeting message to show that the application is working"
         parameter.wanaku_body: string
         parameter.wanaku_body.description: "The greeting message to send"
