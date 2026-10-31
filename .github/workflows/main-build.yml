@@ -14,7 +14,7 @@ on:
     paths-ignore:
       - .github/**
       - docs/**
-      - README.md
+      - "**/*.md"
       - LICENSE
 
 env:

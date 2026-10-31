@@ -1,6 +1,6 @@
 # Camel Integration Capability
 
-A capability service for the [Wanaku MCP Router](https://wanaku.ai) that provides [Apache Camel](https://camel.apache.org) route execution capabilities.
+A capability service for the [Wanaku](https://wanaku.ai) that provides [Apache Camel](https://camel.apache.org) route execution capabilities.
 
 This service downloads Camel routes, runs them using Apache Camel's Main runtime, and exposes `ai-tool:` routes as MCP tools via a built-in HTTP/SSE MCP server.
 
@@ -12,12 +12,12 @@ This service:
 - Exposes routes using the `ai-tool:` URI format as MCP tools
 - Provides an HTTP/SSE MCP server for tool invocation
 
-> [TIP]
+> [!TIP]
 > Design your Camel routes with ease using the [Kaoto Integration Designer](http://kaoto.io) for Apache Camel.
 
 <!-- -->
 
-> [NOTE]
+> [!NOTE]
 > Upgrading from a previous version? See the [Migration Guide](migration-guide.md) for breaking changes and upgrade steps.
 
 ## Related Guides
@@ -58,7 +58,7 @@ One of the following is required to provide routes:
 - `--wait-seconds`: Wait time between retries in seconds (default: 5)
 - `--data-dir`: Directory where downloaded files will be saved (default: `/tmp` for CLI, `/data` for Docker)
 
-> [NOTE]
+> [!NOTE]
 > `--service-catalog` is mutually exclusive with `--routes-ref` and `--dependencies`.
 > When using a service catalog, all resources are extracted from the catalog automatically.
 
@@ -163,7 +163,7 @@ spec:
 | `MCP_ADDRESS`            | MCP address that Wanaku uses to reach the capability       | `http://my-tool:9090/mcp`      |
 | `WANAKU_TOKEN_ENV`       | Name of the variable that contains the Wanaku bearer token | `WANAKU_TOKEN`                 |
 
-> [NOTE]
+> [!NOTE]
 > `SERVICE_CATALOG` is mutually exclusive with `ROUTES_REF` and `DEPENDENCIES`.
 
 ### Troubleshooting
@@ -250,7 +250,7 @@ When the capability receives a stop signal, it does these steps before it stops 
 
 Each HTTP call has a 10-second timeout. Set `terminationGracePeriodSeconds` to 30 or more.
 
-> [NOTE]
+> [!NOTE]
 > Wanaku has no conditional delete. If a replacement registers between the ownership check and the delete, the old instance can remove the new forward. Restart the replacement, or register it again, to recover.
 
 ### Health Probes
@@ -265,7 +265,7 @@ The MCP server port (default 9090) also serves the Camel health endpoints:
 
 The readiness endpoint includes the `wanaku-registration` check. This check is DOWN until registration succeeds, and DOWN while the capability stops. When self-registration is off, this check is UP after startup.
 
-> [IMPORTANT]
+> [!IMPORTANT]
 > Wanaku must reach the advertised address before the pod is ready. A Kubernetes Service sends traffic only to ready pods by default. Set `publishNotReadyAddresses: true` on the Service that the advertised address uses. Otherwise, discovery fails and the pod never becomes ready.
 
 ### Kubernetes Example
@@ -389,7 +389,7 @@ Then reference the file:
 - `--dependencies datastore://filename.txt` if using the data store
 - `--dependencies file:///path/to/filename.txt` if using the git initializer
 
-> [NOTE]
+> [!NOTE]
 > Repositories for dependencies can be set using the `--repositories` option, which receives a comma-separated list of
 > repository URLs.
 
@@ -405,7 +405,7 @@ Route files can be provided to the capability using one of the following methods
 
 ### Using a Service Catalog
 
-> [TIP]
+> [!TIP]
 > For a complete guide on creating and publishing service catalogs, see the [Service Catalog Guide](service-catalog-guide.md).
 
 This is the recommended way to obtain route files. A service catalog is a versioned ZIP archive stored in Wanaku that bundles routes and optionally dependencies for one or more systems.

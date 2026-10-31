@@ -31,7 +31,7 @@ camel-integration-capability/
 
 ```mermaid
 graph TB
-    A[AI Agent/LLM] -->|MCP Protocol| B[Wanaku MCP Router]
+    A[AI Agent/LLM] -->|MCP Protocol| B[Wanaku]
     B -->|HTTP/SSE| C[Camel Integration Capability]
     C -->|Execute| E[Apache Camel Routes]
     E -->|HTTP/REST| F[Backend APIs]
@@ -144,6 +144,6 @@ Apache License 2.0 - see [LICENSE](LICENSE) for details.
 
 ## Related Projects
 
-- [Wanaku MCP Router](https://wanaku.ai) - The MCP router this capability integrates with
+- [Wanaku](https://wanaku.ai) - The governed action proxy for AI agents that this capability integrates with
 - [Apache Camel](https://camel.apache.org) - The integration framework powering route execution
 - [Kaoto](http://kaoto.io) - Visual designer for Camel routes
