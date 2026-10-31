@@ -23,7 +23,7 @@ The readiness checks include `wanaku-registration`:
 - Without self-registration, the check is UP after startup.
 - The check is DOWN while the capability stops.
 
-> [NOTE]
+> [!NOTE]
 > The health endpoints are available only when the MCP server is on (`--mcp-port` greater than 0).
 
 ### Kubernetes Health Checks
@@ -186,7 +186,7 @@ The capability is **stateless** and designed for horizontal scaling.
 
 - No shared state between instances
 - Instances can be added or removed dynamically
-- Load balancing handled by Kubernetes Services or Wanaku MCP Router
+- Load balancing handled by Kubernetes Services or Wanaku
 
 **Kubernetes Deployment:**
 

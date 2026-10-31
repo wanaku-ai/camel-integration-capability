@@ -125,7 +125,7 @@ Tools that forward the whole request body instead of mapping individual fields u
           uri: kafka:{{kafka.request.topic}}?brokers={{kafka.brokers}}
 ```
 
-> [TIP]
+> [!TIP]
 > The [wanaku-barn migration commit](https://github.com/wanaku-ai/wanaku-barn/commit/63396ca48b23119fa72793e7dfb93ca2fc4ea2c5) converts a full set of production tool routes -- HTTP, Kafka, JMS, Jira, mail, OpenAI, vector search, and more -- from `direct:wanaku` + rules YAML to `ai-tool:` in one pass. It's a good reference for parameter shapes not covered above.
 
 ### 3. Removed CLI Parameters
@@ -306,7 +306,7 @@ See the [0.1.0 migration section in git history](https://github.com/wanaku-ai/ca
 
 ## Need Help?
 
-- Review the [examples](../examples) directory for working configurations
+- Review the [examples](https://github.com/wanaku-ai/camel-integration-capability/tree/main/examples) directory for working configurations
 - Check the [Usage Guide](usage.md) for detailed documentation
 - Read the [Camel 4.22 AI Tools & MCP Server announcement](https://camel.apache.org/blog/2026/08/camel-ai-tools-mcp-422/index.html) for background on `camel-ai-tool` and `camel-mcp-server`
 - Open an issue on [GitHub](https://github.com/wanaku-ai/camel-integration-capability/issues)

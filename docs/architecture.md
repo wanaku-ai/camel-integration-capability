@@ -13,7 +13,7 @@ C4Context
     title System Context - Camel Integration Capability
 
     Person(agent, "AI Agent", "LLM-based agent requesting operations")
-    System(wanaku, "Wanaku MCP Router", "MCP Protocol router")
+    System(wanaku, "Wanaku", "Governed action proxy for AI agents")
     System_Boundary(capability, "Camel Integration Capability") {
         System(camel, "CamelMain + MCP Server", "Runs Camel routes, exposes MCP tools via HTTP/SSE")
     }
@@ -189,7 +189,7 @@ sequenceDiagram
 graph TB
     subgraph "Kubernetes Cluster"
         subgraph "Wanaku Namespace"
-            A[Wanaku MCP Router Pod]
+            A[Wanaku Pod]
             C[DataStore Service Pod]
         end
 
@@ -243,7 +243,7 @@ The capability is **stateless** and can be horizontally scaled:
 
 - Multiple instances can run concurrently
 - No shared state between instances
-- Load balancing handled by Kubernetes Services or Wanaku MCP Router
+- Load balancing handled by Kubernetes Services or Wanaku
 
 ### Resource Requirements
 
