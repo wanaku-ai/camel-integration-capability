@@ -3,7 +3,7 @@
 This guide is for testing the echo tool and exploring the deployment details,
 including container configuration, route file mounting, and MCP service access.
 For production deployments, use the Wanaku operator as described in
-[Deploying the Service](usage.md#deploying-the-service).
+[Deploying the Service](../get-started/usage.md#deploying-the-service).
 
 The [echo tool manifest](https://github.com/wanaku-ai/camel-integration-capability/blob/main/examples/openshift/echo-tool.yaml) runs
 `quay.io/wanaku/camel-integration-capability:latest` with the equivalent of:

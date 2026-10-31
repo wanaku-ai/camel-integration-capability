@@ -45,4 +45,4 @@ Routes that use the `ai-tool:` URI format are automatically exposed as MCP tools
 
 - Try the [Employee System Example](../employee-system) for a more realistic scenario with multiple routes
 - Learn about [Service Catalogs](../service-catalog) for production deployments
-- Review the [Usage Guide](../../docs/usage.md) for detailed configuration options
+- Review the [Usage Guide](../../docs/get-started/usage.md) for detailed configuration options

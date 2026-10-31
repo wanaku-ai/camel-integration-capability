@@ -18,16 +18,16 @@ This service:
 <!-- -->
 
 > [!NOTE]
-> Upgrading from a previous version? See the [Migration Guide](migration-guide.md) for breaking changes and upgrade steps.
+> Upgrading from a previous version? See the [Migration Guide](../operate/migration-guide.md) for breaking changes and upgrade steps.
 
 ## Related Guides
 
-- **[OpenShift Echo Tool](openshift-echo-tool.md)** - Test a file-based echo route and explore deployment details
-- **[CLI Reference](cli-reference.md)** - Complete command-line parameter reference
+- **[OpenShift Echo Tool](../operate/openshift-echo-tool.md)** - Test a file-based echo route and explore deployment details
+- **[CLI Reference](../reference/cli.md)** - Complete command-line parameter reference
 - **[Self-registration with Wanaku](#self-registration-with-wanaku)** - Register the capability as a Wanaku forward on startup
-- **[Operations](operations.md)** - Health probes, sizing, and production practices
-- **[Service Catalog Guide](service-catalog-guide.md)** - Creating and publishing service catalogs
-- **[Troubleshooting](troubleshooting.md)** - Common issues and solutions
+- **[Operations](../operate/production.md)** - Health probes, sizing, and production practices
+- **[Service Catalog Guide](../build/service-catalogs.md)** - Creating and publishing service catalogs
+- **[Troubleshooting](../operate/troubleshooting.md)** - Common issues and solutions
 
 ## Requirements
 
@@ -97,7 +97,7 @@ java -jar target/camel-integration-capability-main-*-jar-with-dependencies.jar \
 ## Deploying the Service
 
 For production deployments on Kubernetes or OpenShift, use Wanaku's operator.
-The [OpenShift Echo Tool guide](openshift-echo-tool.md) provides a standalone
+The [OpenShift Echo Tool guide](../operate/openshift-echo-tool.md) provides a standalone
 manifest for testing and exploring deployment details.
 
 ### Using a Service Catalog (Recommended)
@@ -406,7 +406,7 @@ Route files can be provided to the capability using one of the following methods
 ### Using a Service Catalog
 
 > [!TIP]
-> For a complete guide on creating and publishing service catalogs, see the [Service Catalog Guide](service-catalog-guide.md).
+> For a complete guide on creating and publishing service catalogs, see the [Service Catalog Guide](../build/service-catalogs.md).
 
 This is the recommended way to obtain route files. A service catalog is a versioned ZIP archive stored in Wanaku that bundles routes and optionally dependencies for one or more systems.
 
