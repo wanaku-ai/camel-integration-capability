@@ -22,7 +22,7 @@ yamllint routes.camel.yaml
 - **Missing colons**: `from` instead of `from:`
 - **Unquoted special characters**: URIs with query parameters need quotes
 
-Validate your routes using [Kaoto](https://kaoto.io) or [Apache Camel Karavan](https://camel.apache.org/karavan).
+Validate your routes using [Kaoto](https://kaoto.io) or [Apache Camel Karavan](https://github.com/apache/camel-karavan).
 
 ### Verify Route Reference URI
 

@@ -352,7 +352,7 @@ Omit `WANAKU_TOKEN_ENV` and `WANAKU_TOKEN` when the Wanaku API does not require 
 ## Designing Routes
 
 The easiest way to design the routes for this project, is to use a visual editor such as [Kaoto](http://kaoto.io) or
-[Camel Karavan](http://camel.apache.org/karavan) to design the routes.
+[Camel Karavan](https://github.com/apache/camel-karavan) to design the routes.
 
 ### ai-tool: Route Format
 
