@@ -111,14 +111,14 @@ The guides below cover development and unreleased features. They may describe be
 - **[Write and Load Routes](docs/build/routes.md)** - The `ai-tool:` route format and the route sources
 - **[Deploy on Kubernetes](docs/operate/kubernetes.md)** - The Wanaku Operator and plain Deployments
 - **[Self-registration](docs/operate/self-registration.md)** - Register the capability as a Wanaku forward
-- **[Service Catalog Guide](docs/build/service-catalogs.md)** - Creating and publishing service catalogs
+- **[Serve a Service Catalog](docs/build/service-catalogs.md)** - Run the capability from a service catalog
+- **[Examples](docs/build/examples.md)** - Working example routes and configurations
 - **[CLI Reference](docs/reference/cli.md)** - Complete command-line parameter reference
 - **[Architecture](docs/get-started/architecture.md)** - System design and data flow
 - **[Operations](docs/operate/production.md)** - Production deployment and monitoring
 - **[Troubleshooting](docs/operate/troubleshooting.md)** - Common issues and solutions
 - **[Building](docs/contributing/building.md)** - Build instructions and development setup
 - **[Migration Guide](docs/operate/migration-guide.md)** - Upgrading between versions
-- **[Examples](examples/)** - Working example routes and configurations
 - **[Contributing](CONTRIBUTING.md)** - Guidelines for contributing
 - **[Security](SECURITY.md)** - Vulnerability reporting
 

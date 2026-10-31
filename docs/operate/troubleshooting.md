@@ -278,6 +278,20 @@ The system name must be listed in `catalog.services`:
 unzip -p catalog.zip index.properties | grep catalog.services
 ```
 
+### System Not Found in Catalog
+
+**Symptom**: An error like `System 'employee-system' not found in catalog 'hr-systems-v3'`.
+
+**Fix**: Add the system name to `catalog.services` in `index.properties`. The name is case-sensitive.
+
+### Missing Files in Extracted Catalog
+
+**Symptom**: A `FileNotFoundException` for a routes file or a dependencies file.
+
+**Cause**: The paths in `index.properties` do not match the file locations in the ZIP.
+
+**Fix**: List the ZIP contents with `unzip -l` and compare them to `index.properties`. All paths are relative to the root of the ZIP. `index.properties` must be at the root, not in a subdirectory.
+
 ### Service Catalogs are Mutually Exclusive with Individual References
 
 You can't mix `--service-catalog` with `--routes-ref` or `--dependencies`.

@@ -238,21 +238,24 @@ capabilities:
             key: client-secret
 ```
 
-**After:**
+**After:** the `capabilities` list of the Classic `Wanaku` resource is gone. Use a `WanakuIntegration` resource of the Wanaku Operator. It needs no OAuth client credentials:
 
 ```yaml
-capabilities:
-  - name: employee-system
-    type: camel-integration-capability
-    image: quay.io/wanaku/camel-integration-capability:latest
-    env:
-      - name: SERVICE_CATALOG
-        value: "employee-system-v2"
-      - name: SERVICE_CATALOG_SYSTEM
-        value: "employee-system"
-      - name: MCP_PORT
-        value: "9090"
+apiVersion: "wanaku.ai/v1alpha1"
+kind: WanakuIntegration
+metadata:
+  name: employee-system
+spec:
+  routerRef: wanaku-dev
+  routes:
+    serviceCatalog:
+      name: employee-system-v2
+      system: employee-system
+  mcp:
+    port: 9090
 ```
+
+See [Deploy on Kubernetes](kubernetes.md) for this resource and for a plain `Deployment`.
 
 ### 9. Health Check Changes
 

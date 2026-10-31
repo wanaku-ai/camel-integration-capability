@@ -68,7 +68,7 @@ CIC gets the route files in one of these ways:
 
 ```bash
 java -jar camel-integration-capability-main-*-jar-with-dependencies.jar \
-  --registration-url http://localhost:8080 \
+  --registration-url http://localhost:8180 \
   --name employee-system \
   --service-catalog employee-system-v2 \
   --service-catalog-system employee-system
@@ -80,7 +80,7 @@ java -jar camel-integration-capability-main-*-jar-with-dependencies.jar \
 
 ```bash
 java -jar camel-integration-capability-main-*-jar-with-dependencies.jar \
-  --registration-url http://localhost:8080 \
+  --registration-url http://localhost:8180 \
   --name camel-core \
   --routes-ref datastore://promote-employee.camel.yaml \
   --dependencies datastore://promote-employee-dependencies.txt \
