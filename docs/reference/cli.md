@@ -31,7 +31,7 @@ The service will:
 3. Locate the `employee-system` resources within the catalog
 4. Load routes and dependencies from the extracted files
 
-See [Service Catalog Guide](../build/service-catalogs.md) for details on creating and publishing catalogs.
+See [Serve a service catalog](../build/service-catalogs.md).
 
 ### Individual File References Mode
 

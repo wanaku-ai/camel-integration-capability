@@ -13,7 +13,8 @@
       "link": "build/",
       "items": [
         { "text": "Write and load routes", "link": "build/routes" },
-        { "text": "Service catalogs", "link": "build/service-catalogs" }
+        { "text": "Serve a service catalog", "link": "build/service-catalogs" },
+        { "text": "Examples", "link": "build/examples" }
       ]
     },
     {
