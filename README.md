@@ -99,28 +99,21 @@ graph TB
 <!-- -->
 
 > [!NOTE]
-> For detailed configuration options and deployment scenarios, see [Get started](docs/get-started/index.md) and the [CLI reference](docs/reference/cli.md).
+> For detailed configuration options and deployment scenarios, see [Get started](https://wanaku.ai/docs/camel-integration-capability/next/get-started/) and the [CLI reference](https://wanaku.ai/docs/camel-integration-capability/next/reference/cli.html).
 
 ## Documentation
 
-For stable release documentation, visit the **[Wanaku Documentation](https://wanaku.ai/docs/)** website.
+The [Camel Integration Capability documentation](https://wanaku.ai/docs/camel-integration-capability/next/) covers:
 
-The guides below cover development and unreleased features. They may describe behavior that differs from the latest stable release.
+- [Get started](https://wanaku.ai/docs/camel-integration-capability/next/get-started/): the quickstart, the architecture, and how the capability connects to Wanaku.
+- [Build tools](https://wanaku.ai/docs/camel-integration-capability/next/build/): write `ai-tool:` routes, serve a service catalog, and use the examples.
+- [Deploy and operate](https://wanaku.ai/docs/camel-integration-capability/next/operate/): deploy on Kubernetes, self-register with Wanaku, run in production, and troubleshoot.
+- [Reference](https://wanaku.ai/docs/camel-integration-capability/next/reference/): all command-line options and environment variables.
+- [Contribute](https://wanaku.ai/docs/camel-integration-capability/next/contributing/): build from source, prepare a release, and write documentation.
 
-- **[Get Started](docs/get-started/index.md)** - Overview and quickstart
-- **[Write and Load Routes](docs/build/routes.md)** - The `ai-tool:` route format and the route sources
-- **[Deploy on Kubernetes](docs/operate/kubernetes.md)** - The Wanaku Operator and plain Deployments
-- **[Self-registration](docs/operate/self-registration.md)** - Register the capability as a Wanaku forward
-- **[Serve a Service Catalog](docs/build/service-catalogs.md)** - Run the capability from a service catalog
-- **[Examples](docs/build/examples.md)** - Working example routes and configurations
-- **[CLI Reference](docs/reference/cli.md)** - Complete command-line parameter reference
-- **[Architecture](docs/get-started/architecture.md)** - System design and data flow
-- **[Operations](docs/operate/production.md)** - Production deployment and monitoring
-- **[Troubleshooting](docs/operate/troubleshooting.md)** - Common issues and solutions
-- **[Building](docs/contributing/building.md)** - Build instructions and development setup
-- **[Migration Guide](docs/operate/migration-guide.md)** - Upgrading between versions
-- **[Contributing](CONTRIBUTING.md)** - Guidelines for contributing
-- **[Security](SECURITY.md)** - Vulnerability reporting
+For Wanaku itself, see the [Wanaku documentation](https://wanaku.ai/docs/next/). For the 0.2 release, see the [Classic documentation](https://wanaku.ai/docs/camel-integration-capability/camel-integration-capability-current/).
+
+See [Contributing](CONTRIBUTING.md) and [Security](SECURITY.md) for contribution guidelines and vulnerability reporting.
 
 ## Deployment
 
@@ -134,7 +127,7 @@ docker run -p 9090:9090 camel-integration-capability [options]
 
 ### Kubernetes/OpenShift
 
-Deploy using the Wanaku operator. See [Deploy on Kubernetes](docs/operate/kubernetes.md) for examples.
+Deploy using the Wanaku operator. See [Deploy on Kubernetes](https://wanaku.ai/docs/camel-integration-capability/next/operate/kubernetes.html) for examples.
 
 ## Support
 
