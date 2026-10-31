@@ -66,7 +66,7 @@ spec:
 
 - **Liveness Probe:** `initialDelaySeconds: 15` allows time for Camel context initialization
 - **Readiness Probe:** `initialDelaySeconds: 10` allows time for route loading
-- **Self-registration:** Wanaku must reach the pod before the pod is ready. Set `publishNotReadyAddresses: true` on the Service that the advertised address uses. See [Self-registration with Wanaku](../get-started/usage.md#self-registration-with-wanaku).
+- **Self-registration:** Wanaku must reach the pod before the pod is ready. Set `publishNotReadyAddresses: true` on the Service that the advertised address uses. See [Self-registration with Wanaku](self-registration.md#kubernetes-example).
 
 ## Resource Sizing
 

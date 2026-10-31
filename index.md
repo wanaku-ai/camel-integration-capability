@@ -7,8 +7,8 @@ hero:
   tagline: Learn how to extend Wanaku capabilities by leveraging more than 300 Apache Camel components.
   actions:
     - theme: brand
-      text: Read the Usage Guide
-      link: ./docs/get-started/usage
+      text: Get started
+      link: ./docs/get-started/
 
 features:
   - title: Building

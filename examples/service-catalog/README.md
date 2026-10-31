@@ -115,5 +115,5 @@ AI: Get employee information for employee ID 12345
 ## Next Steps
 
 - Review the [Service Catalog Guide](../../docs/build/service-catalogs.md) for detailed catalog documentation
-- Learn about [DataStore integration](../../docs/get-started/usage.md) for centralized catalog management
+- Learn about [DataStore integration](../../docs/build/routes.md#load-routes-from-the-data-store) for centralized catalog management
 - Explore multi-service catalog patterns for enterprise deployments

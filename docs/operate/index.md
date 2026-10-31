@@ -5,10 +5,12 @@ description: Run the Camel Integration Capability in production, upgrade it from
 
 # Deploy and operate the Camel Integration Capability
 
-These pages are for operators who deploy and run CIC.
+These pages are for operators who deploy and run CIC on Kubernetes and in production.
 
 ## Pages in this section
 
+- [Deploy on Kubernetes](kubernetes.md): run CIC with the `WanakuIntegration` resource of the Wanaku Operator, or with a Deployment.
+- [Self-registration with Wanaku](self-registration.md): let CIC add and remove its MCP forward in Wanaku.
 - [Operations](production.md): health checks, resource sizing, logging, scaling, and container practices.
 - [Migration guide](migration-guide.md): upgrade between CIC versions.
 - [Test the echo tool on OpenShift](openshift-echo-tool.md): deploy one route on OpenShift to test the deployment.
@@ -17,4 +19,4 @@ These pages are for operators who deploy and run CIC.
 ## Next steps
 
 - [Reference](../reference/index.md): look up the command-line options and environment variables.
-- [Get started](../get-started/index.md): run the capability and register it with Wanaku.
+- [Write and load routes](../build/routes.md): write the routes that CIC serves.

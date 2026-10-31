@@ -91,5 +91,5 @@ To add a new employee endpoint:
 ## Next Steps
 
 - Try the [Service Catalog Example](../service-catalog) to package this as a reusable catalog
-- Review the [Usage Guide](../../docs/get-started/usage.md) for detailed configuration options
+- Review [Write and load routes](../../docs/build/routes.md) and the [CLI reference](../../docs/reference/cli.md) for detailed configuration options
 - Learn about [route orchestration patterns](https://camel.apache.org/components/latest/eips/enterprise-integration-patterns.html) in Apache Camel

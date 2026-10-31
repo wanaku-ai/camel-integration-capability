@@ -37,7 +37,7 @@ See [Service Catalog Guide](../build/service-catalogs.md) for details on creatin
 
 | Parameter | Environment Variable | Required | Default | Description |
 |-----------|---------------------|----------|---------|-------------|
-| `--routes-ref` | `ROUTES_REF` | Yes (if not using catalog) | - | Reference to the Apache Camel routes YAML file. Supports `datastore://` and `file://` schemes. |
+| `--routes-ref` | `ROUTES_PATH` | Yes (if not using catalog) | - | Reference to the Apache Camel routes YAML file. Supports `datastore://` and `file://` schemes. |
 | `--dependencies` | `DEPENDENCIES` | No | - | Reference to a text file containing a comma-separated or newline-separated list of Maven dependencies (GAV format). Supports `datastore://` and `file://` schemes. |
 | `--repositories` | `REPOSITORIES` | No | Maven Central | Comma-separated list of additional Maven repository URLs to use for downloading dependencies. |
 
@@ -93,12 +93,12 @@ See [Service Catalog Guide](../build/service-catalogs.md) for details on creatin
 
 ## MCP Server Parameters
 
-Control the built-in MCP server (HTTP/SSE transport).
+Control the built-in MCP server (streamable HTTP transport).
 
 | Parameter | Environment Variable | Required | Default | Description |
 |-----------|---------------------|----------|---------|-------------|
-| `--mcp-port` | `MCP_PORT` | No | `9090` | Port the MCP server listens on. Clients connect to this port using HTTP/SSE transport at the `/mcp` path. The same port serves the health endpoints (`/observe/health`, `/observe/health/live`, `/observe/health/ready`). |
-| `--mcp-tags` | `MCP_TAGS` | No | - | Comma-separated tags for MCP tool filtering. Only `ai-tool:` routes whose tags match will be exposed as MCP tools. If omitted, all `ai-tool:` routes are exposed. |
+| `--mcp-port` | `MCP_PORT` | No | `9090` | Port the MCP server listens on. Clients connect to this port at the `/mcp` path. The same port serves the health endpoints (`/observe/health`, `/observe/health/live`, `/observe/health/ready`). |
+| `--mcp-tags` | `MCP_TAGS` | No | `wanaku` | Comma-separated tags for MCP tool filtering. Only `ai-tool:` routes whose tags match are exposed as MCP tools. A route without tags is never exposed. |
 
 **Example: Custom MCP Port**:
 
@@ -116,7 +116,7 @@ This exposes only `ai-tool:` routes tagged with `hr` or `employee`.
 
 ## Wanaku Self-registration Parameters
 
-Register the capability as an MCP forward in Wanaku on startup, and remove the forward on shutdown. Self-registration is off by default. See [Self-registration with Wanaku](../get-started/usage.md#self-registration-with-wanaku) for the lifecycle, the ownership rules, and a Kubernetes example.
+Register the capability as an MCP forward in Wanaku on startup, and remove the forward on shutdown. Self-registration is off by default. See [Self-registration with Wanaku](../operate/self-registration.md) for the lifecycle, the ownership rules, and a Kubernetes example.
 
 | Parameter | Environment Variable | Required | Default | Description |
 |-----------|---------------------|----------|---------|-------------|
@@ -213,7 +213,7 @@ java -jar camel-integration-capability-main-*-jar-with-dependencies.jar \
 
 ## Environment Variables
 
-All CLI parameters can be set via environment variables. The mapping follows a standard pattern:
+The container image (`quay.io/wanaku/camel-integration-capability`) reads the environment variables in the tables above and gives them to the JAR as options. `--fail-fast`, `--retries` and `--wait-seconds` have no environment variable. When you run the JAR directly, use the command-line options. The JAR reads only one environment variable: the variable that `--wanaku-token-env` names.
 
 **Example in Kubernetes**:
 
@@ -230,8 +230,6 @@ env:
   - name: MCP_TAGS
     value: "hr,employee"
 ```
-
-CLI parameters take precedence over environment variables. If both are set, the CLI value is used.
 
 ## Parameter Validation
 
@@ -273,6 +271,7 @@ A failed self-registration causes the service to exit with status code 1.
 | Parameter | Default |
 |-----------|---------|
 | `--mcp-port` | `9090` |
+| `--mcp-tags` | `wanaku` |
 | `--name` | `camel` |
 | `--register` | `false` |
 | `--namespace` | `default` |
