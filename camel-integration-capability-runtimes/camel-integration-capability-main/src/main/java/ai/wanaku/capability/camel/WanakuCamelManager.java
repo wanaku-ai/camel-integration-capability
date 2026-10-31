@@ -100,10 +100,29 @@ public class WanakuCamelManager {
             managementServer.setHealthCheckEnabled(true);
             managementServer.setHealthPath("/observe/health");
             context.addService(managementServer);
-            HealthCheckRegistry.get(context).register(new WanakuRegistrationHealthCheck(() -> ready));
+            configureHealthChecks();
         } catch (Exception e) {
             throw new RuntimeException("Failed to setup MCP server", e);
         }
+    }
+
+    private void configureHealthChecks() {
+        HealthCheckRegistry registry = HealthCheckRegistry.get(context);
+        registry.setEnabled(true);
+        // The "default" exposure level collapses all-UP results into one entry; "full" lists every check
+        registry.setExposureLevel("full");
+
+        // A plain DefaultCamelContext does not register the standard checks (camel-main does it on
+        // auto-configuration), so resolve and register them here
+        for (String id : List.of("context", "routes", "consumers")) {
+            Object check = registry.resolveById(id);
+            if (check != null) {
+                registry.register(check);
+            } else {
+                LOG.warn("Unable to resolve the Camel health check '{}'", id);
+            }
+        }
+        registry.register(new WanakuRegistrationHealthCheck(() -> ready));
     }
 
     private void loadRoutes() {

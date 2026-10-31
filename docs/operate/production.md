@@ -22,6 +22,26 @@ The capability serves the Camel health endpoints on the MCP server port.
 
 An endpoint returns HTTP 200 when all its checks are UP, and HTTP 503 when a check is DOWN.
 
+The endpoints use the [Camel Health Check API](https://camel.apache.org/manual/health-check.html) and report these checks:
+
+- `context`: the Camel context is started.
+- `route:<route-id>`: one check for each route.
+- `consumer:<route-id>`: one check for each route consumer.
+- `wanaku-registration`: the registration state (readiness). See below.
+
+The response lists each check. Add `?exposureLevel=oneline` to get only the overall status.
+
+```json
+{
+  "status": "UP",
+  "checks": [
+    { "name": "context", "status": "UP" },
+    { "name": "route:my-route", "status": "UP" },
+    { "name": "wanaku-registration", "status": "UP" }
+  ]
+}
+```
+
 The readiness checks include `wanaku-registration`:
 
 - With self-registration (`--register`), the check is DOWN until the forward is registered in Wanaku.
