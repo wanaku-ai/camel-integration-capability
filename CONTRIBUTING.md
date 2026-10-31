@@ -45,7 +45,7 @@ We expect all contributors to be respectful and professional. Create a welcoming
    ```
 
 > [!NOTE]
-> Routes loaded from `file://` references need no Wanaku server. You need Wanaku Barn for `datastore://` references and service catalogs (`--registration-url`), and a Wanaku server to test self-registration (`--register`). See the [Usage Guide](docs/get-started/usage.md) for setup instructions.
+> Routes loaded from `file://` references need no Wanaku server. You need Wanaku Barn for `datastore://` references and service catalogs (`--registration-url`), and a Wanaku server to test self-registration (`--register`). See the [Quickstart](docs/get-started/quickstart.md) for setup instructions.
 
 ## Project Structure
 

@@ -68,6 +68,7 @@ graph TB
          uri: ai-tool:get-employee-info
          parameters:
            description: "Fetches core profile data for a specific employee"
+           tags: wanaku
          steps:
            - toD: https://api.example.com/employees/${header.employeeId}
    ```
@@ -98,7 +99,7 @@ graph TB
 <!-- -->
 
 > [!NOTE]
-> For detailed configuration options and deployment scenarios, see the [Usage Guide](docs/get-started/usage.md).
+> For detailed configuration options and deployment scenarios, see [Get started](docs/get-started/index.md) and the [CLI reference](docs/reference/cli.md).
 
 ## Documentation
 
@@ -106,7 +107,10 @@ For stable release documentation, visit the **[Wanaku Documentation](https://wan
 
 The guides below cover development and unreleased features. They may describe behavior that differs from the latest stable release.
 
-- **[Usage Guide](docs/get-started/usage.md)** - Configuration and deployment
+- **[Get Started](docs/get-started/index.md)** - Overview and quickstart
+- **[Write and Load Routes](docs/build/routes.md)** - The `ai-tool:` route format and the route sources
+- **[Deploy on Kubernetes](docs/operate/kubernetes.md)** - The Wanaku Operator and plain Deployments
+- **[Self-registration](docs/operate/self-registration.md)** - Register the capability as a Wanaku forward
 - **[Service Catalog Guide](docs/build/service-catalogs.md)** - Creating and publishing service catalogs
 - **[CLI Reference](docs/reference/cli.md)** - Complete command-line parameter reference
 - **[Architecture](docs/get-started/architecture.md)** - System design and data flow
@@ -130,7 +134,7 @@ docker run -p 9090:9090 camel-integration-capability [options]
 
 ### Kubernetes/OpenShift
 
-Deploy using the Wanaku operator. See [Usage Guide](docs/get-started/usage.md#deploying-the-service) for examples.
+Deploy using the Wanaku operator. See [Deploy on Kubernetes](docs/operate/kubernetes.md) for examples.
 
 ## Support
 

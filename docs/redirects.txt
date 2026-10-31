@@ -1,4 +1,5 @@
-usage get-started/usage
+usage get-started/
+get-started/usage get-started/
 architecture get-started/architecture
 service-catalog-guide build/service-catalogs
 cli-reference reference/cli

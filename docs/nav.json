@@ -4,7 +4,7 @@
       "text": "Get started",
       "link": "get-started/",
       "items": [
-        { "text": "Camel Integration Capability", "link": "get-started/usage" },
+        { "text": "Quickstart", "link": "get-started/quickstart" },
         { "text": "Architecture", "link": "get-started/architecture" }
       ]
     },
@@ -12,6 +12,7 @@
       "text": "Build routes and catalogs",
       "link": "build/",
       "items": [
+        { "text": "Write and load routes", "link": "build/routes" },
         { "text": "Service catalogs", "link": "build/service-catalogs" }
       ]
     },
@@ -19,6 +20,8 @@
       "text": "Deploy and operate",
       "link": "operate/",
       "items": [
+        { "text": "Deploy on Kubernetes", "link": "operate/kubernetes" },
+        { "text": "Self-registration", "link": "operate/self-registration" },
         { "text": "Operations", "link": "operate/production" },
         { "text": "Migration guide", "link": "operate/migration-guide" },
         { "text": "Echo tool on OpenShift", "link": "operate/openshift-echo-tool" },

@@ -130,6 +130,7 @@ Tools are only exposed for routes using the `ai-tool:` URI format. Verify your r
       uri: ai-tool:my-tool
       parameters:
         description: "My tool description"
+        tags: wanaku
       steps:
         - log:
             message: "Tool invoked"
@@ -139,12 +140,10 @@ Routes using `direct:`, `timer:`, or other standard URIs are NOT exposed as MCP 
 
 ### Check MCP Tag Filtering
 
-If `--mcp-tags` is set, only routes whose tags match are exposed. Verify:
+CIC exposes only the routes whose tags match `--mcp-tags`. The default value is `wanaku`. A route without tags is never exposed. Verify:
 
-1. Your routes have matching tags
-2. The `--mcp-tags` value includes the tags your routes use
-
-To expose all routes, omit `--mcp-tags`.
+1. Your routes have a `tags` parameter.
+2. The `--mcp-tags` value includes the tags your routes use.
 
 ### In Kubernetes: Verify Service Configuration
 
@@ -162,6 +161,29 @@ spec:
     - name: mcp
       port: 9090
       targetPort: 9090
+```
+
+### In Kubernetes: Check the Pod
+
+If the routes are not found, check the files in the data directory:
+
+```bash
+kubectl exec deployment/camel-integration-capability -- ls -la /data
+```
+
+If the MCP server does not respond, check the environment variables and the logs:
+
+```bash
+kubectl exec deployment/camel-integration-capability -- env | grep -E "(REGISTRATION|MCP)"
+kubectl logs -f deployment/camel-integration-capability -c camel-integration-capability
+```
+
+If the connection is refused, check the Service and the pod, and test the connection:
+
+```bash
+kubectl get svc camel-integration-capability
+kubectl describe pod -l app=camel-integration-capability
+kubectl run test-pod --rm -it --image=busybox -- telnet camel-integration-capability 9090
 ```
 
 ## Self-registration Failures
