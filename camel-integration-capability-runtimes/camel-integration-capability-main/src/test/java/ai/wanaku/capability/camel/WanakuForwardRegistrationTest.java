@@ -19,6 +19,8 @@ class WanakuForwardRegistrationTest {
     private static final String NAME = "echo-tool";
     private static final String ADDRESS = "http://echo-tool.tools.svc:9090/mcp";
 
+    private static final String POST = "POST /api/v1/forwards?replace=true";
+
     private MockWanaku wanaku;
 
     @BeforeEach
@@ -29,6 +31,10 @@ class WanakuForwardRegistrationTest {
     @AfterEach
     void stopWanaku() {
         wanaku.close();
+    }
+
+    private static String delete(WanakuForwardRegistration registration) {
+        return "DELETE /api/v1/forwards/" + NAME + "?label.cic.instance=" + registration.instance();
     }
 
     private WanakuForwardRegistration registration(String url, String token, int retries) {
@@ -45,7 +51,7 @@ class WanakuForwardRegistrationTest {
         registration.register();
 
         assertTrue(registration.isRegistered());
-        assertEquals(List.of("POST /api/v1/forwards"), wanaku.requests);
+        assertEquals(List.of(POST), wanaku.requests);
         assertEquals(List.of("Bearer secret"), wanaku.authorizations);
         JsonNode body = wanaku.lastPostBody;
         assertEquals(NAME, body.path("name").asText());
@@ -64,7 +70,7 @@ class WanakuForwardRegistrationTest {
 
         assertThrows(IOException.class, registration::register);
         // The failure is final: no retry
-        assertEquals(List.of("POST /api/v1/forwards"), wanaku.requests);
+        assertEquals(List.of(POST), wanaku.requests);
 
         registration.deregister();
 
@@ -117,9 +123,7 @@ class WanakuForwardRegistrationTest {
 
         registration.deregister();
 
-        assertEquals(
-                List.of("POST /api/v1/forwards", "GET /api/v1/forwards/" + NAME, "DELETE /api/v1/forwards/" + NAME),
-                wanaku.requests);
+        assertEquals(List.of(POST, delete(registration)), wanaku.requests);
         assertFalse(wanaku.forwards.containsKey(NAME));
     }
 
@@ -131,8 +135,9 @@ class WanakuForwardRegistrationTest {
 
         registration.deregister();
 
-        assertEquals(List.of("POST /api/v1/forwards", "GET /api/v1/forwards/" + NAME), wanaku.requests);
+        assertEquals(List.of(POST, delete(registration)), wanaku.requests);
         assertTrue(wanaku.forwards.containsKey(NAME));
+        assertFalse(registration.isRegistered());
     }
 
     @Test
@@ -143,8 +148,27 @@ class WanakuForwardRegistrationTest {
 
         registration.deregister();
 
-        assertEquals(List.of("POST /api/v1/forwards", "GET /api/v1/forwards/" + NAME), wanaku.requests);
+        assertEquals(List.of(POST, delete(registration)), wanaku.requests);
         assertFalse(registration.isRegistered());
+    }
+
+    @Test
+    void replacementInstanceTakesOverForwardAndOldInstanceKeepsIt() throws Exception {
+        WanakuForwardRegistration oldInstance = registration(wanaku.url(), null, 0);
+        WanakuForwardRegistration newInstance = registration(wanaku.url(), null, 0);
+        oldInstance.register();
+
+        // A RollingUpdate starts the new pod before it stops the old one.
+        newInstance.register();
+        oldInstance.deregister();
+
+        assertEquals(
+                newInstance.instance(),
+                wanaku.forwards.get(NAME).path("labels").path("cic.instance").asText());
+
+        newInstance.deregister();
+
+        assertFalse(wanaku.forwards.containsKey(NAME));
     }
 
     @Test

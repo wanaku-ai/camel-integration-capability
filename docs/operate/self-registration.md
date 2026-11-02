@@ -30,12 +30,14 @@ On startup, the capability does these steps in sequence:
 
 1. It loads the routes and starts Camel and the MCP server.
 2. It connects to its own MCP server at `http://127.0.0.1:<mcp-port>/mcp`. It sends the MCP `initialize` request and the `tools/list` request. It continues only if the server exposes one or more tools.
-3. It sends `POST <wanaku-url>/api/v1/forwards` with the forward name, the advertised address, the namespace, and these labels:
+3. It sends `POST <wanaku-url>/api/v1/forwards?replace=true` with the forward name, the advertised address, the namespace, and these labels:
    - `cic.instance`: a random identifier for this process
    - `cic.version`: the capability version
    - `cic.routes-digest`: the SHA-256 digest of the loaded routes file
 4. Wanaku connects to the advertised address to discover the tools. The registration succeeds only if Wanaku reports the forward as available and discovers one or more tools.
 5. The readiness probe changes to UP.
+
+The `replace=true` parameter tells Wanaku to replace a forward with the same name. A new instance thus takes over the forward of the instance that it replaces, for example during a Kubernetes rolling update. Without this parameter, Wanaku 0.3.0 and later return HTTP 409 for an existing forward.
 
 If Wanaku cannot be reached or returns a 5xx status, the capability tries again up to `--retries` times.
 If registration fails, the capability removes the forward if it owns it, stops Camel, and exits with status 1.
@@ -46,15 +48,13 @@ Kubernetes then restarts the pod.
 When the capability receives a stop signal, it does these steps before it stops Camel:
 
 1. It sets the readiness probe to DOWN.
-2. It reads the forward with `GET <wanaku-url>/api/v1/forwards/<name>`.
-3. If the `cic.instance` label is the identifier of this process, it deletes the forward.
-4. If another instance owns the forward, it keeps the forward. This prevents an old instance from removing the registration of its replacement.
-5. If the forward does not exist (HTTP 404), it does nothing.
+2. It sends `DELETE <wanaku-url>/api/v1/forwards/<name>?label.cic.instance=<instance>`. Wanaku deletes the forward only if the `cic.instance` label is the identifier of this process.
+3. If another instance owns the forward (HTTP 409), it keeps the forward. This prevents an old instance from removing the registration of its replacement.
+4. If the forward does not exist (HTTP 404), it does nothing.
+
+Wanaku checks the label and deletes the forward in one operation. A replacement that registers at the same time cannot lose its forward.
 
 Each HTTP call has a 10-second timeout. Set `terminationGracePeriodSeconds` to 30 or more.
-
-> [!NOTE]
-> Wanaku has no conditional delete. If a replacement registers between the ownership check and the delete, the old instance can remove the new forward. Restart the replacement, or register it again, to recover.
 
 ## Kubernetes example
 
