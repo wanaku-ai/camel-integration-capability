@@ -2,6 +2,7 @@ package ai.wanaku.capability.camel;
 
 import java.io.IOException;
 import java.net.InetSocketAddress;
+import java.net.URLDecoder;
 import java.nio.charset.StandardCharsets;
 import java.util.List;
 import java.util.Map;
@@ -13,7 +14,12 @@ import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.sun.net.httpserver.HttpExchange;
 import com.sun.net.httpserver.HttpServer;
 
-/** A minimal mock of the Wanaku {@code /api/v1/forwards} management API. */
+/**
+ * A minimal mock of the Wanaku {@code /api/v1/forwards} management API.
+ *
+ * <p>Like Wanaku, a {@code POST} for an existing forward name returns 409 unless it has {@code replace=true}, and a
+ * {@code DELETE} with {@code label.<key>=<value>} parameters returns 409 when a label does not match.
+ */
 class MockWanaku implements AutoCloseable {
     private static final ObjectMapper MAPPER = new ObjectMapper();
 
@@ -40,8 +46,9 @@ class MockWanaku implements AutoCloseable {
     private void handle(HttpExchange exchange) throws IOException {
         String method = exchange.getRequestMethod();
         String path = exchange.getRequestURI().getPath();
+        String query = exchange.getRequestURI().getQuery();
         String name = path.substring("/api/v1/forwards".length()).replaceFirst("^/", "");
-        requests.add(method + " " + path);
+        requests.add(method + " " + path + (query == null ? "" : "?" + query));
         String auth = exchange.getRequestHeaders().getFirst("Authorization");
         if (auth != null) {
             authorizations.add(auth);
@@ -53,6 +60,10 @@ class MockWanaku implements AutoCloseable {
                 lastPostBody = body;
                 if (postStatus != 200) {
                     respond(exchange, postStatus, "{\"error\":\"failure\"}");
+                    return;
+                }
+                if (forwards.containsKey(body.path("name").asText()) && !"replace=true".equals(query)) {
+                    respond(exchange, 409, "{\"data\":null,\"error\":\"forward already exists\"}");
                     return;
                 }
                 ObjectNode forward = ((ObjectNode) body.deepCopy()).put("available", available);
@@ -70,7 +81,17 @@ class MockWanaku implements AutoCloseable {
                     respond(exchange, 200, wrap(forward));
                 }
             }
-            case "DELETE" -> respond(exchange, forwards.remove(name) == null ? 404 : 200, "{}");
+            case "DELETE" -> {
+                ObjectNode forward = forwards.get(name);
+                if (forward == null) {
+                    respond(exchange, 404, "{\"error\":\"forward not found\"}");
+                } else if (!labelsMatch(forward, query)) {
+                    respond(exchange, 409, "{\"error\":\"label precondition failed\"}");
+                } else {
+                    forwards.remove(name);
+                    respond(exchange, 200, "{}");
+                }
+            }
             default -> respond(exchange, 405, "{}");
         }
     }
@@ -80,6 +101,24 @@ class MockWanaku implements AutoCloseable {
         ObjectNode forward = MAPPER.createObjectNode().put("name", name).put("address", "http://other:9090/mcp");
         forward.putObject("labels").put(WanakuForwardRegistration.INSTANCE_LABEL, instance);
         forwards.put(name, forward);
+    }
+
+    private static boolean labelsMatch(JsonNode forward, String query) {
+        if (query == null) {
+            return true;
+        }
+        for (String parameter : query.split("&")) {
+            String[] pair = parameter.split("=", 2);
+            if (!pair[0].startsWith("label.")) {
+                continue;
+            }
+            String key = URLDecoder.decode(pair[0].substring("label.".length()), StandardCharsets.UTF_8);
+            String value = pair.length > 1 ? URLDecoder.decode(pair[1], StandardCharsets.UTF_8) : "";
+            if (!value.equals(forward.path("labels").path(key).asText(null))) {
+                return false;
+            }
+        }
+        return true;
     }
 
     private static String wrap(JsonNode data) {

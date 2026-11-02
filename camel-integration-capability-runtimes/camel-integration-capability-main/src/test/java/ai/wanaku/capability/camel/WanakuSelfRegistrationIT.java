@@ -75,13 +75,15 @@ class WanakuSelfRegistrationIT {
 
         assertTrue(camelManager.isReady());
         assertEquals(200, readinessStatus(), "readiness must be UP after registration");
-        assertEquals(List.of("POST /api/v1/forwards"), wanaku.requests);
+        assertEquals(List.of("POST /api/v1/forwards?replace=true"), wanaku.requests);
 
         camelManager.shutdown(registration);
 
         assertFalse(camelManager.isReady());
         assertEquals(
-                List.of("POST /api/v1/forwards", "GET /api/v1/forwards/echo-tool", "DELETE /api/v1/forwards/echo-tool"),
+                List.of(
+                        "POST /api/v1/forwards?replace=true",
+                        "DELETE /api/v1/forwards/echo-tool?label.cic.instance=" + registration.instance()),
                 wanaku.requests);
     }
 

@@ -2,9 +2,11 @@ package ai.wanaku.capability.camel;
 
 import java.io.IOException;
 import java.net.URI;
+import java.net.URLEncoder;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
+import java.nio.charset.StandardCharsets;
 import java.time.Duration;
 import java.util.LinkedHashMap;
 import java.util.Map;
@@ -17,8 +19,10 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 /**
  * Registers this process as an MCP forward in the Wanaku management API and removes the forward on shutdown.
  *
- * <p>Every process uses a random {@code cic.instance} label. On shutdown, the forward is deleted only when the
- * label still matches, so a replaced instance does not remove the registration of a newer one.
+ * <p>Every process uses a random {@code cic.instance} label. Registration replaces a forward with the same name
+ * ({@code replace=true}), so a new instance takes over the forward of the instance it replaces. On shutdown, the
+ * forward is deleted only when the label still matches ({@code label.cic.instance} delete precondition), so a
+ * replaced instance does not remove the registration of a newer one.
  */
 public class WanakuForwardRegistration {
     private static final Logger LOG = LoggerFactory.getLogger(WanakuForwardRegistration.class);
@@ -80,7 +84,8 @@ public class WanakuForwardRegistration {
                 "address", settings.advertisedAddress(),
                 "namespace", settings.namespace(),
                 "labels", labels));
-        HttpRequest request = request("")
+        // The forward name belongs to this capability: replace the registration of a previous instance.
+        HttpRequest request = request("?replace=true")
                 .header("Content-Type", "application/json")
                 .POST(HttpRequest.BodyPublishers.ofByteArray(body))
                 .build();
@@ -151,39 +156,26 @@ public class WanakuForwardRegistration {
     }
 
     /**
-     * Deletes the forward if this process still owns it. A missing forward is not an error.
+     * Deletes the forward if this process still owns it. A missing forward, or a forward owned by another instance,
+     * is not an error.
      *
-     * @throws IOException if the ownership check or the delete fails
+     * @throws IOException if the delete fails
      */
     public void deregister() throws IOException, InterruptedException {
         if (!registered) {
             return;
         }
-        String path = "/" + settings.name();
-        HttpResponse<String> current = client.send(request(path).GET().build(), HttpResponse.BodyHandlers.ofString());
-        if (current.statusCode() == 404) {
-            LOG.info("Forward '{}' is not registered in Wanaku. Nothing to remove", settings.name());
-            registered = false;
-            return;
-        }
-        if (current.statusCode() != 200) {
-            throw new IOException("Cannot verify forward ownership: Wanaku returned HTTP " + current.statusCode());
-        }
-        String owner = unwrap(MAPPER.readTree(current.body()))
-                .path("labels")
-                .path(INSTANCE_LABEL)
-                .asText();
-        if (!instance.equals(owner)) {
-            LOG.info("Forward '{}' is owned by another instance ({}). Leaving it registered", settings.name(), owner);
-            registered = false;
-            return;
-        }
+        // Wanaku checks the label and deletes the forward in one operation.
+        String path = "/" + settings.name() + "?label." + INSTANCE_LABEL + "="
+                + URLEncoder.encode(instance, StandardCharsets.UTF_8);
         HttpResponse<String> deleted =
                 client.send(request(path).DELETE().build(), HttpResponse.BodyHandlers.ofString());
-        if (deleted.statusCode() != 404 && (deleted.statusCode() < 200 || deleted.statusCode() >= 300)) {
-            throw new IOException("Cannot remove forward: Wanaku returned HTTP " + deleted.statusCode());
+        switch (deleted.statusCode()) {
+            case 200, 204 -> LOG.info("Forward '{}' removed from Wanaku", settings.name());
+            case 404 -> LOG.info("Forward '{}' is not registered in Wanaku. Nothing to remove", settings.name());
+            case 409 -> LOG.info("Forward '{}' is owned by another instance. Leaving it registered", settings.name());
+            default -> throw new IOException("Cannot remove forward: Wanaku returned HTTP " + deleted.statusCode());
         }
-        LOG.info("Forward '{}' removed from Wanaku", settings.name());
         registered = false;
     }
 
