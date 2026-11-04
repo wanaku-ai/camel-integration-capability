@@ -47,10 +47,16 @@ gh workflow run release -r ${RELEASE_BRANCH} -f releaseBranch=${RELEASE_BRANCH} 
 
 ## Post-Release
 
-After the release workflow completes:
+After the release workflow completes successfully:
 
-1. Verify release artifacts on the [GitHub Releases page](https://github.com/wanaku-ai/camel-integration-capability/releases)
-2. Update the [Wanaku documentation site](https://wanaku.ai/docs/) if needed
+1. Release the artifacts, including container images:
+
+   ```shell
+   gh workflow run release-artifacts -f currentDevelopmentVersion=${CURRENT_DEVELOPMENT_VERSION}
+   ```
+
+2. Verify release artifacts on the [GitHub Releases page](https://github.com/wanaku-ai/camel-integration-capability/releases)
+3. Update the [Wanaku documentation site](https://wanaku.ai/docs/) if needed
 
 ## Next steps
 
