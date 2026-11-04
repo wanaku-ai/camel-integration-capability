@@ -27,6 +27,23 @@ git checkout -b 0.3.x
 git push origin 0.3.x
 ```
 
+### Start the next development version on main (first release of a minor version only)
+
+After you create the release branch, go back to `main` and set the next development version. Use the next minor
+version with the `-SNAPSHOT` suffix. For example, after you create the `0.3.x` branch, set `main` to `0.4.0-SNAPSHOT`.
+
+```shell
+git checkout main
+mvn versions:set -DnewVersion=0.4.0-SNAPSHOT
+mvn versions:commit
+git commit -a -m "Version bump to 0.4.0-SNAPSHOT"
+git push origin main
+```
+
+> [!NOTE]
+> The `versions:commit` goal removes the `pom.xml.versionsBackup` files. The `git commit -a` command commits all the
+> changed `pom.xml` files.
+
 ### Set the versions
 
 ```shell
