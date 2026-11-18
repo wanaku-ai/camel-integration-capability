@@ -133,7 +133,8 @@ public class WanakuForwardRegistration {
             return "Cannot reach Wanaku: " + e.getMessage();
         }
         if (response.statusCode() >= 500) {
-            return "Wanaku returned HTTP " + response.statusCode();
+            // The body has the reason, for example a discovery failure of the forward
+            return "Wanaku returned HTTP " + response.statusCode() + ": " + response.body();
         }
         if (response.statusCode() < 200 || response.statusCode() >= 300) {
             throw new IOException(
