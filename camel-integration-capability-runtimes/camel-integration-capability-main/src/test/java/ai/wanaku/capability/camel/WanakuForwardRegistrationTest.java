@@ -89,9 +89,11 @@ class WanakuForwardRegistrationTest {
     void serverErrorsAreRetriedThenFail() {
         wanaku.postStatus = 503;
 
-        assertThrows(IOException.class, registration(wanaku.url(), null, 2)::register);
+        IOException error = assertThrows(IOException.class, registration(wanaku.url(), null, 2)::register);
 
         assertEquals(3, wanaku.requests.size());
+        // The message has the response body, so the reason shows in the runtime log
+        assertEquals("Wanaku returned HTTP 503: {\"error\":\"failure\"}", error.getMessage());
     }
 
     @Test
